@@ -23,28 +23,46 @@
 
     /* ===== CARDS ===== */
     .card {
-      width: 68px; height: 96px; border-radius: 10px;
+      width: 68px; height: 96px; border-radius: 12px;
       position: relative; flex-shrink: 0;
-      transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease, border-color 0.2s ease;
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), border-color 0.3s ease;
       user-select: none;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2);
     }
     .card-back {
-      background: linear-gradient(145deg, #1e3a5f, #312e81, #1e1b4b);
-      border: 2px solid rgba(148,163,184,0.3);
+      background: linear-gradient(135deg, #090d16 0%, #1e1b4b 50%, #312e81 100%);
+      border: 2px solid rgba(212, 175, 55, 0.55);
       display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+      box-shadow: inset 0 0 12px rgba(212, 175, 55, 0.15), 0 6px 14px rgba(0,0,0,0.4);
     }
     .card-back-pat {
-      width: calc(100% - 8px); height: calc(100% - 8px);
-      border-radius: 5px;
-      border: 1px solid rgba(148,163,184,0.15);
+      width: calc(100% - 10px); height: calc(100% - 10px);
+      border-radius: 6px;
+      border: 1px solid rgba(212, 175, 55, 0.25);
       background:
-        repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.05) 4px, rgba(255,255,255,0.05) 8px),
-        repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(255,255,255,0.05) 4px, rgba(255,255,255,0.05) 8px);
+        radial-gradient(circle, rgba(212, 175, 55, 0.15) 1px, transparent 1px),
+        repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(212,175,55,0.06) 4px, rgba(212,175,55,0.06) 8px),
+        repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(212,175,55,0.06) 4px, rgba(212,175,55,0.06) 8px);
+      background-size: 8px 8px, 100% 100%, 100% 100%;
+      position: relative;
+    }
+    .card-back::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(125deg, transparent 45%, rgba(255, 255, 255, 0.12) 50%, transparent 55%);
+      background-size: 250% 250%;
+      animation: metallicSheen 6s infinite linear;
+    }
+    @keyframes metallicSheen {
+      0% { background-position: 200% 0; }
+      100% { background-position: -120% 0; }
     }
     .card-face {
       background: linear-gradient(145deg, #ffffff, #f8fafc);
       border: 1.5px solid #cbd5e1;
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15), inset 0 -2px 5px rgba(0, 0, 0, 0.05);
     }
     .card-red { color: #ef4444; }
     .card-black { color: #1e293b; }
@@ -55,11 +73,25 @@
 
     /* ===== CARD STATES ===== */
     .card-play { cursor: pointer; }
-    .card-play:hover { transform: translateY(-10px) scale(1.03); box-shadow: 0 12px 24px rgba(0,0,0,0.4); }
+    .card-play {
+      box-shadow: 0 0 8px rgba(34, 211, 238, 0.35);
+      border-color: rgba(34, 211, 238, 0.5) !important;
+      animation: cardPulse 1.8s ease-in-out infinite alternate;
+    }
+    @keyframes cardPulse {
+      0% { box-shadow: 0 0 6px rgba(34, 211, 238, 0.3); border-color: rgba(34, 211, 238, 0.4) !important; }
+      100% { box-shadow: 0 0 16px rgba(212, 175, 55, 0.6); border-color: rgba(212, 175, 55, 0.5) !important; }
+    }
+    .card-play:hover {
+      transform: translateY(-12px) scale(1.05);
+      box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45), 0 0 20px rgba(34, 211, 238, 0.6) !important;
+      z-index: 20;
+    }
     .card-sel {
-      transform: translateY(-16px) !important;
+      transform: translateY(-20px) scale(1.04) !important;
       border-color: #22d3ee !important;
-      box-shadow: 0 0 16px rgba(34,211,238,0.5), 0 8px 24px rgba(0,0,0,0.3) !important;
+      box-shadow: 0 0 22px rgba(34, 211, 238, 0.75), 0 12px 30px rgba(0, 0, 0, 0.45) !important;
+      z-index: 30 !important;
     }
 
     /* ===== TABLE SLOT ===== */
@@ -67,23 +99,29 @@
 
     /* ===== PILE STACKS ===== */
     .pile-stack { position: relative; width: 68px; height: 96px; }
-    .pile-layer { position: absolute; transition: all 0.3s ease; }
+    .pile-layer {
+      position: absolute;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.35));
+    }
 
     /* ===== ZONES ===== */
     .game-zone {
-      background: rgba(15,23,42,0.6);
-      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(148,163,184,0.1);
-      border-radius: 20px; padding: 16px;
+      background: rgba(10, 15, 30, 0.45);
+      backdrop-filter: blur(35px) saturate(180%);
+      -webkit-backdrop-filter: blur(35px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px; padding: 18px;
       transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255,255,255,0.05);
     }
     .zone-glow {
-      border-color: rgba(34,211,238,0.4);
-      box-shadow: 0 0 25px rgba(34,211,238,0.1), inset 0 0 20px rgba(34,211,238,0.02);
+      border-color: rgba(34, 211, 238, 0.4);
+      box-shadow: 0 0 35px rgba(34, 211, 238, 0.15), inset 0 0 20px rgba(34, 211, 238, 0.04);
     }
     .zone-glow-rose {
-      border-color: rgba(251,113,133,0.35);
-      box-shadow: 0 0 25px rgba(251,113,133,0.1);
+      border-color: rgba(251, 113, 133, 0.4);
+      box-shadow: 0 0 35px rgba(251, 113, 133, 0.12);
     }
 
     /* ===== ROUND TABLE ===== */
@@ -99,19 +137,23 @@
       inset: 0;
       border-radius: 9999px;
       background:
-        radial-gradient(circle at center, rgba(15,118,110,0.28), rgba(15,23,42,0.18) 42%, rgba(15,23,42,0.82) 72%),
-        linear-gradient(145deg, rgba(20,83,45,0.78), rgba(6,78,59,0.68));
-      border: 1px solid rgba(148,163,184,0.22);
-      box-shadow: inset 0 0 70px rgba(0,0,0,0.42), 0 24px 70px rgba(0,0,0,0.28);
+        radial-gradient(circle at center, rgba(16, 185, 129, 0.3) 0%, rgba(4, 120, 87, 0.25) 45%, rgba(6, 78, 59, 0.8) 80%, rgba(2, 44, 34, 0.95) 100%),
+        radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
+        linear-gradient(135deg, #064e3b, #022c22);
+      border: 14px solid #1e293b;
+      box-shadow:
+        inset 0 0 80px rgba(0,0,0,0.7),
+        0 0 0 3px #d4af37,
+        0 20px 60px rgba(0,0,0,0.5);
       pointer-events: none;
       z-index: 0;
     }
     .table-arena::after {
       content: "";
       position: absolute;
-      inset: 7%;
+      inset: 6%;
       border-radius: 9999px;
-      border: 1px solid rgba(255,255,255,0.08);
+      border: 2px dashed rgba(212, 175, 55, 0.2);
       pointer-events: none;
       z-index: 1;
     }
@@ -197,15 +239,28 @@
     }
     @keyframes wPulse { 0%,100% { opacity:1; } 50% { opacity:0.65; } }
 
-    /* ===== WIN MODAL ===== */
-    .win-overlay { background: rgba(0,0,0,0.75); backdrop-filter: blur(12px); }
+    /* ===== WIN MODAL & CONFETTI ===== */
+    .win-overlay { background: rgba(3, 7, 18, 0.85); backdrop-filter: blur(15px); }
     .win-card {
-      background: linear-gradient(145deg, rgba(30,41,59,0.98), rgba(15,23,42,0.98));
-      border: 1px solid rgba(148,163,184,0.18); border-radius: 24px; padding: 48px;
-      animation: winIn 0.5s cubic-bezier(0.16,1,0.3,1);
-      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+      background: linear-gradient(145deg, rgba(15,23,42,0.98), rgba(9,12,28,0.98));
+      border: 1px solid rgba(212, 175, 55, 0.35); border-radius: 28px; padding: 36px;
+      animation: winIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 25px 60px -12px rgba(0,0,0,0.8), 0 0 30px rgba(212, 175, 55, 0.15);
+      position: relative; overflow: hidden;
     }
-    @keyframes winIn { from { transform: scale(0.85) translateY(40px); opacity:0; } to { transform: scale(1) translateY(0); opacity:1; } }
+    @keyframes winIn { from { transform: scale(0.8) translateY(50px); opacity:0; } to { transform: scale(1) translateY(0); opacity:1; } }
+    
+    /* CSS Confetti Particles */
+    .confetti-container { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+    .confetti-p {
+      position: absolute; width: 8px; height: 8px; border-radius: 2px;
+      opacity: 0.85; animation: confettiDrop var(--d) linear infinite;
+      top: -10px; left: var(--x); background-color: var(--c);
+    }
+    @keyframes confettiDrop {
+      0% { transform: translateY(0) rotate(0); }
+      100% { transform: translateY(500px) rotate(720deg); opacity: 0; }
+    }
 
     /* ===== HAND FAN ===== */
     .hand-fan > * { margin-inline-end: -28px; }
@@ -1113,8 +1168,32 @@
         }, 3200);
       }
 
+      function spawnConfetti(container) {
+        container.innerHTML = '';
+        const colors = ['#d4af37', '#22d3ee', '#34d399', '#f43f5e', '#a855f7', '#fb923c'];
+        for (let i = 0; i < 80; i++) {
+          const p = document.createElement('div');
+          p.className = 'confetti-p';
+          p.style.setProperty('--x', Math.random() * 100 + '%');
+          p.style.setProperty('--d', (Math.random() * 2 + 1.5) + 's');
+          p.style.setProperty('--c', colors[Math.floor(Math.random() * colors.length)]);
+          p.style.animationDelay = (Math.random() * 1.5) + 's';
+          container.appendChild(p);
+        }
+      }
+
       function showWinModal(winnersList) {
         el('win-modal').classList.remove('hidden');
+        
+        // Spawn confetti inside modal card
+        let confContainer = el('win-confetti');
+        if (!confContainer) {
+          confContainer = document.createElement('div');
+          confContainer.id = 'win-confetti';
+          confContainer.className = 'confetti-container';
+          el('win-modal').firstElementChild.appendChild(confContainer);
+        }
+        spawnConfetti(confContainer);
         
         // Find if I won (I am 1st) or finished earlier
         const myRank = winnersList.indexOf(name) + 1; // 1-indexed rank
@@ -1127,15 +1206,31 @@
           el('win-title').textContent = '💩 הפסדת! יצאת שיטהד...';
         }
         
-        let rankHtml = '<div class="mt-4 flex flex-col gap-2.5 text-right font-semibold">';
+        let rankHtml = '<div class="mt-4 flex flex-col gap-2.5 text-right font-semibold relative z-10">';
         winnersList.forEach((wName, idx) => {
           const isMe = wName === name;
-          const meStyle = isMe ? 'text-cyan-400 font-extrabold border-cyan-500/30 bg-cyan-500/10' : 'text-slate-300 border-slate-800 bg-slate-950/40';
-          const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '💩';
-          const rankText = idx === winnersList.length - 1 ? 'מפסיד (שיטהד)' : `מקום ${idx + 1}`;
+          let meStyle = 'text-slate-300 border-slate-800 bg-slate-950/40';
+          let medal = '💩';
+          let rankText = idx === winnersList.length - 1 ? 'מפסיד (שיטהד)' : `מקום ${idx + 1}`;
+          
+          if (idx === 0) {
+            medal = '🥇';
+            if (isMe) meStyle = 'text-yellow-400 font-extrabold border-yellow-500/40 bg-yellow-500/10 shadow-[0_0_15px_rgba(234,179,8,0.15)]';
+            else meStyle = 'text-yellow-500/90 border-yellow-500/20 bg-yellow-950/10';
+          } else if (idx === 1) {
+            medal = '🥈';
+            if (isMe) meStyle = 'text-cyan-400 font-extrabold border-cyan-500/40 bg-cyan-500/10 shadow-[0_0_15px_rgba(34,211,238,0.15)]';
+            else meStyle = 'text-slate-300 border-slate-700 bg-slate-800/30';
+          } else if (idx === 2) {
+            medal = '🥉';
+            if (isMe) meStyle = 'text-amber-500 font-extrabold border-amber-600/40 bg-amber-600/10 shadow-[0_0_15px_rgba(245,158,11,0.15)]';
+            else meStyle = 'text-amber-600/90 border-amber-900/20 bg-amber-950/10';
+          } else {
+            if (isMe) meStyle = 'text-rose-400 font-extrabold border-rose-500/40 bg-rose-500/10';
+          }
           
           rankHtml += `
-            <div class="flex items-center justify-between px-4 py-2 border rounded-xl ${meStyle}">
+            <div class="flex items-center justify-between px-4 py-2 border rounded-xl backdrop-blur-sm transition duration-300 ${meStyle}">
               <div class="flex items-center gap-2">
                 <span class="text-lg">${medal}</span>
                 <span>${wName}</span>
@@ -1240,8 +1335,16 @@
           for (let i = start; i < G.discardCount; i++) {
             const offset = i - start;
             const card = G.discardHistory[offset];
-            const opStyle = card.rank === 3 ? ';opacity: 0.25' : '';
-            discHtml += '<div class="pile-layer" style="top:' + (offset * 2) + 'px;left:' + offset + 'px' + opStyle + '">' + cFace(card) + '</div>';
+            
+            // Deterministic organic stack offsets to mimic real cards
+            const rot = Math.sin(i * 12.34) * 8; // -8 to 8 degrees rotation
+            const shiftX = Math.cos(i * 5.67) * 4; // -4 to 4 px shift X
+            const shiftY = Math.sin(i * 8.91) * 3; // -3 to 3 px shift Y
+            
+            let style = 'top:' + (offset * 2 + shiftY) + 'px;left:' + (offset + shiftX) + 'px;transform:rotate(' + rot + 'deg)';
+            if (card.rank === 3) style += ';opacity: 0.25';
+            
+            discHtml += '<div class="pile-layer" style="' + style + '">' + cFace(card) + '</div>';
           }
           discHtml += '</div>';
           discEl.innerHTML = discHtml;
