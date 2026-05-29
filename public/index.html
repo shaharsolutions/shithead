@@ -438,7 +438,9 @@
         if (socket) return;
         // If opened as local file, connect explicitly to the localhost server
         const socketUrl = window.location.protocol === 'file:' ? 'http://localhost:3000' : undefined;
-        socket = io(socketUrl);
+        socket = io(socketUrl, {
+          transports: ['websocket']
+        });
 
         // ═══════════════════════════════════════════
         //  SOCKET SOCKET LISTENERS
