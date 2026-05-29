@@ -1169,9 +1169,26 @@
         // MAIN PLAY PHASE
         if (G.phase !== 'play') return;
         
-        // Turn check
+        // Turn check & interjection check
         const myIdx = G.players.findIndex(p => p.isSelf);
-        if (G.turnIdx !== myIdx) {
+        let canInteract = G.turnIdx === myIdx;
+
+        if (!canInteract) {
+          // Check if we can interject with a 4 on empty pile
+          if (G.discardCount === 0) {
+            let card = null;
+            if (src === 'hand') {
+              card = myInfo.hand[idx];
+            } else if (src === 'table') {
+              card = myInfo.ts[idx].card;
+            }
+            if (card && card.rank === 4) {
+              canInteract = true;
+            }
+          }
+        }
+
+        if (!canInteract) {
           toast('זה לא התור שלך', 'warning');
           return;
         }
@@ -1612,20 +1629,29 @@
         el('human-table').innerHTML = myTableHtml;
 
         // Render hand cards
-        const isHandPlayable = (G.phase === 'play' && myTurn && myActiveSrc === 'hand') || (G.phase === 'swap' && !myInfo.ready);
+        const isHandPlayable = (G.phase === 'play' && myTurn && myActiveSrc === 'hand') || 
+                               (G.phase === 'swap' && !myInfo.ready) ||
+                               (G.phase === 'play' && !myTurn && G.discardCount === 0);
         let myHandHtml = '';
         for (let i = 0; i < myInfo.hand.length; i++) {
           const c = myInfo.hand[i];
           const isSelected = (selSrc === 'hand' && sel.includes(i)) ||
                             (swapSel && swapSel.src === 'hand' && swapSel.idx === i);
-          const isPlayable = isHandPlayable && (G.phase === 'swap' || isCardPlayable(c));
+          const isPlayable = G.phase === 'swap' 
+            ? isHandPlayable 
+            : (myTurn ? (isHandPlayable && isCardPlayable(c)) : (isHandPlayable && c.rank === 4));
           myHandHtml += '<div data-hand="' + i + '">' + cFace(c, isSelected, isPlayable) + '</div>';
         }
         el('human-hand').innerHTML = myHandHtml;
 
         // --- Controls Button States ---
         el('play-btn').classList.toggle('hidden', G.phase !== 'play');
-        el('play-btn').disabled = !sel.length || !myTurn;
+        const isInterjecting = sel.length && G.discardCount === 0 && selSrc && (
+          selSrc === 'hand' 
+            ? myInfo.hand[sel[0]].rank === 4 
+            : (myInfo.ts[sel[0]] && myInfo.ts[sel[0]].card && myInfo.ts[sel[0]].card.rank === 4)
+        );
+        el('play-btn').disabled = !sel.length || (!myTurn && !isInterjecting);
 
         el('pick-btn').classList.toggle('hidden', G.phase !== 'play');
         const hasLegalPlay = myActiveSrc === 'hand' 

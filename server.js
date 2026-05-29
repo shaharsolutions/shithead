@@ -448,12 +448,36 @@ io.on('connection', (socket) => {
     const { room: activeRoom, playerIdx } = getRoomForSocket(socket.id);
 
     if (!activeRoom || activeRoom.phase !== 'play') return;
-    if (activeRoom.turnIdx !== playerIdx) {
-      return socket.emit('error-msg', 'זה לא התור שלך.');
-    }
 
     const player = activeRoom.players[playerIdx];
     const src = pSrc(player, activeRoom.deck.length);
+    let isInterjection = false;
+
+    if (activeRoom.turnIdx !== playerIdx) {
+      if (activeRoom.discardPile.length === 0) {
+        let cards = [];
+        if (src === 'hand') {
+          cards = indices.map(idx => player.hand[idx]);
+        } else if (src === 'table') {
+          cards = indices.map(idx => player.ts[idx].card);
+        }
+        if (cards.length && cards.every(c => c && c.rank === 4)) {
+          isInterjection = true;
+        }
+      }
+      
+      if (!isInterjection) {
+        return socket.emit('error-msg', 'זה לא התור שלך.');
+      }
+    }
+
+    if (isInterjection) {
+      activeRoom.turnIdx = playerIdx; // Shift turn to the interjector!
+      io.to(activeRoom.id).emit('toast-msg', {
+        msg: `⚡ ${player.name} התפרץ עם קלף 4 וגנב את התור!`,
+        type: 'special'
+      });
+    }
 
     if (src === 'hand') {
       const cards = indices.map(idx => player.hand[idx]);
