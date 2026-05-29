@@ -472,19 +472,46 @@ io.on('connection', (socket) => {
       executePlayState(activeRoom, player, cards);
     } else if (src === 'table') {
       const cards = indices.map(idx => player.ts[idx].card);
-      if (!cards.length || !cards.every(c => c.rank === cards[0].rank)) {
-        return socket.emit('error-msg', 'בחירת הקלפים אינה תקינה.');
-      }
-      if (!canPlay(activeRoom, cards[0])) {
-        return socket.emit('error-msg', 'אי אפשר לשחק את הקלף הזה על הערימה.');
-      }
+      if (!cards.length) return socket.emit('error-msg', 'בחירת הקלפים אינה תקינה.');
 
-      // Valid play! Remove from table slots
-      indices.forEach(idx => {
-        player.ts[idx].card = null;
-      });
+      // Check if all selected cards are of the same rank AND legally playable
+      const allSameRank = cards.every(c => c.rank === cards[0].rank);
+      const isPlayable = allSameRank && canPlay(activeRoom, cards[0]);
 
-      executePlayState(activeRoom, player, cards);
+      if (isPlayable) {
+        // Valid play! Remove from table slots
+        indices.forEach(idx => {
+          player.ts[idx].card = null;
+        });
+        executePlayState(activeRoom, player, cards);
+      } else {
+        // Illegal blind play! Reveal all selected cards by putting them on the discard pile,
+        // and player must pick up the entire pile.
+        indices.forEach(idx => {
+          activeRoom.discardPile.push(player.ts[idx].card);
+          player.ts[idx].card = null;
+        });
+        
+        broadcastState(activeRoom);
+        
+        const cardStrings = cards.map(getCardString).join(', ');
+        io.to(activeRoom.id).emit('toast-msg', {
+          msg: `${player.name} ניסה לשחק קלף שולחן מוסתר (${cardStrings}) - לא חוקי! לוקח את הערימה`,
+          type: 'warning'
+        });
+
+        // Force pickup and end turn after a slight delay
+        setTimeout(() => {
+          player.hand.push(...activeRoom.discardPile);
+          activeRoom.discardPile = [];
+          activeRoom.seven = false;
+          sortH(player.hand);
+          
+          nextTurn(activeRoom);
+          broadcastState(activeRoom);
+          scheduleBotTurn(activeRoom);
+        }, 1200);
+      }
     }
   });
 

@@ -1269,8 +1269,11 @@
       // ═══════════════════════════════════════════
       //  CARD HTML RENDER GENERATORS
       // ═══════════════════════════════════════════
-      function cBack(playable) {
-        return '<div class="card card-back' + (playable ? ' card-play' : '') + '"><div class="card-back-pat"></div></div>';
+      function cBack(playable, isSelected) {
+        let cls = 'card card-back';
+        if (playable) cls += ' card-play';
+        if (isSelected) cls += ' card-sel';
+        return '<div class="' + cls + '"><div class="card-back-pat"></div></div>';
       }
 
       function cFace(c, isSelected, playable) {
@@ -1301,11 +1304,18 @@
         let html = '';
 
         if (isSelf) {
-          // My own table slot card (visible to me)
-          const playable = (G.phase === 'play' && myTurn && src === 'table' && isCardPlayable(slot.card)) || (G.phase === 'swap' && !G.players[myIdx].ready);
-          const isSelected = (selSrc === 'table' && sel.includes(i)) ||
-                             (swapSel && swapSel.src === 'table' && swapSel.idx === i);
-          html += '<div class="relative z-10" data-table-slot="' + i + '">' + cFace(slot.card, isSelected, playable) + '</div>';
+          // My own table slot card
+          if (G.phase === 'swap') {
+            // Swap phase: visible to me so I can choose!
+            const playable = !G.players[myIdx].ready;
+            const isSelected = (swapSel && swapSel.src === 'table' && swapSel.idx === i);
+            html += '<div class="relative z-10" data-table-slot="' + i + '">' + cFace(slot.card, isSelected, playable) + '</div>';
+          } else {
+            // Play phase: hidden from me! Show card back!
+            const playable = myTurn && src === 'table';
+            const isSelected = (selSrc === 'table' && sel.includes(i));
+            html += '<div class="relative z-10" data-table-slot="' + i + '">' + cBack(playable, isSelected) + '</div>';
+          }
         } else {
           // Opponent's table slot card (hidden from me - show card back!)
           html += '<div>' + cBack(false) + '</div>';
@@ -1565,12 +1575,7 @@
         } else if (myTurn) {
           const activeSrc = getActivePlayerSource(myInfo);
           if (activeSrc === 'table') {
-            const hasLegalPlay = myInfo.ts.some(s => s.card && isCardPlayable(s.card));
-            if (!hasLegalPlay && G.discardCount > 0) {
-              message = 'אין מהלך חוקי מקלפי השולחן. קח את הערימה';
-            } else {
-              message = 'בחר קלף מהשולחן ולחץ שחק קלפים';
-            }
+            message = 'בחר קלף מהשולחן ולחץ שחק קלפים (זכור מה בחרת!)';
           } else {
             const hasLegalPlay = myInfo.hand.some(c => isCardPlayable(c));
             if (!hasLegalPlay && G.discardCount > 0) {
