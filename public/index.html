@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="משחק שיטהד אונליין בזמן אמת עם חברים או מול המחשב.">
+  <title>שיטהד אונליין</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+      fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+
+    /* ===== CARDS ===== */
+    .card {
+      width: 68px; height: 96px; border-radius: 10px;
+      position: relative; flex-shrink: 0;
+      transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease, border-color 0.2s ease;
+      user-select: none;
+    }
+    .card-back {
+      background: linear-gradient(145deg, #1e3a5f, #312e81, #1e1b4b);
+      border: 2px solid rgba(148,163,184,0.3);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .card-back-pat {
+      width: calc(100% - 8px); height: calc(100% - 8px);
+      border-radius: 5px;
+      border: 1px solid rgba(148,163,184,0.15);
+      background:
+        repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.05) 4px, rgba(255,255,255,0.05) 8px),
+        repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(255,255,255,0.05) 4px, rgba(255,255,255,0.05) 8px);
+    }
+    .card-face {
+      background: linear-gradient(145deg, #ffffff, #f8fafc);
+      border: 1.5px solid #cbd5e1;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+    }
+    .card-red { color: #ef4444; }
+    .card-black { color: #1e293b; }
+    .c-tl { position: absolute; top: 4px; left: 6px; font-size: 11px; font-weight: 800; line-height: 1.1; text-align: center; }
+    .c-mid { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 26px; opacity: 0.85; }
+    .c-br { position: absolute; bottom: 4px; right: 6px; font-size: 11px; font-weight: 800; line-height: 1.1; text-align: center; transform: rotate(180deg); }
+    .card-empty { border: 2px dashed rgba(148,163,184,0.15); background: rgba(15,23,42,0.4); }
+
+    /* ===== CARD STATES ===== */
+    .card-play { cursor: pointer; }
+    .card-play:hover { transform: translateY(-10px) scale(1.03); box-shadow: 0 12px 24px rgba(0,0,0,0.4); }
+    .card-sel {
+      transform: translateY(-16px) !important;
+      border-color: #22d3ee !important;
+      box-shadow: 0 0 16px rgba(34,211,238,0.5), 0 8px 24px rgba(0,0,0,0.3) !important;
+    }
+
+    /* ===== TABLE SLOT ===== */
+    .tslot { position: relative; width: 68px; min-height: 96px; }
+
+    /* ===== PILE STACKS ===== */
+    .pile-stack { position: relative; width: 68px; height: 96px; }
+    .pile-layer { position: absolute; transition: all 0.3s ease; }
+
+    /* ===== ZONES ===== */
+    .game-zone {
+      background: rgba(15,23,42,0.6);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(148,163,184,0.1);
+      border-radius: 20px; padding: 16px;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .zone-glow {
+      border-color: rgba(34,211,238,0.4);
+      box-shadow: 0 0 25px rgba(34,211,238,0.1), inset 0 0 20px rgba(34,211,238,0.02);
+    }
+    .zone-glow-rose {
+      border-color: rgba(251,113,133,0.35);
+      box-shadow: 0 0 25px rgba(251,113,133,0.1);
+    }
+
+    /* ===== ROUND TABLE ===== */
+    .table-arena {
+      position: relative;
+      min-height: 880px;
+      border-radius: 9999px;
+      overflow: visible;
+    }
+    .table-arena::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 9999px;
+      background:
+        radial-gradient(circle at center, rgba(15,118,110,0.28), rgba(15,23,42,0.18) 42%, rgba(15,23,42,0.82) 72%),
+        linear-gradient(145deg, rgba(20,83,45,0.78), rgba(6,78,59,0.68));
+      border: 1px solid rgba(148,163,184,0.22);
+      box-shadow: inset 0 0 70px rgba(0,0,0,0.42), 0 24px 70px rgba(0,0,0,0.28);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .table-arena::after {
+      content: "";
+      position: absolute;
+      inset: 7%;
+      border-radius: 9999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      pointer-events: none;
+      z-index: 1;
+    }
+    .table-seat {
+      position: absolute;
+      width: min(330px, 34vw);
+      max-width: 330px;
+      min-width: 230px;
+      padding: 12px;
+      border-radius: 18px;
+      z-index: 2;
+    }
+    .table-center {
+      position: absolute;
+      top: 43%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: min(360px, 52vw);
+      z-index: 3;
+    }
+    .seat-self {
+      left: 50%;
+      bottom: 28px;
+      transform: translateX(-50%);
+      width: min(560px, 72vw);
+      max-width: 560px;
+      z-index: 4;
+    }
+    .seat-top {
+      left: 50%;
+      top: 28px;
+      transform: translateX(-50%);
+    }
+    .seat-upper-left {
+      left: 20%;
+      top: 60px;
+      transform: translateX(-50%);
+    }
+    .seat-upper-right {
+      right: 20%;
+      top: 60px;
+      transform: translateX(50%);
+    }
+    .seat-left {
+      left: 18px;
+      top: 42%;
+      transform: translateY(-50%);
+    }
+    .seat-right {
+      right: 18px;
+      top: 42%;
+      transform: translateY(-50%);
+    }
+
+    /* ===== TOASTS ===== */
+    .toast {
+      padding: 10px 18px; border-radius: 12px; font-size: 13.5px; font-weight: 600;
+      backdrop-filter: blur(10px); max-width: 340px; pointer-events: none;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+      animation: toastIn 0.35s cubic-bezier(0.16,1,0.3,1);
+    }
+    .toast-info { background: rgba(14,165,233,0.95); color: #fff; border: 1px solid rgba(255,255,255,0.1); }
+    .toast-burn { background: rgba(220,38,38,0.95); color: #fff; border: 1px solid rgba(255,255,255,0.1); }
+    .toast-special { background: rgba(124,58,237,0.95); color: #fff; border: 1px solid rgba(255,255,255,0.1); }
+    .toast-warning { background: rgba(217,119,6,0.95); color: #fff; border: 1px solid rgba(255,255,255,0.1); }
+    .toast-out { animation: toastOut 0.3s ease-in forwards; }
+    @keyframes toastIn { from { transform: translateX(80px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes toastOut { to { transform: translateX(80px); opacity: 0; } }
+
+    /* ===== BUTTON GLOW ===== */
+    .btn-glow { animation: bPulse 1.4s ease-in-out infinite; }
+    @keyframes bPulse { 0%,100% { box-shadow: 0 0 8px rgba(245,158,11,0.3); } 50% { box-shadow: 0 0 22px rgba(245,158,11,0.65); } }
+
+    /* ===== TURN BADGE ===== */
+    .badge-dot { width: 8px; height: 8px; border-radius: 50%; animation: dotP 1.2s ease-in-out infinite; }
+    @keyframes dotP { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.3; transform:scale(0.65); } }
+
+    /* ===== SEVEN WARNING ===== */
+    .seven-warn {
+      background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25);
+      color: #fbbf24; padding: 6px 16px; border-radius: 10px; font-size: 13.5px; font-weight: 600;
+      animation: wPulse 2s ease-in-out infinite;
+    }
+    @keyframes wPulse { 0%,100% { opacity:1; } 50% { opacity:0.65; } }
+
+    /* ===== WIN MODAL ===== */
+    .win-overlay { background: rgba(0,0,0,0.75); backdrop-filter: blur(12px); }
+    .win-card {
+      background: linear-gradient(145deg, rgba(30,41,59,0.98), rgba(15,23,42,0.98));
+      border: 1px solid rgba(148,163,184,0.18); border-radius: 24px; padding: 48px;
+      animation: winIn 0.5s cubic-bezier(0.16,1,0.3,1);
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+    }
+    @keyframes winIn { from { transform: scale(0.85) translateY(40px); opacity:0; } to { transform: scale(1) translateY(0); opacity:1; } }
+
+    /* ===== HAND FAN ===== */
+    .hand-fan > * { margin-inline-end: -28px; }
+    .hand-fan > *:last-child { margin-inline-end: 0; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 640px) {
+      .card { width: 54px; height: 76px; border-radius: 8px; }
+      .c-tl, .c-br { font-size: 9px; left: 4px; top: 3px; }
+      .c-mid { font-size: 20px; }
+      .tslot { width: 54px; min-height: 76px; }
+      .pile-stack { width: 54px; height: 76px; }
+      .hand-fan > * { margin-inline-end: -22px; }
+      .table-arena { min-height: 840px; border-radius: 42px; overflow: visible; }
+      .table-seat { width: 44vw; min-width: 148px; padding: 8px; border-radius: 14px; }
+      .table-center { width: 210px; }
+      .seat-self { width: calc(100% - 20px); bottom: 18px; }
+      .seat-top { top: 18px; }
+      .seat-upper-left { left: 27%; top: 12px; }
+      .seat-upper-right { right: 27%; top: 12px; }
+      .seat-left { left: 4px; top: 34%; transform: none; }
+      .seat-right { right: 4px; top: 34%; transform: none; }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white overflow-x-hidden">
+
+  <!-- Toasts container -->
+  <div id="toasts" class="fixed top-4 right-4 z-50 flex flex-col gap-2 items-end"></div>
+
+  <!-- Win / Game Over Modal -->
+  <div id="win-modal" class="hidden fixed inset-0 z-40 flex items-center justify-center win-overlay">
+    <div class="win-card text-center max-w-md mx-4">
+      <div class="text-6xl mb-4">👑</div>
+      <h2 id="win-title" class="text-4xl font-black mb-2 tracking-tight"></h2>
+      <p id="win-sub" class="text-slate-400 mb-6 text-sm"></p>
+      <div class="flex gap-3 justify-center">
+        <button id="rematch-btn" class="px-8 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-white shadow-lg transition-all duration-200 hover:scale-105">משחק נוסף</button>
+        <button id="win-lobby-btn" class="px-6 py-3 rounded-xl font-bold text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all duration-200">לובי</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col min-h-screen gap-3">
+    
+    <!-- Title / Logo Header -->
+    <header class="text-center pt-2 pb-1">
+      <h1 class="text-2xl sm:text-3xl font-black tracking-tight flex items-center justify-center gap-2">
+        <span class="text-indigo-500 text-lg sm:text-xl">♣</span>
+        <span class="bg-gradient-to-r from-cyan-400 via-indigo-400 to-emerald-400 bg-clip-text text-transparent">שיטהד אונליין</span>
+        <span class="text-emerald-500 text-lg sm:text-xl">♦</span>
+      </h1>
+      <p class="text-xs text-slate-500 mt-0.5">משחק קלפים בזמן אמת, מול חברים או מול המחשב</p>
+    </header>
+
+    <!-- ═══════════════════════════════════════════
+      LOBBY VIEW
+    ═══════════════════════════════════════════ -->
+    <div id="lobby-view" class="flex-1 flex items-center justify-center my-6">
+      <div class="w-full max-w-md bg-slate-900/60 border border-slate-800 rounded-2xl p-6 sm:p-8 backdrop-blur-xl shadow-xl flex flex-col gap-6">
+        <div>
+          <h2 class="text-xl font-bold text-slate-200">הכנה למשחק</h2>
+          <p class="text-xs text-slate-400 mt-1">הזן שם, בחר מצב משחק ומספר שחקנים.</p>
+        </div>
+
+        <!-- Name Input -->
+        <div class="flex flex-col gap-2">
+          <label for="player-name" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">השם שלך</label>
+          <input type="text" id="player-name" placeholder="הכנס שם..." maxlength="12" class="px-4 py-3 rounded-xl bg-slate-950/80 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition duration-200">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="flex flex-col gap-2">
+            <label for="game-mode" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">מצב משחק</label>
+            <select id="game-mode" class="px-4 py-3 rounded-xl bg-slate-950/80 border border-slate-800 text-white focus:outline-none focus:border-cyan-500 transition duration-200">
+              <option value="computer">נגד המחשב</option>
+              <option value="online">חדר עם חברים</option>
+            </select>
+          </div>
+          <div class="flex flex-col gap-2">
+            <label for="player-count" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">מספר שחקנים</label>
+            <select id="player-count" class="px-4 py-3 rounded-xl bg-slate-950/80 border border-slate-800 text-white focus:outline-none focus:border-cyan-500 transition duration-200">
+              <option value="2">2 שחקנים</option>
+              <option value="3">3 שחקנים</option>
+              <option value="4">4 שחקנים</option>
+            </select>
+          </div>
+        </div>
+
+        <hr class="border-slate-800/80">
+
+        <!-- Action grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Create Room -->
+          <div class="flex flex-col gap-2">
+            <button id="create-btn" class="w-full py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white shadow-lg transition duration-200 hover:-translate-y-0.5">התחל משחק</button>
+            <p class="text-[10px] text-slate-500 text-center">פתח חדר חדש או משחק מול מחשב</p>
+          </div>
+
+          <!-- Join Room -->
+          <div class="flex flex-col gap-2">
+            <div class="flex gap-2">
+              <input type="text" id="room-code" placeholder="קוד" maxlength="4" class="w-20 text-center uppercase font-bold text-sm bg-slate-950/80 border border-slate-800 rounded-xl focus:outline-none focus:border-emerald-500 transition duration-200">
+              <button id="join-btn" class="flex-1 py-3.5 rounded-xl font-bold text-sm bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg transition duration-200 hover:-translate-y-0.5">הצטרף</button>
+            </div>
+            <p class="text-[10px] text-slate-500 text-center">הכנס קוד חדר בן 4 אותיות</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+      WAITING LOBBY VIEW
+    ═══════════════════════════════════════════ -->
+    <div id="waiting-view" class="hidden flex-1 flex items-center justify-center my-6">
+      <div class="w-full max-w-md bg-slate-900/60 border border-slate-800 rounded-2xl p-8 backdrop-blur-xl shadow-xl text-center flex flex-col items-center gap-6">
+        <div class="w-16 h-16 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 text-indigo-400 text-2xl font-black animate-pulse">⏳</div>
+        <div>
+          <h2 class="text-xl font-bold">מחכים לשחקנים...</h2>
+          <p class="text-xs text-slate-400 mt-1">שלח את קוד החדר לחברים כדי להתחיל:</p>
+        </div>
+        
+        <div class="px-6 py-3 rounded-2xl bg-slate-950/80 border border-slate-800 text-3xl font-black tracking-widest text-cyan-400 shadow-inner select-all cursor-pointer hover:bg-slate-900 transition" id="waiting-code-display" title="Click to copy">
+          ----
+        </div>
+
+        <div class="text-xs text-slate-500">
+          שחקן: <span id="waiting-player-name" class="font-bold text-slate-400">---</span>
+        </div>
+        
+        <button id="waiting-back-btn" class="mt-2 text-xs font-semibold text-slate-500 hover:text-slate-300 transition duration-200">ביטול וחזרה</button>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+      GAME BOARD VIEW
+    ═══════════════════════════════════════════ -->
+    <div id="game-view" class="hidden flex-1 flex flex-col gap-3">
+      
+      <!-- Room Code / Status Header -->
+      <div class="flex items-center justify-between px-3 py-1 bg-slate-900/40 rounded-xl border border-slate-800/60 text-xs">
+        <span class="text-slate-400">חדר: <span id="game-room-id" class="font-black text-cyan-400 tracking-wider">----</span></span>
+        <div id="swap-notification" class="hidden text-indigo-400 font-bold animate-pulse">שלב החלפה</div>
+        <div id="play-notification" class="hidden text-emerald-400 font-bold">שלב משחק</div>
+      </div>
+
+      <div id="table-arena" class="table-arena">
+        <div id="opponents-wrap"></div>
+
+        <!-- Discard and Draw Pile Center Zone -->
+        <div id="center-zone" class="table-center flex flex-col items-center justify-center">
+          <div class="flex justify-center items-start gap-10 sm:gap-16">
+            <div class="text-center">
+              <div id="draw-pile" class="mb-1"></div>
+              <span class="text-[10px] sm:text-xs text-slate-500 uppercase font-bold tracking-wider">קופה · <span id="draw-cnt" class="text-slate-400 font-semibold">0</span></span>
+            </div>
+            <div class="text-center">
+              <div id="disc-pile" class="mb-1"></div>
+              <span class="text-[10px] sm:text-xs text-slate-500 uppercase font-bold tracking-wider">ערימה · <span id="disc-cnt" class="text-slate-400 font-semibold">0</span></span>
+            </div>
+          </div>
+          <!-- 7 Restriction Warning -->
+          <div class="flex justify-center mt-2">
+            <div id="seven-warn" class="seven-warn hidden">הקלף הבא חייב להיות 7 ומטה</div>
+          </div>
+          <!-- Game Instruction Message -->
+          <p id="game-msg" class="text-center text-xs sm:text-sm text-slate-400 mt-2 min-h-[20px] font-medium"></p>
+        </div>
+
+        <!-- Human Player Zone -->
+        <div id="human-zone" class="game-zone table-seat seat-self flex flex-col">
+          <div class="flex items-center justify-between mb-2">
+            <span id="player-name-display" class="text-sm font-semibold text-slate-300">אתה</span>
+            <div class="flex gap-2">
+              <span id="player-ready-badge" class="hidden inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-indigo-500/20 text-indigo-400 border border-indigo-500/10">
+                מוכן
+              </span>
+              <span id="player-finished-badge" class="hidden inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-emerald-500/20 text-emerald-400 border border-emerald-500/10">
+                👑 סיימת!
+              </span>
+              <span id="human-badge" class="hidden inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-cyan-500/20 text-cyan-400 border border-cyan-500/10">
+                <span class="badge-dot bg-cyan-400"></span>התור שלך
+              </span>
+            </div>
+          </div>
+          <!-- Human Table Slots -->
+          <div id="human-table" class="flex justify-center gap-4 sm:gap-5 mb-3"></div>
+          <!-- Human Hand -->
+          <div id="human-hand" class="flex justify-center flex-wrap gap-1.5 mb-3 min-h-[96px] items-end"></div>
+          
+          <!-- Controls Buttons Bar -->
+          <div class="flex justify-center gap-2.5 flex-wrap mt-auto pt-1">
+            <button id="play-btn" class="hidden px-6 py-2 rounded-xl font-bold text-sm bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-900/30 transition duration-200 disabled:opacity-30 disabled:cursor-not-allowed">שחק קלפים</button>
+            <button id="pick-btn" class="hidden px-6 py-2 rounded-xl font-bold text-sm bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-900/30 transition duration-200 disabled:opacity-30 disabled:cursor-not-allowed">קח ערימה</button>
+            <button id="start-btn" class="hidden px-6 py-2 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white shadow-lg transition duration-200 hover:scale-105">סיימתי להחליף, בוא נתחיל! 🎮</button>
+            <button id="lobby-btn" class="px-5 py-2 rounded-xl font-bold text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition duration-200">חזרה ללובי</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Socket.IO library -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      // ═══════════════════════════════════════════
+      //  CONSTANTS & SUITS
+      // ═══════════════════════════════════════════
+      const RD = { 2:'2', 3:'3', 4:'4', 5:'5', 6:'6', 7:'7', 8:'8', 9:'9', 10:'10', 11:'J', 12:'Q', 13:'K', 14:'A' };
+      const SS = { spades:'♠', hearts:'♥', diamonds:'♦', clubs:'♣' };
+      const el = id => document.getElementById(id);
+
+      // ═══════════════════════════════════════════
+      //  LOCAL CLIENT STATE
+      // ═══════════════════════════════════════════
+      let socket = null;
+      let name = '';
+      let G = null; // Sanitized game state from server
+      let sel = []; // Selected card indices
+      let selSrc = null; // 'hand' | 'faceUp'
+      let swapSel = null; // { src, idx }
+
+      // Connect to websocket server
+      function connectSocket() {
+        if (socket) return;
+        socket = io();
+
+        // ═══════════════════════════════════════════
+        //  SOCKET SOCKET LISTENERS
+        // ═══════════════════════════════════════════
+        socket.on('room-created', ({ roomId }) => {
+          el('lobby-view').classList.add('hidden');
+          el('waiting-view').classList.remove('hidden');
+          el('game-view').classList.add('hidden');
+          el('waiting-code-display').textContent = roomId;
+          el('waiting-player-name').textContent = name;
+        });
+
+        socket.on('game-start', ({ roomId }) => {
+          el('lobby-view').classList.add('hidden');
+          el('waiting-view').classList.add('hidden');
+          el('game-view').classList.remove('hidden');
+          el('game-room-id').textContent = roomId;
+          sel = [];
+          selSrc = null;
+          swapSel = null;
+          hideWinModal();
+        });
+
+        socket.on('state-update', (state) => {
+          G = state;
+          render();
+        });
+
+        socket.on('toast-msg', ({ msg, type }) => {
+          toast(msg, type);
+        });
+
+        socket.on('error-msg', (msg) => {
+          toast(msg, 'warning');
+        });
+
+        socket.on('opponent-disconnected', ({ msg }) => {
+          toast(msg, 'warning');
+          setTimeout(() => {
+            resetToLobby();
+          }, 2000);
+        });
+      }
+
+      // Reset application back to lobby screen
+      function resetToLobby() {
+        G = null;
+        sel = [];
+        selSrc = null;
+        swapSel = null;
+        hideWinModal();
+        el('lobby-view').classList.remove('hidden');
+        el('waiting-view').classList.add('hidden');
+        el('game-view').classList.add('hidden');
+        if (socket) {
+          socket.disconnect();
+          socket = null;
+        }
+      }
+
+      // ═══════════════════════════════════════════
+      //  LOBBY USER ACTIONS
+      // ═══════════════════════════════════════════
+      function handleCreate() {
+        const input = el('player-name').value.trim();
+        if (!input) {
+          toast('נא להזין שם לפני שמתחילים', 'warning');
+          return;
+        }
+        name = input;
+        connectSocket();
+        socket.emit('create-room', {
+          name,
+          mode: el('game-mode').value,
+          playerCount: el('player-count').value
+        });
+      }
+
+      function handleJoin() {
+        const input = el('player-name').value.trim();
+        const code = el('room-code').value.trim().toUpperCase();
+        if (!input) {
+          toast('נא להזין שם לפני שמצטרפים', 'warning');
+          return;
+        }
+        if (code.length !== 4) {
+          toast('קוד החדר חייב להיות בן 4 אותיות', 'warning');
+          return;
+        }
+        name = input;
+        connectSocket();
+        socket.emit('join-room', { name, roomId: code });
+      }
+
+      function handleCopyCode() {
+        const codeText = el('waiting-code-display').textContent;
+        if (codeText && codeText !== '----') {
+          navigator.clipboard.writeText(codeText)
+            .then(() => toast('קוד החדר הועתק', 'info'))
+            .catch(() => toast('לא ניתן להעתיק את קוד החדר', 'warning'));
+        }
+      }
+
+      // ═══════════════════════════════════════════
+      //  IN-GAME GAMEPLAY ACTIONS
+      // ═══════════════════════════════════════════
+      function handleCardClick(src, idx) {
+        if (!G || G.winner) return;
+        const myInfo = G.players.find(p => p.isSelf);
+        if (!myInfo) return;
+
+        // SWAP PHASE
+        if (G.phase === 'swap') {
+          if (myInfo.ready) return; // Cannot swap after lock
+
+          if (!swapSel) {
+            swapSel = { src, idx };
+          } else if (swapSel.src === src && swapSel.idx === idx) {
+            swapSel = null;
+          } else if (swapSel.src !== src) {
+            // Initiate swap on the server
+            const handIdx = src === 'hand' ? idx : swapSel.idx;
+            const slotIdx = src === 'faceUp' ? idx : swapSel.idx;
+            socket.emit('swap-cards', { handIdx, slotIdx });
+            swapSel = null;
+          } else {
+            swapSel = { src, idx };
+          }
+          render();
+          return;
+        }
+
+        // MAIN PLAY PHASE
+        if (G.phase !== 'play') return;
+        
+        // Turn check
+        const myIdx = G.players.findIndex(p => p.isSelf);
+        if (G.turnIdx !== myIdx) {
+          toast('זה לא התור שלך', 'warning');
+          return;
+        }
+
+        const currentSrc = getActivePlayerSource(myInfo);
+        if (currentSrc !== src) {
+          return; // Can only select cards from current source
+        }
+
+        if (src === 'hand') {
+          const card = myInfo.hand[idx];
+          if (selSrc === 'hand') {
+            const selectIdx = sel.indexOf(idx);
+            if (selectIdx !== -1) {
+              sel.splice(selectIdx, 1);
+              if (!sel.length) selSrc = null;
+            } else {
+              // Only allow selecting multiples of same rank
+              const existingCard = myInfo.hand[sel[0]];
+              if (existingCard.rank === card.rank) {
+                sel.push(idx);
+              } else {
+                sel = [idx];
+              }
+            }
+          } else {
+            sel = [idx];
+            selSrc = 'hand';
+          }
+        } else if (src === 'faceUp') {
+          const card = myInfo.ts[idx].fu;
+          if (!card) return;
+
+          if (selSrc === 'faceUp') {
+            const selectIdx = sel.indexOf(idx);
+            if (selectIdx !== -1) {
+              sel.splice(selectIdx, 1);
+              if (!sel.length) selSrc = null;
+            } else {
+              // Multiples of same rank from face up cards
+              const existingCard = myInfo.ts[sel[0]].fu;
+              if (existingCard.rank === card.rank) {
+                sel.push(idx);
+              } else {
+                sel = [idx];
+              }
+            }
+          } else {
+            sel = [idx];
+            selSrc = 'faceUp';
+          }
+        }
+        render();
+      }
+
+      function handleFaceDownFlip(idx) {
+        if (!G || G.phase !== 'play') return;
+        const myIdx = G.players.findIndex(p => p.isSelf);
+        if (G.turnIdx !== myIdx) {
+          toast('זה לא התור שלך', 'warning');
+          return;
+        }
+
+        const myInfo = G.players[myIdx];
+        if (getActivePlayerSource(myInfo) !== 'faceDown') return;
+
+        socket.emit('play-facedown', { slotIdx: idx });
+        sel = [];
+        selSrc = null;
+      }
+
+      function handlePlaySelected() {
+        if (!socket || !sel.length) return;
+        socket.emit('play-cards', { indices: sel });
+        sel = [];
+        selSrc = null;
+      }
+
+      function handlePickUp() {
+        if (!socket) return;
+        socket.emit('pick-up');
+        sel = [];
+        selSrc = null;
+      }
+
+      function handleLockReady() {
+        if (!socket) return;
+        socket.emit('ready');
+        swapSel = null;
+      }
+
+      function handleRematch() {
+        if (!socket) return;
+        socket.emit('rematch');
+        hideWinModal();
+      }
+
+      // Determine active player's source on the client side
+      function getActivePlayerSource(player) {
+        if (player.handCount > 0) return 'hand';
+        if (G.deckCount > 0) return 'hand';
+        if (player.ts.some(s => s.fu !== null)) return 'faceUp';
+        if (player.ts.some(s => s.hasFD)) return 'faceDown';
+        return null;
+      }
+
+      function isCardPlayable(card) {
+        if (!G) return false;
+        if (card.rank === 2 || card.rank === 3 || card.rank === 10) return true;
+        if (!G.discardTop) return true;
+        if (G.seven) return card.rank <= 7;
+        return card.rank >= G.discardTop.rank;
+      }
+
+      // ═══════════════════════════════════════════
+      //  CARD HTML RENDER GENERATORS
+      // ═══════════════════════════════════════════
+      function cBack(playable) {
+        return '<div class="card card-back' + (playable ? ' card-play' : '') + '"><div class="card-back-pat"></div></div>';
+      }
+
+      function cFace(c, isSelected, playable) {
+        const red = c.suit === 'hearts' || c.suit === 'diamonds';
+        let cls = 'card card-face ' + (red ? 'card-red' : 'card-black');
+        if (isSelected) cls += ' card-sel';
+        if (playable) cls += ' card-play';
+        return '<div class="' + cls + '">' +
+          '<span class="c-tl">' + RD[c.rank] + '<br>' + SS[c.suit] + '</span>' +
+          '<span class="c-mid">' + SS[c.suit] + '</span>' +
+          '<span class="c-br">' + RD[c.rank] + '<br>' + SS[c.suit] + '</span></div>';
+      }
+
+      function cEmpty() {
+        return '<div class="card card-empty"></div>';
+      }
+
+      function renderSlot(slot, isSelf, i, src) {
+        const hasFD = slot.hasFD;
+        const hasFU = slot.fu !== null;
+        if (!hasFD && !hasFU) return '<div class="tslot">' + cEmpty() + '</div>';
+
+        const myIdx = G.players.findIndex(p => p.isSelf);
+        const myTurn = G.turnIdx === myIdx;
+        const canClick = isSelf && myTurn && G.phase === 'play';
+        let html = '';
+
+        if (hasFD) {
+          const fdPlayable = canClick && src === 'faceDown' && !hasFU;
+          const posClass = hasFU ? 'absolute top-[3px] left-[2px] z-0' : '';
+          html += '<div class="' + posClass + '"' + (fdPlayable ? ' data-fd="' + i + '"' : '') + '>' + cBack(fdPlayable) + '</div>';
+        }
+        if (hasFU) {
+          const fuPlayable = (canClick && src === 'faceUp') || (G.phase === 'swap' && isSelf && !G.players[myIdx].ready);
+          const isSelected = (selSrc === 'faceUp' && sel.includes(i) && isSelf) ||
+                            (swapSel && swapSel.src === 'faceUp' && swapSel.idx === i && isSelf);
+          html += '<div class="relative z-10"' + (isSelf ? ' data-fu="' + i + '"' : '') + '>' + cFace(slot.fu, isSelected, fuPlayable) + '</div>';
+        }
+
+        return '<div class="tslot">' + html + '</div>';
+      }
+
+      // ═══════════════════════════════════════════
+      //  TOAST MESSAGE UTILITY
+      // ═══════════════════════════════════════════
+      function toast(msg, type) {
+        const container = el('toasts');
+        const t = document.createElement('div');
+        t.className = 'toast toast-' + (type || 'info');
+        t.textContent = msg;
+        container.appendChild(t);
+        setTimeout(() => {
+          t.classList.add('toast-out');
+          setTimeout(() => { t.remove(); }, 300);
+        }, 3200);
+      }
+
+      function showWinModal(winnersList) {
+        el('win-modal').classList.remove('hidden');
+        
+        // Find if I won (I am 1st) or finished earlier
+        const myRank = winnersList.indexOf(name) + 1; // 1-indexed rank
+        
+        if (myRank === 1) {
+          el('win-title').textContent = '🥇 ניצחת במקום הראשון!';
+        } else if (myRank > 1 && myRank < winnersList.length) {
+          el('win-title').textContent = `🥈 סיימת במקום ה-${myRank}!`;
+        } else {
+          el('win-title').textContent = '💩 הפסדת! יצאת שיטהד...';
+        }
+        
+        let rankHtml = '<div class="mt-4 flex flex-col gap-2.5 text-right font-semibold">';
+        winnersList.forEach((wName, idx) => {
+          const isMe = wName === name;
+          const meStyle = isMe ? 'text-cyan-400 font-extrabold border-cyan-500/30 bg-cyan-500/10' : 'text-slate-300 border-slate-800 bg-slate-950/40';
+          const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '💩';
+          const rankText = idx === winnersList.length - 1 ? 'מפסיד (שיטהד)' : `מקום ${idx + 1}`;
+          
+          rankHtml += `
+            <div class="flex items-center justify-between px-4 py-2 border rounded-xl ${meStyle}">
+              <div class="flex items-center gap-2">
+                <span class="text-lg">${medal}</span>
+                <span>${wName}</span>
+              </div>
+              <span class="text-xs opacity-75 font-normal">${rankText}</span>
+            </div>
+          `;
+        });
+        rankHtml += '</div>';
+        
+        el('win-sub').innerHTML = rankHtml;
+      }
+
+      function getOpponentSeatClass(displayIdx, totalOpponents) {
+        if (totalOpponents === 1) return 'seat-top';
+        if (totalOpponents === 2) return displayIdx === 0 ? 'seat-upper-right' : 'seat-upper-left';
+        return ['seat-right', 'seat-top', 'seat-left'][displayIdx] || 'seat-top';
+      }
+
+      function renderOpponent(player, idx, isTurn, seatClass) {
+        let handHtml = '';
+        for (let i = 0; i < player.handCount; i++) {
+          handHtml += '<div>' + cBack(false) + '</div>';
+        }
+
+        let tableHtml = '';
+        for (let i = 0; i < 3; i++) {
+          tableHtml += renderSlot(player.ts[i], false, i, null);
+        }
+
+        const readyBadge = G.phase === 'swap' && player.ready
+          ? '<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-indigo-500/20 text-indigo-400 border border-indigo-500/10">מוכן</span>'
+          : '';
+        const finishedBadge = player.finished
+          ? '<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-emerald-500/20 text-emerald-400 border border-emerald-500/10">👑 סיים</span>'
+          : '';
+        const turnBadge = G.phase === 'play' && isTurn
+          ? '<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-rose-500/20 text-rose-400 border border-rose-500/10"><span class="badge-dot bg-rose-400"></span>בתור</span>'
+          : '';
+        const botMark = player.isBot ? 'מחשב' : 'שחקן';
+        const zoneClass = 'game-zone table-seat ' + seatClass + (G.phase === 'play' && isTurn ? ' zone-glow-rose' : '');
+
+        return '<div class="' + zoneClass + '">' +
+          '<div class="flex items-center justify-between mb-2">' +
+            '<span class="text-sm font-semibold text-slate-300">' + player.name + ' · ' + botMark + '</span>' +
+            '<div class="flex gap-2">' + readyBadge + finishedBadge + turnBadge + '</div>' +
+          '</div>' +
+          '<div class="flex justify-center hand-fan mb-3 min-h-[50px]">' + handHtml + '</div>' +
+          '<div class="flex justify-center gap-4 sm:gap-5">' + tableHtml + '</div>' +
+        '</div>';
+      }
+
+      function hideWinModal() {
+        el('win-modal').classList.add('hidden');
+      }
+
+      // ═══════════════════════════════════════════
+      //  RENDER INTERFACE STATE
+      // ═══════════════════════════════════════════
+      function render() {
+        if (!G) return;
+
+        const myIdx = G.players.findIndex(p => p.isSelf);
+        const myInfo = G.players[myIdx];
+        const opponents = G.players
+          .map((player, idx) => ({ player, idx }))
+          .filter(item => !item.player.isSelf);
+
+        const myTurn = G.turnIdx === myIdx;
+
+        // Toggle phase notifications
+        el('swap-notification').classList.toggle('hidden', G.phase !== 'swap');
+        el('play-notification').classList.toggle('hidden', G.phase !== 'play');
+
+        el('opponents-wrap').innerHTML = opponents
+          .map(({ player, idx }, displayIdx) => renderOpponent(player, idx, G.turnIdx === idx, getOpponentSeatClass(displayIdx, opponents.length)))
+          .join('');
+
+        // --- Center Zone Draw / Discard ---
+        const drawEl = el('draw-pile');
+        if (G.deckCount > 0) {
+          const n = Math.min(G.deckCount, 3);
+          let drawHtml = '<div class="pile-stack">';
+          for (let i = 0; i < n; i++) {
+            drawHtml += '<div class="pile-layer" style="top:' + (i * 2) + 'px;left:' + i + 'px">' + cBack(false) + '</div>';
+          }
+          drawHtml += '</div>';
+          drawEl.innerHTML = drawHtml;
+        } else {
+          drawEl.innerHTML = '<div class="pile-stack">' + cEmpty() + '</div>';
+        }
+        el('draw-cnt').textContent = G.deckCount;
+
+        const discEl = el('disc-pile');
+        if (G.discardCount > 0) {
+          const show = Math.min(G.discardCount, 3);
+          let discHtml = '<div class="pile-stack">';
+          const start = G.discardCount - show;
+          for (let i = start; i < G.discardCount; i++) {
+            const offset = i - start;
+            const card = G.discardHistory[offset];
+            const opStyle = card.rank === 3 ? ';opacity: 0.25' : '';
+            discHtml += '<div class="pile-layer" style="top:' + (offset * 2) + 'px;left:' + offset + 'px' + opStyle + '">' + cFace(card) + '</div>';
+          }
+          discHtml += '</div>';
+          discEl.innerHTML = discHtml;
+        } else {
+          discEl.innerHTML = '<div class="pile-stack">' + cEmpty() + '</div>';
+        }
+        el('disc-cnt').textContent = G.discardCount;
+
+        // Seven card restrict warning banner
+        el('seven-warn').classList.toggle('hidden', !G.seven);
+
+        // Turn instruction text
+        let message = '';
+        if (G.phase === 'swap') {
+          message = myInfo.ready ? 'מחכים לשאר השחקנים...' : 'בחר קלף מהיד וקלף גלוי מהשולחן כדי להחליף ביניהם';
+        } else if (G.phase === 'over') {
+          message = '🏆 המשחק הסתיים! ראה את טבלת הדירוג.';
+          showWinModal(G.winners || []);
+        } else if (myTurn) {
+          const activeSrc = getActivePlayerSource(myInfo);
+          if (activeSrc === 'faceDown') {
+            message = 'בחר קלף הפוך כדי לחשוף אותו';
+          } else if (activeSrc === 'faceUp') {
+            const hasLegalPlay = myInfo.ts.some(s => s.fu && isCardPlayable(s.fu));
+            if (!hasLegalPlay && G.discardCount > 0) {
+              message = 'אין מהלך חוקי מהקלפים הגלויים. קח את הערימה';
+            } else {
+              message = 'בחר קלף גלוי מהשולחן ולחץ שחק קלפים';
+            }
+          } else {
+            const hasLegalPlay = myInfo.hand.some(c => isCardPlayable(c));
+            if (!hasLegalPlay && G.discardCount > 0) {
+              message = 'אין קלף חוקי ביד. קח את הערימה';
+            } else {
+              message = 'בחר קלף מהיד ולחץ שחק קלפים';
+            }
+          }
+        } else {
+          const current = G.players[G.turnIdx];
+          message = `מחכים למהלך של ${current ? current.name : 'השחקן הבא'}...`;
+        }
+        el('game-msg').textContent = message;
+
+        // --- You / Player Zone ---
+        el('player-name-display').textContent = `${myInfo.name} · אתה`;
+        el('player-ready-badge').classList.toggle('hidden', G.phase !== 'swap' || !myInfo.ready);
+        el('player-finished-badge').classList.toggle('hidden', !myInfo.finished);
+        el('human-badge').classList.toggle('hidden', G.phase !== 'play' || !myTurn);
+
+        const myActiveSrc = getActivePlayerSource(myInfo);
+
+        // Render your table slots
+        let myTableHtml = '';
+        for (let i = 0; i < 3; i++) {
+          myTableHtml += renderSlot(myInfo.ts[i], true, i, myActiveSrc);
+        }
+        el('human-table').innerHTML = myTableHtml;
+
+        // Render hand cards
+        const isHandPlayable = (G.phase === 'play' && myTurn && myActiveSrc === 'hand') || (G.phase === 'swap' && !myInfo.ready);
+        let myHandHtml = '';
+        for (let i = 0; i < myInfo.hand.length; i++) {
+          const c = myInfo.hand[i];
+          const isSelected = (selSrc === 'hand' && sel.includes(i)) ||
+                            (swapSel && swapSel.src === 'hand' && swapSel.idx === i);
+          const isPlayable = isHandPlayable && (G.phase === 'swap' || isCardPlayable(c));
+          myHandHtml += '<div data-hand="' + i + '">' + cFace(c, isSelected, isPlayable) + '</div>';
+        }
+        el('human-hand').innerHTML = myHandHtml;
+
+        // --- Controls Button States ---
+        el('play-btn').classList.toggle('hidden', G.phase !== 'play');
+        el('play-btn').disabled = !sel.length || !myTurn;
+
+        el('pick-btn').classList.toggle('hidden', G.phase !== 'play');
+        const hasLegalPlay = myActiveSrc === 'hand' 
+          ? myInfo.hand.some(c => isCardPlayable(c))
+          : myInfo.ts.some(s => s.fu && isCardPlayable(s.fu));
+        const canPick = myTurn && !hasLegalPlay && G.discardCount > 0 && myActiveSrc !== 'faceDown';
+        
+        el('pick-btn').disabled = !myTurn || !G.discardCount || myActiveSrc === 'faceDown';
+        el('pick-btn').classList.toggle('btn-glow', canPick);
+
+        el('start-btn').classList.toggle('hidden', G.phase !== 'swap');
+        el('start-btn').disabled = myInfo.ready;
+
+        el('human-zone').classList.toggle('zone-glow', G.phase === 'play' && myTurn);
+      }
+
+      // ═══════════════════════════════════════════
+      //  UI INTERACTION INITIALIZATION
+      // ═══════════════════════════════════════════
+      function setup() {
+        // Lobby view listeners
+        el('create-btn').addEventListener('click', handleCreate);
+        el('join-btn').addEventListener('click', handleJoin);
+        el('waiting-code-display').addEventListener('click', handleCopyCode);
+        el('waiting-back-btn').addEventListener('click', resetToLobby);
+
+        // In-game board click events
+        el('human-hand').addEventListener('click', function (e) {
+          const w = e.target.closest('[data-hand]');
+          if (!w) return;
+          const idx = parseInt(w.dataset.hand);
+          handleCardClick('hand', idx);
+        });
+
+        el('human-table').addEventListener('click', function (e) {
+          const fu = e.target.closest('[data-fu]');
+          if (fu) {
+            const idx = parseInt(fu.dataset.fu);
+            handleCardClick('faceUp', idx);
+            return;
+          }
+          const fd = e.target.closest('[data-fd]');
+          if (fd) {
+            handleFaceDownFlip(parseInt(fd.dataset.fd));
+          }
+        });
+
+        // Controller actions
+        el('play-btn').addEventListener('click', handlePlaySelected);
+        el('pick-btn').addEventListener('click', handlePickUp);
+        el('start-btn').addEventListener('click', handleLockReady);
+        el('lobby-btn').addEventListener('click', resetToLobby);
+        
+        // Modal rematch listeners
+        el('rematch-btn').addEventListener('click', handleRematch);
+        el('win-lobby-btn').addEventListener('click', resetToLobby);
+      }
+
+      // Auto start setup
+      setup();
+
+    })();
+  </script>
+</body>
+</html>

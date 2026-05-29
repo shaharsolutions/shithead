@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Play Shithead (Palace) card game against an AI opponent.">
+  <title>Shithead – The Card Game</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+
+    /* ===== CARDS ===== */
+    .card {
+      width: 68px; height: 96px; border-radius: 10px;
+      position: relative; flex-shrink: 0;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      user-select: none;
+    }
+    .card-back {
+      background: linear-gradient(145deg, #1e3a5f, #312e81, #1e1b4b);
+      border: 2px solid rgba(148,163,184,0.2);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .card-back-pat {
+      width: calc(100% - 8px); height: calc(100% - 8px);
+      border-radius: 5px;
+      border: 1px solid rgba(148,163,184,0.12);
+      background:
+        repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(255,255,255,0.04) 3px, rgba(255,255,255,0.04) 6px),
+        repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(255,255,255,0.04) 3px, rgba(255,255,255,0.04) 6px);
+    }
+    .card-face {
+      background: linear-gradient(145deg, #ffffff, #f8fafc);
+      border: 1.5px solid #cbd5e1;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .card-red { color: #ef4444; }
+    .card-black { color: #1e293b; }
+    .c-tl { position: absolute; top: 3px; left: 5px; font-size: 10px; font-weight: 800; line-height: 1.15; text-align: center; }
+    .c-mid { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 24px; opacity: 0.8; }
+    .c-br { position: absolute; bottom: 3px; right: 5px; font-size: 10px; font-weight: 800; line-height: 1.15; text-align: center; transform: rotate(180deg); }
+    .card-empty { border: 2px dashed rgba(148,163,184,0.2); background: rgba(15,23,42,0.3); }
+
+    /* ===== CARD STATES ===== */
+    .card-play { cursor: pointer; }
+    .card-play:hover { transform: translateY(-8px); box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
+    .card-sel {
+      transform: translateY(-14px) !important;
+      border-color: #22d3ee !important;
+      box-shadow: 0 0 14px rgba(34,211,238,0.45), 0 8px 20px rgba(0,0,0,0.2) !important;
+    }
+
+    /* ===== TABLE SLOT ===== */
+    .tslot { position: relative; width: 68px; min-height: 96px; }
+
+    /* ===== PILE STACKS ===== */
+    .pile-stack { position: relative; width: 68px; height: 96px; }
+    .pile-layer { position: absolute; }
+
+    /* ===== ZONES ===== */
+    .game-zone {
+      background: rgba(15,23,42,0.55);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(148,163,184,0.1);
+      border-radius: 16px; padding: 14px;
+      transition: border-color 0.4s, box-shadow 0.4s;
+    }
+    .zone-glow {
+      border-color: rgba(34,211,238,0.35);
+      box-shadow: 0 0 20px rgba(34,211,238,0.08), inset 0 0 20px rgba(34,211,238,0.03);
+    }
+    .zone-glow-rose {
+      border-color: rgba(251,113,133,0.3);
+      box-shadow: 0 0 20px rgba(251,113,133,0.08);
+    }
+
+    /* ===== TOASTS ===== */
+    .toast {
+      padding: 9px 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
+      backdrop-filter: blur(10px); max-width: 320px; pointer-events: none;
+      animation: toastIn 0.35s cubic-bezier(0.16,1,0.3,1);
+    }
+    .toast-info { background: rgba(14,165,233,0.92); color: #fff; }
+    .toast-burn { background: rgba(239,68,68,0.92); color: #fff; }
+    .toast-special { background: rgba(139,92,246,0.92); color: #fff; }
+    .toast-warning { background: rgba(245,158,11,0.92); color: #fff; }
+    .toast-out { animation: toastOut 0.3s ease-in forwards; }
+    @keyframes toastIn { from { transform: translateX(80px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes toastOut { to { transform: translateX(80px); opacity: 0; } }
+
+    /* ===== BUTTON GLOW ===== */
+    .btn-glow { animation: bPulse 1.4s ease-in-out infinite; }
+    @keyframes bPulse { 0%,100% { box-shadow: 0 0 8px rgba(245,158,11,0.3); } 50% { box-shadow: 0 0 22px rgba(245,158,11,0.6); } }
+
+    /* ===== TURN BADGE ===== */
+    .badge-dot { width: 7px; height: 7px; border-radius: 50%; animation: dotP 1s ease-in-out infinite; }
+    @keyframes dotP { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(0.7); } }
+
+    /* ===== SEVEN WARNING ===== */
+    .seven-warn {
+      background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3);
+      color: #fbbf24; padding: 4px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+      animation: wPulse 2s ease-in-out infinite;
+    }
+    @keyframes wPulse { 0%,100% { opacity:1; } 50% { opacity:0.65; } }
+
+    /* ===== WIN MODAL ===== */
+    .win-overlay { background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); }
+    .win-card {
+      background: linear-gradient(145deg, rgba(30,41,59,0.97), rgba(15,23,42,0.97));
+      border: 1px solid rgba(148,163,184,0.2); border-radius: 20px; padding: 40px;
+      animation: winIn 0.5s cubic-bezier(0.16,1,0.3,1);
+    }
+    @keyframes winIn { from { transform: scale(0.8) translateY(30px); opacity:0; } to { transform: scale(1) translateY(0); opacity:1; } }
+
+    /* ===== COMP HAND FAN ===== */
+    .hand-fan > * { margin-right: -28px; }
+    .hand-fan > *:last-child { margin-right: 0; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 640px) {
+      .card { width: 54px; height: 76px; border-radius: 8px; }
+      .c-tl, .c-br { font-size: 8px; }
+      .c-mid { font-size: 18px; }
+      .tslot { width: 54px; min-height: 76px; }
+      .pile-stack { width: 54px; height: 76px; }
+      .hand-fan > * { margin-right: -22px; }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white overflow-x-hidden">
+
+  <!-- Toasts -->
+  <div id="toasts" class="fixed top-4 right-4 z-50 flex flex-col gap-2 items-end"></div>
+
+  <!-- Win Modal -->
+  <div id="win-modal" class="hidden fixed inset-0 z-40 flex items-center justify-center win-overlay">
+    <div class="win-card text-center">
+      <h2 id="win-title" class="text-4xl font-black mb-2"></h2>
+      <p id="win-sub" class="text-slate-400 mb-6"></p>
+      <button id="win-btn" class="px-8 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-white shadow-lg transition-all duration-200 hover:scale-105">Play Again</button>
+    </div>
+  </div>
+
+  <!-- Game -->
+  <div class="max-w-3xl mx-auto px-3 py-2 flex flex-col min-h-screen gap-3">
+
+    <!-- Header -->
+    <header class="text-center pt-2 pb-0">
+      <h1 class="text-2xl sm:text-3xl font-black tracking-tight">
+        <span class="text-slate-500">♠</span>
+        <span class="bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">SHITHEAD</span>
+        <span class="text-slate-500">♠</span>
+      </h1>
+      <p class="text-xs text-slate-500 mt-0.5">The Card Game · Human vs AI</p>
+    </header>
+
+    <!-- Computer Zone -->
+    <div id="computer-zone" class="game-zone">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-semibold text-slate-300">🤖 Computer</span>
+        <span id="comp-badge" class="hidden inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-rose-500/20 text-rose-400">
+          <span class="badge-dot bg-rose-400"></span>Thinking
+        </span>
+      </div>
+      <div id="comp-hand" class="flex justify-center hand-fan mb-3 min-h-[50px]"></div>
+      <div id="comp-table" class="flex justify-center gap-4 sm:gap-5"></div>
+    </div>
+
+    <!-- Center Zone -->
+    <div class="game-zone">
+      <div class="flex justify-center items-start gap-10 sm:gap-16">
+        <div class="text-center">
+          <div id="draw-pile" class="mb-1"></div>
+          <span class="text-xs text-slate-500">Draw · <span id="draw-cnt" class="text-slate-400 font-semibold">0</span></span>
+        </div>
+        <div class="text-center">
+          <div id="disc-pile" class="mb-1"></div>
+          <span class="text-xs text-slate-500">Discard · <span id="disc-cnt" class="text-slate-400 font-semibold">0</span></span>
+        </div>
+      </div>
+      <div class="flex justify-center mt-2">
+        <div id="seven-warn" class="seven-warn hidden">⚠️ Next card must be 7 or lower!</div>
+      </div>
+      <p id="game-msg" class="text-center text-sm text-slate-400 mt-2 min-h-[20px]"></p>
+    </div>
+
+    <!-- Human Zone -->
+    <div id="human-zone" class="game-zone flex-1 flex flex-col">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-semibold text-slate-300">👤 You</span>
+        <span id="human-badge" class="hidden inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-cyan-500/20 text-cyan-400">
+          <span class="badge-dot bg-cyan-400"></span>Your Turn
+        </span>
+      </div>
+      <div id="human-table" class="flex justify-center gap-4 sm:gap-5 mb-3"></div>
+      <div id="human-hand" class="flex justify-center flex-wrap gap-1.5 mb-3 min-h-[96px] items-end"></div>
+      <div class="flex justify-center gap-2.5 flex-wrap mt-auto pt-1">
+        <button id="play-btn" class="hidden px-5 py-2 rounded-xl font-bold text-sm bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-900/30 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed">▶ Play</button>
+        <button id="pick-btn" class="hidden px-5 py-2 rounded-xl font-bold text-sm bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-900/30 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed">📥 Pick Up Pile</button>
+        <button id="start-btn" class="hidden px-5 py-2 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white shadow-lg transition-all duration-200 hover:scale-105">🚀 Start Game</button>
+        <button id="new-btn" class="px-5 py-2 rounded-xl font-bold text-sm bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600 transition-all duration-200">↻ New Game</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ═══════════════════════════════════════════
+  //  CONSTANTS
+  // ═══════════════════════════════════════════
+  const SUITS = ['spades', 'hearts', 'diamonds', 'clubs'];
+  const RANKS = [2,3,4,5,6,7,8,9,10,11,12,13,14];
+  const RD = {2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A'};
+  const SS = {spades:'♠', hearts:'♥', diamonds:'♦', clubs:'♣'};
+  const AI_DELAY = 950;
+  const el = id => document.getElementById(id);
+
+  // ═══════════════════════════════════════════
+  //  STATE
+  // ═══════════════════════════════════════════
+  let G;
+
+  function freshState() {
+    return {
+      deck: [], discardPile: [], burned: [],
+      players: {
+        human:    { hand: [], ts: [{fd:null,fu:null},{fd:null,fu:null},{fd:null,fu:null}] },
+        computer: { hand: [], ts: [{fd:null,fu:null},{fd:null,fu:null},{fd:null,fu:null}] }
+      },
+      turn: null,       // 'human' | 'computer'
+      phase: 'swap',    // 'swap' | 'play' | 'over'
+      seven: false,
+      sel: [],          // selected indices
+      selSrc: null,     // 'hand' | 'faceUp'
+      swapSel: null,    // { src, idx }
+      winner: null,
+      locked: false
+    };
+  }
+
+  // ═══════════════════════════════════════════
+  //  UTILITIES
+  // ═══════════════════════════════════════════
+  function mkDeck() {
+    const d = [];
+    for (const s of SUITS) for (const r of RANKS) d.push({ rank: r, suit: s });
+    return d;
+  }
+
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function sortH(h) { h.sort((a, b) => a.rank - b.rank); }
+  function top() { const p = G.discardPile; return p.length ? p[p.length - 1] : null; }
+
+  // ═══════════════════════════════════════════
+  //  DEALING
+  // ═══════════════════════════════════════════
+  function deal() {
+    G.deck = shuffle(mkDeck());
+    for (let i = 0; i < 3; i++) {
+      G.players.human.ts[i].fd = G.deck.pop();
+      G.players.computer.ts[i].fd = G.deck.pop();
+    }
+    for (let i = 0; i < 3; i++) {
+      G.players.human.ts[i].fu = G.deck.pop();
+      G.players.computer.ts[i].fu = G.deck.pop();
+    }
+    for (let k of ['human','computer']) {
+      G.players[k].hand = [G.deck.pop(), G.deck.pop(), G.deck.pop()];
+      sortH(G.players[k].hand);
+    }
+  }
+
+  // ═══════════════════════════════════════════
+  //  GAME LOGIC
+  // ═══════════════════════════════════════════
+  function canPlay(c) {
+    if (c.rank === 2 || c.rank === 10) return true;
+    if (!G.discardPile.length) return true;
+    if (G.seven) return c.rank <= 7;
+    return c.rank >= top().rank;
+  }
+
+  function pSrc(pk) {
+    const p = G.players[pk];
+    if (p.hand.length > 0) return 'hand';
+    if (G.deck.length > 0) return 'hand';
+    if (p.ts.some(s => s.fu !== null)) return 'faceUp';
+    if (p.ts.some(s => s.fd !== null)) return 'faceDown';
+    return null;
+  }
+
+  function hasLegal(pk) {
+    const src = pSrc(pk);
+    if (!src) return false;
+    const p = G.players[pk];
+    if (src === 'hand') return p.hand.some(c => canPlay(c));
+    if (src === 'faceUp') return p.ts.some(s => s.fu && canPlay(s.fu));
+    return true;
+  }
+
+  function drawCards(pk) {
+    const p = G.players[pk];
+    while (p.hand.length < 3 && G.deck.length > 0) p.hand.push(G.deck.pop());
+    sortH(p.hand);
+  }
+
+  function chk4() {
+    if (G.discardPile.length < 4) return false;
+    const t = G.discardPile.slice(-4);
+    return t.every(c => c.rank === t[0].rank);
+  }
+
+  function burnPile() {
+    G.burned.push(...G.discardPile);
+    G.discardPile = [];
+    G.seven = false;
+  }
+
+  function isWin(pk) {
+    const p = G.players[pk];
+    return !p.hand.length && !G.deck.length && p.ts.every(s => !s.fu && !s.fd);
+  }
+
+  function execPlay(pk, cards) {
+    cards.forEach(c => G.discardPile.push(c));
+    let extra = false;
+    const r = cards[0].rank;
+
+    if (r === 10) {
+      burnPile(); extra = true;
+      toast((pk === 'human' ? 'You' : '🤖 Computer') + ' burned the pile! 🔥', 'burn');
+    } else if (r === 7) {
+      G.seven = true;
+    } else {
+      G.seven = false;
+    }
+
+    if (!extra && chk4()) {
+      burnPile(); extra = true;
+      toast('Four of a kind! Pile burned! 🔥🔥', 'burn');
+    }
+
+    drawCards(pk);
+
+    if (isWin(pk)) { G.winner = pk; G.phase = 'over'; return; }
+    if (!extra) G.turn = pk === 'human' ? 'computer' : 'human';
+  }
+
+  function execPickUp(pk) {
+    const p = G.players[pk];
+    p.hand.push(...G.discardPile);
+    G.discardPile = [];
+    G.seven = false;
+    sortH(p.hand);
+    toast((pk === 'human' ? 'You' : '🤖 Computer') + ' picked up the pile! 📥', 'info');
+    G.turn = pk === 'human' ? 'computer' : 'human';
+  }
+
+  function endTurn() {
+    G.sel = []; G.selSrc = null;
+    if (G.phase === 'over') { G.locked = false; render(); showWinModal(); return; }
+    if (G.turn === 'computer') {
+      G.locked = true; render();
+      setTimeout(aiTurn, AI_DELAY);
+    } else {
+      G.locked = false; render();
+    }
+  }
+
+  function firstPlayer() {
+    const lo = h => {
+      const ns = h.filter(c => c.rank !== 2 && c.rank !== 10).map(c => c.rank);
+      return ns.length ? Math.min(...ns) : Infinity;
+    };
+    return lo(G.players.human.hand) <= lo(G.players.computer.hand) ? 'human' : 'computer';
+  }
+
+  // ═══════════════════════════════════════════
+  //  AI
+  // ═══════════════════════════════════════════
+  function aiTurn() {
+    if (G.phase === 'over') return;
+    const src = pSrc('computer');
+    if (!src) { G.winner = 'computer'; G.phase = 'over'; endTurn(); return; }
+    if (src === 'hand') aiHand();
+    else if (src === 'faceUp') aiFU();
+    else aiFD();
+  }
+
+  function aiHand() {
+    const p = G.players.computer;
+    const legal = p.hand.filter(c => canPlay(c));
+    if (!legal.length) { execPickUp('computer'); endTurn(); return; }
+
+    // Play lowest non-special; save 2/10
+    const ns = legal.filter(c => c.rank !== 2 && c.rank !== 10);
+    let pick;
+    if (ns.length) {
+      pick = ns[0];
+    } else {
+      const twos = legal.filter(c => c.rank === 2);
+      pick = twos.length ? twos[0] : legal[0];
+    }
+    // Play all of same rank
+    const same = p.hand.filter(c => c.rank === pick.rank);
+    same.forEach(c => { p.hand.splice(p.hand.indexOf(c), 1); });
+
+    toast('🤖 plays ' + same.map(c => RD[c.rank] + SS[c.suit]).join(', '), 'info');
+    execPlay('computer', same);
+    endTurn();
+  }
+
+  function aiFU() {
+    const p = G.players.computer;
+    const ls = [];
+    for (let i = 0; i < 3; i++) if (p.ts[i].fu && canPlay(p.ts[i].fu)) ls.push(i);
+    if (!ls.length) { execPickUp('computer'); endTurn(); return; }
+
+    ls.sort((a, b) => p.ts[a].fu.rank - p.ts[b].fu.rank);
+    const tr = p.ts[ls[0]].fu.rank;
+    const ss = ls.filter(i => p.ts[i].fu.rank === tr);
+    const cards = [];
+    ss.forEach(i => { cards.push(p.ts[i].fu); p.ts[i].fu = null; });
+
+    toast('🤖 plays ' + cards.map(c => RD[c.rank] + SS[c.suit]).join(', '), 'info');
+    execPlay('computer', cards);
+    endTurn();
+  }
+
+  function aiFD() {
+    const p = G.players.computer;
+    const avail = [];
+    for (let i = 0; i < 3; i++) if (p.ts[i].fd) avail.push(i);
+    if (!avail.length) return;
+
+    const si = avail[Math.floor(Math.random() * avail.length)];
+    const card = p.ts[si].fd;
+    p.ts[si].fd = null;
+
+    toast('🤖 flips: ' + RD[card.rank] + SS[card.suit], 'special');
+
+    if (canPlay(card)) {
+      execPlay('computer', [card]);
+      endTurn();
+    } else {
+      G.discardPile.push(card);
+      render();
+      toast('🤖 Illegal! Picks up pile! 😬', 'warning');
+      setTimeout(function () { execPickUp('computer'); endTurn(); }, AI_DELAY);
+    }
+  }
+
+  // ═══════════════════════════════════════════
+  //  HUMAN ACTIONS
+  // ═══════════════════════════════════════════
+  function hPlayCards() {
+    if (G.phase !== 'play' || G.turn !== 'human' || G.locked || !G.sel.length) return;
+    var src = pSrc('human'), p = G.players.human;
+
+    if (src === 'hand' && G.selSrc === 'hand') {
+      var cards = G.sel.map(function (i) { return p.hand[i]; });
+      if (!cards.every(function (c) { return c.rank === cards[0].rank; })) return;
+      if (!canPlay(cards[0])) return;
+      var sorted = G.sel.slice().sort(function (a, b) { return b - a; });
+      sorted.forEach(function (i) { p.hand.splice(i, 1); });
+      execPlay('human', cards);
+      endTurn();
+    } else if (src === 'faceUp' && G.selSrc === 'faceUp') {
+      var cards2 = [], slots = [];
+      G.sel.forEach(function (i) {
+        if (p.ts[i].fu) { cards2.push(p.ts[i].fu); slots.push(i); }
+      });
+      if (!cards2.length) return;
+      if (!cards2.every(function (c) { return c.rank === cards2[0].rank; })) return;
+      if (!canPlay(cards2[0])) return;
+      slots.forEach(function (i) { p.ts[i].fu = null; });
+      execPlay('human', cards2);
+      endTurn();
+    }
+  }
+
+  function hFaceDown(si) {
+    if (G.phase !== 'play' || G.turn !== 'human' || G.locked) return;
+    if (pSrc('human') !== 'faceDown') return;
+    var p = G.players.human;
+    if (!p.ts[si].fd) return;
+
+    var card = p.ts[si].fd;
+    p.ts[si].fd = null;
+    toast('You flip: ' + RD[card.rank] + SS[card.suit], 'special');
+
+    if (canPlay(card)) {
+      execPlay('human', [card]);
+      endTurn();
+    } else {
+      G.discardPile.push(card);
+      toast('Illegal card! Picking up pile! 😬', 'warning');
+      G.locked = true;
+      render();
+      setTimeout(function () { execPickUp('human'); endTurn(); }, 1200);
+    }
+  }
+
+  function hPickUp() {
+    if (G.phase !== 'play' || G.turn !== 'human' || G.locked || !G.discardPile.length) return;
+    execPickUp('human');
+    endTurn();
+  }
+
+  // ═══════════════════════════════════════════
+  //  CARD SELECTION
+  // ═══════════════════════════════════════════
+  function handleSel(src, idx) {
+    if (G.phase !== 'play' || G.turn !== 'human' || G.locked) return;
+    if (pSrc('human') !== src) return;
+
+    var card;
+    if (src === 'hand') card = G.players.human.hand[idx];
+    else card = G.players.human.ts[idx].fu;
+    if (!card) return;
+
+    if (G.selSrc === src) {
+      var si = G.sel.indexOf(idx);
+      if (si !== -1) {
+        G.sel.splice(si, 1);
+        if (!G.sel.length) G.selSrc = null;
+      } else {
+        var ex = src === 'hand' ? G.players.human.hand[G.sel[0]] : G.players.human.ts[G.sel[0]].fu;
+        if (ex && card.rank === ex.rank) G.sel.push(idx);
+        else { G.sel = [idx]; }
+      }
+    } else {
+      G.sel = [idx]; G.selSrc = src;
+    }
+    render();
+  }
+
+  // ═══════════════════════════════════════════
+  //  SWAP PHASE
+  // ═══════════════════════════════════════════
+  function handleSwap(src, idx) {
+    if (G.phase !== 'swap') return;
+    if (!G.swapSel) {
+      G.swapSel = { src: src, idx: idx };
+    } else if (G.swapSel.src === src && G.swapSel.idx === idx) {
+      G.swapSel = null;
+    } else if (G.swapSel.src !== src) {
+      var hI, sI;
+      if (G.swapSel.src === 'hand') { hI = G.swapSel.idx; sI = idx; }
+      else { hI = idx; sI = G.swapSel.idx; }
+      var p = G.players.human;
+      var tmp = p.hand[hI];
+      p.hand[hI] = p.ts[sI].fu;
+      p.ts[sI].fu = tmp;
+      sortH(p.hand);
+      G.swapSel = null;
+    } else {
+      G.swapSel = { src: src, idx: idx };
+    }
+    render();
+  }
+
+  function startGame() {
+    G.phase = 'play';
+    G.turn = firstPlayer();
+    G.swapSel = null;
+    toast((G.turn === 'human' ? 'You go' : 'Computer goes') + ' first!', 'info');
+    if (G.turn === 'computer') { G.locked = true; setTimeout(aiTurn, AI_DELAY); }
+    render();
+  }
+
+  function newGame() {
+    hideWinModal();
+    G = freshState();
+    deal();
+    render();
+    toast('New game! Swap cards if you want, then Start.', 'info');
+  }
+
+  // ═══════════════════════════════════════════
+  //  CARD HTML HELPERS
+  // ═══════════════════════════════════════════
+  function cBack(playable) {
+    return '<div class="card card-back' + (playable ? ' card-play' : '') + '"><div class="card-back-pat"></div></div>';
+  }
+
+  function cFace(c, sel, playable) {
+    var red = c.suit === 'hearts' || c.suit === 'diamonds';
+    var cls = 'card card-face ' + (red ? 'card-red' : 'card-black');
+    if (sel) cls += ' card-sel';
+    if (playable) cls += ' card-play';
+    return '<div class="' + cls + '">' +
+      '<span class="c-tl">' + RD[c.rank] + '<br>' + SS[c.suit] + '</span>' +
+      '<span class="c-mid">' + SS[c.suit] + '</span>' +
+      '<span class="c-br">' + RD[c.rank] + '<br>' + SS[c.suit] + '</span></div>';
+  }
+
+  function cEmpty() { return '<div class="card card-empty"></div>'; }
+
+  function rSlot(slot, pk, i) {
+    var hasFD = slot.fd !== null, hasFU = slot.fu !== null;
+    if (!hasFD && !hasFU) return '<div class="tslot">' + cEmpty() + '</div>';
+
+    var isH = pk === 'human';
+    var src = G.phase === 'play' ? pSrc(pk) : null;
+    var canC = isH && !G.locked && G.turn === 'human';
+    var html = '';
+
+    if (hasFD) {
+      var fdC = canC && src === 'faceDown' && !hasFU;
+      var posC = hasFU ? 'absolute top-[3px] left-[2px] z-0' : '';
+      html += '<div class="' + posC + '"' + (fdC ? ' data-fd="' + i + '"' : '') + '>' + cBack(fdC) + '</div>';
+    }
+    if (hasFU) {
+      var fuC = (canC && src === 'faceUp') || (G.phase === 'swap' && isH);
+      var sel = (G.selSrc === 'faceUp' && G.sel.indexOf(i) !== -1) ||
+                (G.swapSel && G.swapSel.src === 'faceUp' && G.swapSel.idx === i);
+      html += '<div class="relative z-10"' + (isH ? ' data-fu="' + i + '"' : '') + '>' + cFace(slot.fu, sel, fuC) + '</div>';
+    }
+
+    return '<div class="tslot">' + html + '</div>';
+  }
+
+  // ═══════════════════════════════════════════
+  //  TOASTS
+  // ═══════════════════════════════════════════
+  function toast(msg, type) {
+    var t = document.createElement('div');
+    t.className = 'toast toast-' + (type || 'info');
+    t.textContent = msg;
+    el('toasts').appendChild(t);
+    setTimeout(function () {
+      t.classList.add('toast-out');
+      setTimeout(function () { t.remove(); }, 300);
+    }, 2800);
+  }
+
+  // ═══════════════════════════════════════════
+  //  WIN MODAL
+  // ═══════════════════════════════════════════
+  function showWinModal() {
+    el('win-modal').classList.remove('hidden');
+    el('win-title').textContent = G.winner === 'human' ? '🎉 You Win!' : '😞 Computer Wins';
+    el('win-sub').textContent = G.winner === 'human' ? 'You cleared all your cards!' : 'Better luck next time!';
+  }
+  function hideWinModal() { el('win-modal').classList.add('hidden'); }
+
+  // ═══════════════════════════════════════════
+  //  RENDER
+  // ═══════════════════════════════════════════
+  function render() {
+    // --- Computer hand ---
+    var chHTML = '';
+    for (var ci = 0; ci < G.players.computer.hand.length; ci++) chHTML += '<div>' + cBack() + '</div>';
+    el('comp-hand').innerHTML = chHTML;
+
+    // --- Computer table ---
+    var ctHTML = '';
+    for (var ti = 0; ti < 3; ti++) ctHTML += rSlot(G.players.computer.ts[ti], 'computer', ti);
+    el('comp-table').innerHTML = ctHTML;
+
+    // --- Draw pile ---
+    var dpEl = el('draw-pile');
+    if (G.deck.length) {
+      var n = Math.min(G.deck.length, 3);
+      var dpH = '<div class="pile-stack">';
+      for (var di = 0; di < n; di++) dpH += '<div class="pile-layer" style="top:' + (di * 2) + 'px;left:' + di + 'px">' + cBack() + '</div>';
+      dpH += '</div>';
+      dpEl.innerHTML = dpH;
+    } else {
+      dpEl.innerHTML = '<div class="pile-stack">' + cEmpty() + '</div>';
+    }
+    el('draw-cnt').textContent = G.deck.length;
+
+    // --- Discard pile ---
+    var dcEl = el('disc-pile');
+    if (G.discardPile.length) {
+      var show = Math.min(G.discardPile.length, 3);
+      var dcH = '<div class="pile-stack">';
+      var start = G.discardPile.length - show;
+      for (var dci = start; dci < G.discardPile.length; dci++) {
+        var off = dci - start;
+        dcH += '<div class="pile-layer" style="top:' + (off * 2) + 'px;left:' + off + 'px">' + cFace(G.discardPile[dci]) + '</div>';
+      }
+      dcH += '</div>';
+      dcEl.innerHTML = dcH;
+    } else {
+      dcEl.innerHTML = '<div class="pile-stack">' + cEmpty() + '</div>';
+    }
+    el('disc-cnt').textContent = G.discardPile.length;
+
+    // --- Seven warning ---
+    el('seven-warn').classList.toggle('hidden', !G.seven);
+
+    // --- Message ---
+    var hSrc = G.phase === 'play' ? pSrc('human') : null;
+    var msg = '';
+    if (G.phase === 'swap') msg = '🔄 Swap cards between hand & face-up, then click Start!';
+    else if (G.phase === 'over') msg = G.winner === 'human' ? '🎉 You win!' : '😞 Computer wins!';
+    else if (G.turn === 'human') {
+      if (hSrc === 'faceDown') msg = '👆 Click a face-down card to flip it!';
+      else if (!hasLegal('human') && G.discardPile.length) msg = '❌ No legal moves! Pick up the pile.';
+      else msg = '🃏 Select card(s) and click Play';
+    } else msg = '🤖 Computer is thinking...';
+    el('game-msg').textContent = msg;
+
+    // --- Human table ---
+    var htHTML = '';
+    for (var hi = 0; hi < 3; hi++) htHTML += rSlot(G.players.human.ts[hi], 'human', hi);
+    el('human-table').innerHTML = htHTML;
+
+    // --- Human hand ---
+    var handPlayable = (G.phase === 'play' && G.turn === 'human' && !G.locked && hSrc === 'hand') || G.phase === 'swap';
+    var hhHTML = '';
+    for (var hhi = 0; hhi < G.players.human.hand.length; hhi++) {
+      var c = G.players.human.hand[hhi];
+      var isSel = (G.selSrc === 'hand' && G.sel.indexOf(hhi) !== -1) ||
+                  (G.swapSel && G.swapSel.src === 'hand' && G.swapSel.idx === hhi);
+      hhHTML += '<div data-hand="' + hhi + '">' + cFace(c, isSel, handPlayable) + '</div>';
+    }
+    el('human-hand').innerHTML = hhHTML;
+
+    // --- Buttons ---
+    el('play-btn').classList.toggle('hidden', G.phase !== 'play');
+    el('play-btn').disabled = !G.sel.length || G.turn !== 'human' || G.locked;
+
+    el('pick-btn').classList.toggle('hidden', G.phase !== 'play');
+    el('pick-btn').disabled = G.turn !== 'human' || G.locked || !G.discardPile.length || hSrc === 'faceDown';
+
+    var needPick = G.phase === 'play' && G.turn === 'human' && !G.locked && !hasLegal('human') && hSrc !== 'faceDown' && G.discardPile.length > 0;
+    el('pick-btn').classList.toggle('btn-glow', needPick);
+
+    el('start-btn').classList.toggle('hidden', G.phase !== 'swap');
+
+    // --- Turn badges ---
+    el('comp-badge').classList.toggle('hidden', G.phase !== 'play' || G.turn !== 'computer');
+    el('human-badge').classList.toggle('hidden', G.phase !== 'play' || G.turn !== 'human');
+
+    // --- Zone glow ---
+    el('computer-zone').classList.toggle('zone-glow-rose', G.phase === 'play' && G.turn === 'computer');
+    el('computer-zone').classList.toggle('zone-glow', false);
+    el('human-zone').classList.toggle('zone-glow', G.phase === 'play' && G.turn === 'human');
+    el('human-zone').classList.toggle('zone-glow-rose', false);
+  }
+
+  // ═══════════════════════════════════════════
+  //  EVENT SETUP
+  // ═══════════════════════════════════════════
+  function setup() {
+    el('human-hand').addEventListener('click', function (e) {
+      var w = e.target.closest('[data-hand]');
+      if (!w) return;
+      var idx = parseInt(w.dataset.hand);
+      if (G.phase === 'swap') handleSwap('hand', idx);
+      else handleSel('hand', idx);
+    });
+
+    el('human-table').addEventListener('click', function (e) {
+      var fu = e.target.closest('[data-fu]');
+      if (fu) {
+        var idx = parseInt(fu.dataset.fu);
+        if (G.phase === 'swap') handleSwap('faceUp', idx);
+        else handleSel('faceUp', idx);
+        return;
+      }
+      var fd = e.target.closest('[data-fd]');
+      if (fd) { hFaceDown(parseInt(fd.dataset.fd)); }
+    });
+
+    el('play-btn').addEventListener('click', hPlayCards);
+    el('pick-btn').addEventListener('click', hPickUp);
+    el('start-btn').addEventListener('click', startGame);
+    el('new-btn').addEventListener('click', newGame);
+    el('win-btn').addEventListener('click', newGame);
+  }
+
+  // ═══════════════════════════════════════════
+  //  INIT
+  // ═══════════════════════════════════════════
+  G = freshState();
+  deal();
+  setup();
+  render();
+  toast('Welcome! Swap cards if needed, then Start.', 'info');
+
+})();
+</script>
+</body>
+</html>
