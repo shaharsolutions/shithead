@@ -233,6 +233,19 @@
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white overflow-x-hidden">
 
+  <!-- Sound Toggle -->
+  <div class="fixed top-4 left-4 z-50">
+    <button id="mute-btn" class="w-10 h-10 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white flex items-center justify-center backdrop-blur-xl shadow-lg transition-all duration-200 hover:scale-105 active:scale-95" title="השתק / הפעל צלילים">
+      <svg id="sound-icon-on" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+      </svg>
+      <svg id="sound-icon-off" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+      </svg>
+    </button>
+  </div>
+
   <!-- Toasts container -->
   <div id="toasts" class="fixed top-4 right-4 z-50 flex flex-col gap-2 items-end"></div>
 
@@ -432,6 +445,319 @@
       let sel = []; // Selected card indices
       let selSrc = null; // 'hand' | 'faceUp'
       let swapSel = null; // { src, idx }
+      let winSoundPlayed = false;
+
+      // ═══════════════════════════════════════════
+      //  SOUND ENGINE (Web Audio API Synthesizer)
+      // ═══════════════════════════════════════════
+      const Snd = {
+        ctx: null,
+        muted: false,
+        getCtx() {
+          if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+          if (this.ctx.state === 'suspended') this.ctx.resume();
+          return this.ctx;
+        },
+        play(type) {
+          if (this.muted) return;
+          try {
+            const ctx = this.getCtx();
+            const now = ctx.currentTime;
+            
+            if (type === 'click') {
+              // Subtle tactile popping click
+              const osc = ctx.createOscillator();
+              const gainNode = ctx.createGain();
+              osc.type = 'triangle';
+              osc.frequency.setValueAtTime(800, now);
+              osc.frequency.exponentialRampToValueAtTime(200, now + 0.03);
+              gainNode.gain.setValueAtTime(0.04, now);
+              gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+              osc.connect(gainNode);
+              gainNode.connect(ctx.destination);
+              osc.start(now);
+              osc.stop(now + 0.03);
+            }
+            else if (type === 'card') {
+              // Bandpass-filtered paper friction noise + triangle sweep
+              const bufferSize = ctx.sampleRate * 0.12;
+              const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+              const data = buffer.getChannelData(0);
+              for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+              }
+              const noise = ctx.createBufferSource();
+              noise.buffer = buffer;
+              const filter = ctx.createBiquadFilter();
+              filter.type = 'bandpass';
+              filter.frequency.setValueAtTime(1000, now);
+              filter.Q.setValueAtTime(3, now);
+              const noiseGain = ctx.createGain();
+              noiseGain.gain.setValueAtTime(0.06, now);
+              noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+              noise.connect(filter);
+              filter.connect(noiseGain);
+              noiseGain.connect(ctx.destination);
+              noise.start(now);
+
+              const osc = ctx.createOscillator();
+              const oscGain = ctx.createGain();
+              osc.type = 'triangle';
+              osc.frequency.setValueAtTime(350, now);
+              osc.frequency.exponentialRampToValueAtTime(120, now + 0.1);
+              oscGain.gain.setValueAtTime(0.06, now);
+              oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+              osc.connect(oscGain);
+              oscGain.connect(ctx.destination);
+              osc.start(now);
+              osc.stop(now + 0.1);
+            }
+            else if (type === 'swap') {
+              // Quick card slide / zoom sweep
+              const osc = ctx.createOscillator();
+              const gainNode = ctx.createGain();
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(300, now);
+              osc.frequency.exponentialRampToValueAtTime(600, now + 0.12);
+              gainNode.gain.setValueAtTime(0.06, now);
+              gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+              osc.connect(gainNode);
+              gainNode.connect(ctx.destination);
+              osc.start(now);
+              osc.stop(now + 0.12);
+            }
+            else if (type === 'deal') {
+              // Rapid cards-dealing flick suite
+              for (let i = 0; i < 6; i++) {
+                const time = now + i * 0.07;
+                const osc = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(600 - i * 40, time);
+                osc.frequency.exponentialRampToValueAtTime(200, time + 0.05);
+                gainNode.gain.setValueAtTime(0.03, time);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+                osc.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                osc.start(time);
+                osc.stop(time + 0.05);
+              }
+              // Upbeat pentatonic chime at end of dealing
+              const chimeOsc = ctx.createOscillator();
+              const chimeGain = ctx.createGain();
+              chimeOsc.type = 'sine';
+              chimeOsc.frequency.setValueAtTime(523.25, now + 0.45);
+              chimeOsc.frequency.exponentialRampToValueAtTime(659.25, now + 0.6);
+              chimeGain.gain.setValueAtTime(0, now);
+              chimeGain.gain.setValueAtTime(0, now + 0.45);
+              chimeGain.gain.linearRampToValueAtTime(0.06, now + 0.48);
+              chimeGain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+              chimeOsc.connect(chimeGain);
+              chimeGain.connect(ctx.destination);
+              chimeOsc.start(now + 0.45);
+              chimeOsc.stop(now + 0.85);
+            }
+            else if (type === 'turn') {
+              // Soft premium glass chime (F5 to C6)
+              const notes = [698.46, 1046.50];
+              notes.forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                gainNode.gain.setValueAtTime(0.06, now + idx * 0.08);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.4);
+                osc.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                osc.start(now + idx * 0.08);
+                osc.stop(now + idx * 0.08 + 0.4);
+              });
+            }
+            else if (type === 'magic') {
+              // Sparkle arpeggio chord
+              const scale = [784, 1047, 1319, 1568];
+              scale.forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + idx * 0.04);
+                gainNode.gain.setValueAtTime(0.06, now + idx * 0.04);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.04 + 0.3);
+                osc.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                osc.start(now + idx * 0.04);
+                osc.stop(now + idx * 0.04 + 0.3);
+              });
+            }
+            else if (type === 'magic-2') {
+              // Bouncy bubble boing reset
+              [0, 0.06].forEach((delay) => {
+                const osc = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(250, now + delay);
+                osc.frequency.exponentialRampToValueAtTime(500, now + delay + 0.08);
+                gainNode.gain.setValueAtTime(0.06, now + delay);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.08);
+                osc.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                osc.start(now + delay);
+                osc.stop(now + delay + 0.08);
+              });
+            }
+            else if (type === 'magic-3') {
+              // Airy transparent glassy wind chime
+              const highNotes = [1568, 1760, 2093, 2349];
+              highNotes.forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+                gainNode.gain.setValueAtTime(0.03, now + idx * 0.05);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.05 + 0.25);
+                osc.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                osc.start(now + idx * 0.05);
+                osc.stop(now + idx * 0.05 + 0.25);
+              });
+            }
+            else if (type === 'burn') {
+              // Deep white noise fire burst + sawtooth sweep
+              const bufferSize = ctx.sampleRate * 0.4;
+              const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+              const data = buffer.getChannelData(0);
+              for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+              }
+              const noise = ctx.createBufferSource();
+              noise.buffer = buffer;
+              const filter = ctx.createBiquadFilter();
+              filter.type = 'lowpass';
+              filter.frequency.setValueAtTime(600, now);
+              filter.frequency.exponentialRampToValueAtTime(100, now + 0.35);
+              const noiseGain = ctx.createGain();
+              noiseGain.gain.setValueAtTime(0.15, now);
+              noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+              noise.connect(filter);
+              filter.connect(noiseGain);
+              noiseGain.connect(ctx.destination);
+              noise.start(now);
+
+              const osc = ctx.createOscillator();
+              const oscGain = ctx.createGain();
+              osc.type = 'sawtooth';
+              osc.frequency.setValueAtTime(300, now);
+              osc.frequency.exponentialRampToValueAtTime(50, now + 0.35);
+              oscGain.gain.setValueAtTime(0.1, now);
+              oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+              osc.connect(oscGain);
+              oscGain.connect(ctx.destination);
+              osc.start(now);
+              osc.stop(now + 0.38);
+            }
+            else if (type === 'pickup') {
+              // Descending cartoon sliding whistle
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(550, now);
+              osc.frequency.linearRampToValueAtTime(120, now + 0.35);
+              
+              const vib = ctx.createOscillator();
+              const vibGain = ctx.createGain();
+              vib.frequency.value = 15;
+              vibGain.gain.value = 25;
+              vib.connect(vibGain);
+              vibGain.connect(osc.frequency);
+              
+              gain.gain.setValueAtTime(0.14, now);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+              
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              
+              vib.start(now);
+              osc.start(now);
+              vib.stop(now + 0.35);
+              osc.stop(now + 0.35);
+            }
+            else if (type === 'join') {
+              // Cheerful bubble chime double pop
+              const notes = [440, 554.37];
+              notes.forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+                gainNode.gain.setValueAtTime(0.06, now + idx * 0.06);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.18);
+                osc.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                osc.start(now + idx * 0.06);
+                osc.stop(now + idx * 0.06 + 0.18);
+              });
+            }
+            else if (type === 'error') {
+              // Double square warning blits
+              [0, 0.12].forEach(delay => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(130, now + delay);
+                gain.gain.setValueAtTime(0.08, now + delay);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.08);
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.start(now + delay); osc.stop(now + delay + 0.08);
+              });
+            }
+            else if (type === 'victory') {
+              // Rising grand arpeggio fanfare
+              const chord = [261.63, 329.63, 392.00, 523.25, 659.25, 784.00, 1046.50];
+              chord.forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+                osc.type = (idx % 2 === 0) ? 'sine' : 'triangle';
+                osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+                gainNode.gain.setValueAtTime(0.06, now + idx * 0.06);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.45);
+                osc.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                osc.start(now + idx * 0.06);
+                osc.stop(now + idx * 0.06 + 0.45);
+              });
+            }
+            else if (type === 'defeat') {
+              // Trombone comedy slide wah-wah
+              const notes = [293.66, 277.18, 261.63, 220.00];
+              notes.forEach((freq, idx) => {
+                const time = now + idx * 0.18;
+                const osc = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+                osc.type = 'sawtooth';
+                
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(1000, time);
+                filter.frequency.exponentialRampToValueAtTime(200, time + 0.22);
+                
+                osc.frequency.setValueAtTime(freq, time);
+                osc.frequency.linearRampToValueAtTime(freq - 15, time + 0.2);
+                
+                gainNode.gain.setValueAtTime(0.06, time);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.22);
+                
+                osc.connect(filter);
+                filter.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                osc.start(time);
+                osc.stop(time + 0.22);
+              });
+            }
+          } catch (e) {
+            console.error('Audio play failed', e);
+          }
+        }
+      };
 
       // Connect to websocket server
       function connectSocket() {
@@ -461,20 +787,45 @@
           sel = [];
           selSrc = null;
           swapSel = null;
+          winSoundPlayed = false;
           hideWinModal();
+          Snd.play('deal'); // DEAL SOUND AT GAME START
         });
 
         socket.on('state-update', (state) => {
+          const oldTurnIdx = G ? G.turnIdx : null;
+          const wasMyTurn = G ? (G.players.findIndex(p => p.isSelf) === G.turnIdx) : false;
+          
           G = state;
           render();
+
+          // Trigger Turn warning if turn changed to self
+          if (G.phase === 'play') {
+            const myIdx = G.players.findIndex(p => p.isSelf);
+            const isMyTurn = G.turnIdx === myIdx;
+            if (isMyTurn && !wasMyTurn) {
+              Snd.play('turn');
+            }
+          }
         });
 
         socket.on('toast-msg', ({ msg, type }) => {
           toast(msg, type);
+          if (type === 'burn') Snd.play('burn');
+          else if (type === 'special') Snd.play('magic');
+          else if (type === 'warning') Snd.play('error');
+          else if (msg.includes('שיחק')) {
+            if (msg.includes('שיחק 2')) Snd.play('magic-2');
+            else if (msg.includes('שיחק 3')) Snd.play('magic-3');
+            else Snd.play('card');
+          }
+          else if (msg.includes('לקח')) Snd.play('pickup');
+          else if (msg.includes('הצטרף')) Snd.play('join');
         });
 
         socket.on('error-msg', (msg) => {
           toast(msg, 'warning');
+          Snd.play('error');
         });
 
         socket.on('opponent-disconnected', ({ msg }) => {
@@ -491,6 +842,7 @@
         sel = [];
         selSrc = null;
         swapSel = null;
+        winSoundPlayed = false;
         hideWinModal();
         el('lobby-view').classList.remove('hidden');
         el('waiting-view').classList.add('hidden');
@@ -558,16 +910,20 @@
 
           if (!swapSel) {
             swapSel = { src, idx };
+            Snd.play('click');
           } else if (swapSel.src === src && swapSel.idx === idx) {
             swapSel = null;
+            Snd.play('click');
           } else if (swapSel.src !== src) {
             // Initiate swap on the server
             const handIdx = src === 'hand' ? idx : swapSel.idx;
             const slotIdx = src === 'faceUp' ? idx : swapSel.idx;
             socket.emit('swap-cards', { handIdx, slotIdx });
+            Snd.play('swap');
             swapSel = null;
           } else {
             swapSel = { src, idx };
+            Snd.play('click');
           }
           render();
           return;
@@ -590,6 +946,7 @@
 
         if (src === 'hand') {
           const card = myInfo.hand[idx];
+          Snd.play('click');
           if (selSrc === 'hand') {
             const selectIdx = sel.indexOf(idx);
             if (selectIdx !== -1) {
@@ -611,6 +968,7 @@
         } else if (src === 'faceUp') {
           const card = myInfo.ts[idx].fu;
           if (!card) return;
+          Snd.play('click');
 
           if (selSrc === 'faceUp') {
             const selectIdx = sel.indexOf(idx);
@@ -902,6 +1260,16 @@
         } else if (G.phase === 'over') {
           message = '🏆 המשחק הסתיים! ראה את טבלת הדירוג.';
           showWinModal(G.winners || []);
+          
+          if (!winSoundPlayed) {
+            winSoundPlayed = true;
+            const myRank = G.winners.indexOf(name) + 1;
+            if (myRank > 0 && myRank < G.winners.length) {
+              Snd.play('victory');
+            } else {
+              Snd.play('defeat');
+            }
+          }
         } else if (myTurn) {
           const activeSrc = getActivePlayerSource(myInfo);
           if (activeSrc === 'faceDown') {
@@ -973,10 +1341,30 @@
         el('human-zone').classList.toggle('zone-glow', G.phase === 'play' && myTurn);
       }
 
+      function updateMuteUI() {
+        const on = el('sound-icon-on');
+        const off = el('sound-icon-off');
+        if (Snd.muted) {
+          on.classList.add('hidden');
+          off.classList.remove('hidden');
+        } else {
+          on.classList.remove('hidden');
+          off.classList.add('hidden');
+        }
+      }
+
       // ═══════════════════════════════════════════
       //  UI INTERACTION INITIALIZATION
       // ═══════════════════════════════════════════
       function setup() {
+        // Mute button trigger
+        el('mute-btn').addEventListener('click', function () {
+          Snd.muted = !Snd.muted;
+          localStorage.setItem('shithead_sound_muted', Snd.muted ? '1' : '0');
+          updateMuteUI();
+          Snd.play('click');
+        });
+
         // Lobby view listeners
         el('create-btn').addEventListener('click', handleCreate);
         el('join-btn').addEventListener('click', handleJoin);
@@ -1017,6 +1405,10 @@
 
       // Auto start setup
       setup();
+
+      // Initialize sound mute from local storage
+      Snd.muted = localStorage.getItem('shithead_sound_muted') === '1';
+      updateMuteUI();
 
     })();
   </script>
