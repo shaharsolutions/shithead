@@ -72,32 +72,27 @@ function dealGame(room) {
   room.players.forEach(p => {
     p.hand = [];
     p.ts = [
-      { fd: null, fu: null },
-      { fd: null, fu: null },
-      { fd: null, fu: null }
+      { card: null },
+      { card: null },
+      { card: null }
     ];
     p.ready = false;
     p.finished = false;
   });
 
-  // Deal face downs
-  for (let i = 0; i < 3; i++) {
-    room.players.forEach(p => {
-      p.ts[i].fd = deck.pop();
-    });
-  }
-
-  // Deal face ups
-  for (let i = 0; i < 3; i++) {
-    room.players.forEach(p => {
-      p.ts[i].fu = deck.pop();
-    });
-  }
-
-  // Deal hands
+  // Deal exactly 6 starting cards to each player's hand
   room.players.forEach(p => {
-    p.hand = [deck.pop(), deck.pop(), deck.pop()];
+    p.hand = [deck.pop(), deck.pop(), deck.pop(), deck.pop(), deck.pop(), deck.pop()];
     sortH(p.hand);
+
+    // Bots strategically select their 3 highest cards to put on the table immediately!
+    if (p.isBot) {
+      p.ts[0].card = p.hand.pop();
+      p.ts[1].card = p.hand.pop();
+      p.ts[2].card = p.hand.pop();
+      sortH(p.hand);
+      p.ready = true; // Bot is ready!
+    }
   });
 
   room.deck = deck;
@@ -128,8 +123,7 @@ function getEffectiveTopCard(room) {
 function pSrc(player, deckLength) {
   if (player.hand.length > 0) return 'hand';
   if (deckLength > 0) return 'hand';
-  if (player.ts.some(s => s.fu !== null)) return 'faceUp';
-  if (player.ts.some(s => s.fd !== null)) return 'faceDown';
+  if (player.ts.some(s => s.card !== null)) return 'table';
   return null;
 }
 
@@ -153,7 +147,7 @@ function burnPile(room) {
 }
 
 function isWin(player, deckLength) {
-  return !player.hand.length && deckLength === 0 && player.ts.every(s => !s.fu && !s.fd);
+  return !player.hand.length && deckLength === 0 && player.ts.every(s => !s.card);
 }
 
 // Determine who starts based on lowest card in hand (excluding 2 and 10)
@@ -199,10 +193,10 @@ function getSanitizedState(room, socketId) {
         handCount: p.hand.length,
         // Only send hand array to the player themselves
         hand: isSelf ? p.hand : [],
-        // Send face-up cards to everyone, but keep face-down cards completely hidden (send only booleans)
+        // Send table cards to the player themselves, others only see boolean hasCard indicator
         ts: p.ts.map(s => ({
-          fu: s.fu,
-          hasFD: s.fd !== null
+          card: isSelf ? s.card : null,
+          hasCard: s.card !== null
         }))
       };
     }),
@@ -306,9 +300,9 @@ function playBotTurn(room) {
     return;
   }
 
-  if (src === 'faceUp') {
-    const faceUpCards = bot.ts.map(slot => slot.fu);
-    const indices = choosePlayableGroup(faceUpCards, room);
+  if (src === 'table') {
+    const tableCards = bot.ts.map(slot => slot.card);
+    const indices = choosePlayableGroup(tableCards, room);
     if (!indices.length) {
       if (room.discardPile.length) {
         bot.hand.push(...room.discardPile);
@@ -322,32 +316,10 @@ function playBotTurn(room) {
       }
       return;
     }
-    const cards = indices.map(idx => bot.ts[idx].fu);
-    indices.forEach(idx => { bot.ts[idx].fu = null; });
+    const cards = indices.map(idx => bot.ts[idx].card);
+    indices.forEach(idx => { bot.ts[idx].card = null; });
     executePlayState(room, bot, cards);
     return;
-  }
-
-  if (src === 'faceDown') {
-    const slotIdx = bot.ts.findIndex(slot => slot.fd);
-    const card = bot.ts[slotIdx].fd;
-    bot.ts[slotIdx].fd = null;
-    io.to(room.id).emit('toast-msg', { msg: `${bot.name} הפך ${getCardString(card)}`, type: 'special' });
-    if (canPlay(room, card)) {
-      executePlayState(room, bot, [card]);
-    } else {
-      room.discardPile.push(card);
-      broadcastState(room);
-      setTimeout(() => {
-        bot.hand.push(...room.discardPile);
-        room.discardPile = [];
-        room.seven = false;
-        sortH(bot.hand);
-        nextTurn(room);
-        broadcastState(room);
-        scheduleBotTurn(room);
-      }, 1000);
-    }
   }
 }
 
@@ -420,10 +392,25 @@ io.on('connection', (socket) => {
 
     if (!activeRoom || activeRoom.phase !== 'swap' || player.ready) return;
 
-    if (handIdx >= 0 && handIdx < player.hand.length && slotIdx >= 0 && slotIdx < 3) {
-      const temp = player.hand[handIdx];
-      player.hand[handIdx] = player.ts[slotIdx].fu;
-      player.ts[slotIdx].fu = temp;
+    if (slotIdx >= 0 && slotIdx < 3) {
+      const tableCard = player.ts[slotIdx].card;
+
+      if (handIdx >= 0 && handIdx < player.hand.length) {
+        const handCard = player.hand[handIdx];
+        if (tableCard === null) {
+          // Move from hand to empty table slot
+          player.ts[slotIdx].card = handCard;
+          player.hand.splice(handIdx, 1);
+        } else {
+          // Swap hand card and table card
+          player.hand[handIdx] = tableCard;
+          player.ts[slotIdx].card = handCard;
+        }
+      } else if (handIdx === -1 && tableCard !== null) {
+        // Move from table slot back to hand
+        player.hand.push(tableCard);
+        player.ts[slotIdx].card = null;
+      }
       sortH(player.hand);
       broadcastState(activeRoom);
     }
@@ -483,8 +470,8 @@ io.on('connection', (socket) => {
 
       // Execute play
       executePlayState(activeRoom, player, cards);
-    } else if (src === 'faceUp') {
-      const cards = indices.map(idx => player.ts[idx].fu);
+    } else if (src === 'table') {
+      const cards = indices.map(idx => player.ts[idx].card);
       if (!cards.length || !cards.every(c => c.rank === cards[0].rank)) {
         return socket.emit('error-msg', 'בחירת הקלפים אינה תקינה.');
       }
@@ -492,68 +479,16 @@ io.on('connection', (socket) => {
         return socket.emit('error-msg', 'אי אפשר לשחק את הקלף הזה על הערימה.');
       }
 
-      // Valid play! Remove from table face up slots
+      // Valid play! Remove from table slots
       indices.forEach(idx => {
-        player.ts[idx].fu = null;
+        player.ts[idx].card = null;
       });
 
       executePlayState(activeRoom, player, cards);
     }
   });
 
-  // 6. Play Face Down card blindly
-  socket.on('play-facedown', ({ slotIdx }) => {
-    const { room: activeRoom, playerIdx } = getRoomForSocket(socket.id);
-
-    if (!activeRoom || activeRoom.phase !== 'play') return;
-    if (activeRoom.turnIdx !== playerIdx) {
-      return socket.emit('error-msg', 'זה לא התור שלך.');
-    }
-
-    const player = activeRoom.players[playerIdx];
-    const src = pSrc(player, activeRoom.deck.length);
-    if (src !== 'faceDown') return;
-
-    const card = player.ts[slotIdx].fd;
-    if (!card) return;
-
-    player.ts[slotIdx].fd = null;
-    
-    // Broadcast flip toast
-    io.to(activeRoom.id).emit('toast-msg', {
-      msg: `${player.name} הפך ${getCardString(card)}`,
-      type: 'special'
-    });
-
-    if (canPlay(activeRoom, card)) {
-      // Play is legal!
-      executePlayState(activeRoom, player, [card]);
-    } else {
-      // Illegal blind flip! Card goes into discard pile and player picks up entire pile.
-      activeRoom.discardPile.push(card);
-      broadcastState(activeRoom);
-      
-      io.to(activeRoom.id).emit('toast-msg', {
-        msg: `קלף לא חוקי. ${player.name} לוקח את הערימה`,
-        type: 'warning'
-      });
-
-      // Force pickup and end turn after a slight delay for dramatic effect
-      setTimeout(() => {
-        player.hand.push(...activeRoom.discardPile);
-        activeRoom.discardPile = [];
-        activeRoom.seven = false;
-        sortH(player.hand);
-        
-        // Pass turn
-        nextTurn(activeRoom);
-        broadcastState(activeRoom);
-        scheduleBotTurn(activeRoom);
-      }, 1000);
-    }
-  });
-
-  // 7. Pick up the pile
+  // 6. Pick up the pile
   socket.on('pick-up', () => {
     const { room: activeRoom, playerIdx } = getRoomForSocket(socket.id);
 
@@ -566,9 +501,6 @@ io.on('connection', (socket) => {
 
     const player = activeRoom.players[playerIdx];
     
-    // Can't pick up if they are forced to flip blind face-down card
-    if (pSrc(player, activeRoom.deck.length) === 'faceDown') return;
-
     player.hand.push(...activeRoom.discardPile);
     activeRoom.discardPile = [];
     activeRoom.seven = false;
@@ -660,6 +592,30 @@ function executePlayState(room, player, cards) {
     room.seven = true;
   } else if (r === 3) {
     // 3 is transparent: it can be played on anything and keeps the previous rule active.
+  } else if (r === 8) {
+    room.seven = false;
+    // Skip next players
+    const skipCount = cards.length;
+    for (let k = 0; k < skipCount; k++) {
+      // Find the player to be skipped
+      let tempTurnIdx = room.turnIdx;
+      let attempts = 0;
+      do {
+        tempTurnIdx = (tempTurnIdx + 1) % room.players.length;
+        attempts++;
+      } while (room.players[tempTurnIdx].finished && attempts < room.players.length);
+
+      const skippedPlayer = room.players[tempTurnIdx];
+      if (skippedPlayer && !skippedPlayer.finished) {
+        io.to(room.id).emit('toast-msg', {
+          msg: `🚫 התור של ${skippedPlayer.name} דולג!`,
+          type: 'skip'
+        });
+      }
+      
+      // Advance room.turnIdx past the skipped player
+      room.turnIdx = tempTurnIdx;
+    }
   } else {
     room.seven = false;
   }

@@ -300,6 +300,94 @@
       .seat-left { left: 4px; top: 38%; transform: none; }
       .seat-right { right: 4px; top: 38%; transform: none; }
     }
+
+    /* ===== SKIP ANNIHILATION ANIMATION ===== */
+    .skip-overlay-wrap {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 140px;
+      height: 140px;
+      pointer-events: none;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .skip-ring {
+      position: absolute;
+      border: 4px solid #f43f5e;
+      border-radius: 50%;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      box-shadow: 0 0 20px rgba(244, 63, 94, 0.6), inset 0 0 20px rgba(244, 63, 94, 0.6);
+      animation: skipRingWave 0.9s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+    }
+    
+    .skip-icon-wrap {
+      background: rgba(244, 63, 94, 0.15);
+      border: 2px solid rgba(244, 63, 94, 0.4);
+      backdrop-filter: blur(8px);
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 15px rgba(244, 63, 94, 0.3);
+      opacity: 0;
+      transform: scale(0.5) rotate(-45deg);
+      animation: skipIconPop 0.9s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    
+    .skip-icon-svg {
+      width: 36px;
+      height: 36px;
+      stroke: #f43f5e;
+      stroke-width: 2.5;
+      fill: none;
+      filter: drop-shadow(0 0 4px rgba(244, 63, 94, 0.5));
+    }
+    
+    @keyframes skipRingWave {
+      0% {
+        transform: scale(0.3);
+        opacity: 0.8;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        transform: scale(1.4);
+        opacity: 0;
+      }
+    }
+    
+    @keyframes skipIconPop {
+      0% {
+        transform: scale(0.4) rotate(-90deg);
+        opacity: 0;
+      }
+      20% {
+        transform: scale(1.1) rotate(10deg);
+        opacity: 1;
+      }
+      35% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+      }
+      75% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(0.7) rotate(20deg);
+        opacity: 0;
+      }
+    }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white overflow-x-hidden">
@@ -856,6 +944,34 @@
                 osc.stop(time + 0.22);
               });
             }
+            else if (type === 'skip') {
+              // Descending alarm sweep + double mute tap
+              const osc = ctx.createOscillator();
+              const gainNode = ctx.createGain();
+              osc.type = 'triangle';
+              osc.frequency.setValueAtTime(400, now);
+              osc.frequency.linearRampToValueAtTime(150, now + 0.15);
+              gainNode.gain.setValueAtTime(0.06, now);
+              gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+              osc.connect(gainNode);
+              gainNode.connect(ctx.destination);
+              osc.start(now);
+              osc.stop(now + 0.15);
+
+              // Sharp high chime to mark the skip block
+              const ch = ctx.createOscillator();
+              const chGain = ctx.createGain();
+              ch.type = 'sine';
+              ch.frequency.setValueAtTime(880, now + 0.05);
+              chGain.gain.setValueAtTime(0, now);
+              chGain.gain.setValueAtTime(0, now + 0.05);
+              chGain.gain.linearRampToValueAtTime(0.05, now + 0.06);
+              chGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+              ch.connect(chGain);
+              chGain.connect(ctx.destination);
+              ch.start(now + 0.05);
+              ch.stop(now + 0.25);
+            }
           } catch (e) {
             console.error('Audio play failed', e);
           }
@@ -917,6 +1033,10 @@
           if (type === 'burn') Snd.play('burn');
           else if (type === 'special') Snd.play('magic');
           else if (type === 'warning') Snd.play('error');
+          else if (type === 'skip') {
+            Snd.play('skip');
+            triggerSkipAnimation();
+          }
           else if (msg.includes('שיחק')) {
             if (msg.includes('שיחק 2')) Snd.play('magic-2');
             else if (msg.includes('שיחק 3')) Snd.play('magic-3');
@@ -1011,22 +1131,30 @@
         if (G.phase === 'swap') {
           if (myInfo.ready) return; // Cannot swap after lock
 
-          if (!swapSel) {
-            swapSel = { src, idx };
-            Snd.play('click');
-          } else if (swapSel.src === src && swapSel.idx === idx) {
-            swapSel = null;
-            Snd.play('click');
-          } else if (swapSel.src !== src) {
-            // Initiate swap on the server
-            const handIdx = src === 'hand' ? idx : swapSel.idx;
-            const slotIdx = src === 'faceUp' ? idx : swapSel.idx;
-            socket.emit('swap-cards', { handIdx, slotIdx });
-            Snd.play('swap');
-            swapSel = null;
-          } else {
-            swapSel = { src, idx };
-            Snd.play('click');
+          if (src === 'hand') {
+            // Select or deselect hand card
+            if (swapSel && swapSel.src === 'hand' && swapSel.idx === idx) {
+              swapSel = null;
+              Snd.play('click');
+            } else {
+              swapSel = { src: 'hand', idx };
+              Snd.play('click');
+            }
+          } else if (src === 'table') {
+            if (swapSel && swapSel.src === 'hand') {
+              // Move/Swap hand card to table slot
+              socket.emit('swap-cards', { handIdx: swapSel.idx, slotIdx: idx });
+              Snd.play('swap');
+              swapSel = null;
+            } else {
+              // No hand card selected, click table card to return it to hand
+              const slotCard = myInfo.ts[idx].card;
+              if (slotCard !== null) {
+                socket.emit('swap-cards', { handIdx: -1, slotIdx: idx });
+                Snd.play('swap');
+                swapSel = null;
+              }
+            }
           }
           render();
           return;
@@ -1068,19 +1196,20 @@
             sel = [idx];
             selSrc = 'hand';
           }
-        } else if (src === 'faceUp') {
-          const card = myInfo.ts[idx].fu;
+        } else if (src === 'table') {
+          const slot = myInfo.ts[idx];
+          const card = slot.card;
           if (!card) return;
           Snd.play('click');
 
-          if (selSrc === 'faceUp') {
+          if (selSrc === 'table') {
             const selectIdx = sel.indexOf(idx);
             if (selectIdx !== -1) {
               sel.splice(selectIdx, 1);
               if (!sel.length) selSrc = null;
             } else {
-              // Multiples of same rank from face up cards
-              const existingCard = myInfo.ts[sel[0]].fu;
+              // Multiples of same rank from table cards
+              const existingCard = myInfo.ts[sel[0]].card;
               if (existingCard.rank === card.rank) {
                 sel.push(idx);
               } else {
@@ -1089,26 +1218,10 @@
             }
           } else {
             sel = [idx];
-            selSrc = 'faceUp';
+            selSrc = 'table';
           }
         }
         render();
-      }
-
-      function handleFaceDownFlip(idx) {
-        if (!G || G.phase !== 'play') return;
-        const myIdx = G.players.findIndex(p => p.isSelf);
-        if (G.turnIdx !== myIdx) {
-          toast('זה לא התור שלך', 'warning');
-          return;
-        }
-
-        const myInfo = G.players[myIdx];
-        if (getActivePlayerSource(myInfo) !== 'faceDown') return;
-
-        socket.emit('play-facedown', { slotIdx: idx });
-        sel = [];
-        selSrc = null;
       }
 
       function handlePlaySelected() {
@@ -1116,6 +1229,14 @@
         socket.emit('play-cards', { indices: sel });
         sel = [];
         selSrc = null;
+      }
+
+      // Determine active player's source on the client side
+      function getActivePlayerSource(player) {
+        if (player.handCount > 0) return 'hand';
+        if (G.deckCount > 0) return 'hand';
+        if (player.ts.some(s => s.hasCard || s.card !== null)) return 'table';
+        return null;
       }
 
       function handlePickUp() {
@@ -1135,15 +1256,6 @@
         if (!socket) return;
         socket.emit('rematch');
         hideWinModal();
-      }
-
-      // Determine active player's source on the client side
-      function getActivePlayerSource(player) {
-        if (player.handCount > 0) return 'hand';
-        if (G.deckCount > 0) return 'hand';
-        if (player.ts.some(s => s.fu !== null)) return 'faceUp';
-        if (player.ts.some(s => s.hasFD)) return 'faceDown';
-        return null;
       }
 
       function isCardPlayable(card) {
@@ -1177,25 +1289,26 @@
       }
 
       function renderSlot(slot, isSelf, i, src) {
-        const hasFD = slot.hasFD;
-        const hasFU = slot.fu !== null;
-        if (!hasFD && !hasFU) return '<div class="tslot">' + cEmpty() + '</div>';
+        const hasCard = slot.hasCard || slot.card !== null;
+        if (!hasCard) {
+          // Empty slot: clickable in swap phase to receive card from hand
+          const canClickEmpty = isSelf && G.phase === 'swap';
+          return '<div class="tslot"' + (canClickEmpty ? ' data-empty-slot="' + i + '"' : '') + '>' + cEmpty() + '</div>';
+        }
 
         const myIdx = G.players.findIndex(p => p.isSelf);
         const myTurn = G.turnIdx === myIdx;
-        const canClick = isSelf && myTurn && G.phase === 'play';
         let html = '';
 
-        if (hasFD) {
-          const fdPlayable = canClick && src === 'faceDown' && !hasFU;
-          const posClass = hasFU ? 'absolute top-[3px] left-[2px] z-0' : '';
-          html += '<div class="' + posClass + '"' + (fdPlayable ? ' data-fd="' + i + '"' : '') + '>' + cBack(fdPlayable) + '</div>';
-        }
-        if (hasFU) {
-          const fuPlayable = (canClick && src === 'faceUp') || (G.phase === 'swap' && isSelf && !G.players[myIdx].ready);
-          const isSelected = (selSrc === 'faceUp' && sel.includes(i) && isSelf) ||
-                            (swapSel && swapSel.src === 'faceUp' && swapSel.idx === i && isSelf);
-          html += '<div class="relative z-10"' + (isSelf ? ' data-fu="' + i + '"' : '') + '>' + cFace(slot.fu, isSelected, fuPlayable) + '</div>';
+        if (isSelf) {
+          // My own table slot card (visible to me)
+          const playable = (G.phase === 'play' && myTurn && src === 'table' && isCardPlayable(slot.card)) || (G.phase === 'swap' && !G.players[myIdx].ready);
+          const isSelected = (selSrc === 'table' && sel.includes(i)) ||
+                             (swapSel && swapSel.src === 'table' && swapSel.idx === i);
+          html += '<div class="relative z-10" data-table-slot="' + i + '">' + cFace(slot.card, isSelected, playable) + '</div>';
+        } else {
+          // Opponent's table slot card (hidden from me - show card back!)
+          html += '<div>' + cBack(false) + '</div>';
         }
 
         return '<div class="tslot">' + html + '</div>';
@@ -1214,6 +1327,34 @@
           t.classList.add('toast-out');
           setTimeout(() => { t.remove(); }, 300);
         }, 3200);
+      }
+
+      function triggerSkipAnimation() {
+        const discEl = el('disc-pile');
+        if (!discEl) return;
+        
+        // Remove any existing skip overlays first
+        const existing = discEl.querySelectorAll('.skip-overlay-wrap');
+        existing.forEach(e => e.remove());
+        
+        const overlay = document.createElement('div');
+        overlay.className = 'skip-overlay-wrap';
+        overlay.innerHTML = `
+          <div class="skip-ring"></div>
+          <div class="skip-icon-wrap">
+            <svg class="skip-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="12" r="10" stroke="#f43f5e" stroke-width="2.5" />
+              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" stroke="#f43f5e" stroke-width="2.5" />
+            </svg>
+          </div>
+        `;
+        
+        discEl.appendChild(overlay);
+        
+        // Clean up the overlay after animation completes (950ms)
+        setTimeout(() => {
+          overlay.remove();
+        }, 950);
       }
 
       function spawnConfetti(container) {
@@ -1423,14 +1564,12 @@
           }
         } else if (myTurn) {
           const activeSrc = getActivePlayerSource(myInfo);
-          if (activeSrc === 'faceDown') {
-            message = 'בחר קלף הפוך כדי לחשוף אותו';
-          } else if (activeSrc === 'faceUp') {
-            const hasLegalPlay = myInfo.ts.some(s => s.fu && isCardPlayable(s.fu));
+          if (activeSrc === 'table') {
+            const hasLegalPlay = myInfo.ts.some(s => s.card && isCardPlayable(s.card));
             if (!hasLegalPlay && G.discardCount > 0) {
-              message = 'אין מהלך חוקי מהקלפים הגלויים. קח את הערימה';
+              message = 'אין מהלך חוקי מקלפי השולחן. קח את הערימה';
             } else {
-              message = 'בחר קלף גלוי מהשולחן ולחץ שחק קלפים';
+              message = 'בחר קלף מהשולחן ולחץ שחק קלפים';
             }
           } else {
             const hasLegalPlay = myInfo.hand.some(c => isCardPlayable(c));
@@ -1480,10 +1619,10 @@
         el('pick-btn').classList.toggle('hidden', G.phase !== 'play');
         const hasLegalPlay = myActiveSrc === 'hand' 
           ? myInfo.hand.some(c => isCardPlayable(c))
-          : myInfo.ts.some(s => s.fu && isCardPlayable(s.fu));
-        const canPick = myTurn && !hasLegalPlay && G.discardCount > 0 && myActiveSrc !== 'faceDown';
+          : myInfo.ts.some(s => s.card && isCardPlayable(s.card));
+        const canPick = myTurn && !hasLegalPlay && G.discardCount > 0;
         
-        el('pick-btn').disabled = !myTurn || !G.discardCount || myActiveSrc === 'faceDown';
+        el('pick-btn').disabled = !myTurn || !G.discardCount;
         el('pick-btn').classList.toggle('btn-glow', canPick);
 
         el('start-btn').classList.toggle('hidden', G.phase !== 'swap');
@@ -1531,15 +1670,17 @@
         });
 
         el('human-table').addEventListener('click', function (e) {
-          const fu = e.target.closest('[data-fu]');
-          if (fu) {
-            const idx = parseInt(fu.dataset.fu);
-            handleCardClick('faceUp', idx);
+          const slot = e.target.closest('[data-table-slot]');
+          if (slot) {
+            const idx = parseInt(slot.dataset.tableSlot);
+            handleCardClick('table', idx);
             return;
           }
-          const fd = e.target.closest('[data-fd]');
-          if (fd) {
-            handleFaceDownFlip(parseInt(fd.dataset.fd));
+          const emptySlot = e.target.closest('[data-empty-slot]');
+          if (emptySlot) {
+            const idx = parseInt(emptySlot.dataset.emptySlot);
+            handleCardClick('table', idx);
+            return;
           }
         });
 
