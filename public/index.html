@@ -410,8 +410,8 @@
 
   </div>
 
-  <!-- Socket.IO library -->
-  <script src="/socket.io/socket.io.js"></script>
+  <!-- Socket.IO library from CDN -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script>
     (function () {
       'use strict';
@@ -436,7 +436,9 @@
       // Connect to websocket server
       function connectSocket() {
         if (socket) return;
-        socket = io();
+        // If opened as local file, connect explicitly to the localhost server
+        const socketUrl = window.location.protocol === 'file:' ? 'http://localhost:3000' : undefined;
+        socket = io(socketUrl);
 
         // ═══════════════════════════════════════════
         //  SOCKET SOCKET LISTENERS
