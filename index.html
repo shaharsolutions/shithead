@@ -808,6 +808,9 @@
           tableHtml += renderSlot(player.ts[i], false, i, null);
         }
 
+        const handBadge = !player.finished
+          ? '<span class="sm:hidden inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700">🎴 ' + player.handCount + '</span>'
+          : '';
         const readyBadge = G.phase === 'swap' && player.ready
           ? '<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-indigo-500/20 text-indigo-400 border border-indigo-500/10">מוכן</span>'
           : '';
@@ -823,9 +826,9 @@
         return '<div class="' + zoneClass + '">' +
           '<div class="flex items-center justify-between mb-2">' +
             '<span class="text-sm font-semibold text-slate-300">' + player.name + ' · ' + botMark + '</span>' +
-            '<div class="flex gap-2">' + readyBadge + finishedBadge + turnBadge + '</div>' +
+            '<div class="flex gap-1.5 items-center">' + handBadge + readyBadge + finishedBadge + turnBadge + '</div>' +
           '</div>' +
-          '<div class="flex justify-center hand-fan mb-3 min-h-[50px]">' + handHtml + '</div>' +
+          '<div class="hidden sm:flex justify-center hand-fan mb-3 min-h-[50px]">' + handHtml + '</div>' +
           '<div class="flex justify-center gap-4 sm:gap-5">' + tableHtml + '</div>' +
         '</div>';
       }
