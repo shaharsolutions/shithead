@@ -444,6 +444,79 @@
     </div>
   </div>
 
+  <!-- Rules Modal -->
+  <div id="rules-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xl p-4 transition-all duration-300">
+    <div class="w-full max-w-2xl bg-gradient-to-br from-slate-900 to-indigo-950 border border-slate-800/80 border-t-2 border-t-[#d4af37] rounded-3xl p-6 shadow-2xl relative max-h-[85vh] flex flex-col gap-4 overflow-y-auto">
+      
+      <!-- Close Button -->
+      <button id="close-rules-btn" class="absolute top-4 left-4 w-8 h-8 rounded-xl bg-slate-800/80 border border-slate-700/60 text-slate-400 hover:text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-200">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      <div class="text-center pt-2">
+        <h2 class="text-2xl font-black bg-gradient-to-r from-yellow-400 via-amber-200 to-yellow-500 bg-clip-text text-transparent tracking-tight">חוקי המשחק שיטהד (Shithead)</h2>
+        <p class="text-xs text-indigo-400/80 font-bold mt-1">גרסה אסטרטגית טקטית עם בחירת קלפים מותאמת</p>
+      </div>
+
+      <div class="flex-1 overflow-y-auto text-right text-sm text-slate-300 space-y-4 px-1" dir="rtl">
+        <div>
+          <h3 class="text-base font-bold text-slate-200 mb-1 border-b border-slate-800 pb-1">🃏 מטרה ומבנה המשחק</h3>
+          <p class="leading-relaxed">
+            המטרה היא להיפטר מכל הקלפים שברשותך (מהיד ומהשולחן). השחקן האחרון שנשאר עם קלפים הוא ה**שיטהד** ומפסיד במשחק!
+          </p>
+        </div>
+
+        <div>
+          <h3 class="text-base font-bold text-slate-200 mb-1 border-b border-slate-800 pb-1">⚙️ שלב ההחלפה והבחירה (Swap Phase)</h3>
+          <p class="leading-relaxed">
+            בתחילת המשחק כל שחקן מקבל **6 קלפים סודיים** לידו.
+            עליך לבחור בדיוק **3 קלפים** מתוכם ולהניח אותם על השולחן כקלפי קבע. 
+            3 הקלפים הנותרים יישארו כיד המשחק שלך. 
+            <span class="text-[#d4af37] font-bold">שים לב:</span> במהלך המשחק, קלפי השולחן יהיו מוסתרים (קלפים עיוורים), ועליך לזכור מה בחרת כדי לשחק אותם בהצלחה בהמשך!
+          </p>
+        </div>
+
+        <div>
+          <h3 class="text-base font-bold text-slate-200 mb-1 border-b border-slate-800 pb-1">⚔️ מהלך המשחק</h3>
+          <ul class="list-disc list-inside space-y-1.5 leading-relaxed mr-2">
+            <li>בכל תור, שחקן רשאי להניח קלף אחד או יותר מאותו הדירוג (למשל: שני קלפי 5).</li>
+            <li>דירוג הקלף המשוחק חייב להיות **שווה או גבוה יותר** מהקלף שבראש הערימה.</li>
+            <li>לאחר כל מהלך, השחקן מושך קלפים מהקופה כדי להחזיק תמיד **לפחות 3 קלפים ביד** (כל עוד הקופה לא התרוקנה).</li>
+            <li>אם לשחקן אין מהלך חוקי, עליו **לקחת את כל הערימה** לידו!</li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="text-base font-bold text-slate-200 mb-1 border-b border-slate-800 pb-1">✨ קלפים מיוחדים</h3>
+          <ul class="list-none space-y-2 leading-relaxed">
+            <li><strong>🟢 קלף 2 (אתחול):</strong> ניתן לשחק על כל קלף. מאתחל את דירוג הערימה ל-2.</li>
+            <li><strong>🔵 קלף 3 (שקוף):</strong> קלף שקוף שמחקה את הקלף שמתחתיו ושומר על חוקי הערימה הנוכחיים.</li>
+            <li><strong>⚡ קלף 4 (התפרצות):</strong> כאשר הערימה ריקה, ניתן להתפרץ ולשחק אותו גם שלא בתורך כדי לגנוב את התור!</li>
+            <li><strong>🟡 קלף 7 (מתחת):</strong> הופך את חוקי המשחק זמנית! הקלף הבא אחריו חייב להיות **בדיוק 7 ומטה**.</li>
+            <li><strong>🚫 קלף 8 (עצור/דילוג):</strong> מדלג על התור של השחקן הבא. משחק מרובה של 8 מדלג על מספר שחקנים בהתאם!</li>
+            <li><strong>🔥 קלף 10 (שריפה):</strong> שורף ומעלים את כל ערימת הדיסקארד מהמשחק, ומקנה לשחקן ששיחק אותו תור נוסף מיידי.</li>
+            <li><strong>💥 רביעייה זהה (שריפה אוטומטית):</strong> הנחת 4 קלפים זהים ברצף על הערימה שורפת אותה מיד ומקנה תור נוסף.</li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="text-base font-bold text-slate-200 mb-1 border-b border-slate-800 pb-1">🧠 קלפי השולחן (Play Phase)</h3>
+          <p class="leading-relaxed">
+            רק לאחר שהיד שלך והקופה התרוקנו לחלוטין, תוכל להתחיל לשחק מקלפי השולחן. 
+            המשחק מהשולחן מתבצע באופן **עיוור/עיוורון זיכרון**: עליך לבחור קלף ולנסות לשחק אותו. 
+            אם הוא חוקי, הוא ישוחק בהצלחה. אם בחרת קלף לא חוקי, הוא ייחשף לערימה ותיאלץ לקחת את כל ערימת הדיסקארד לידך!
+          </p>
+        </div>
+      </div>
+
+      <div class="pt-2 text-center border-t border-slate-800/80">
+        <button id="rules-understand-btn" class="px-8 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black shadow-lg shadow-amber-500/10 hover:shadow-amber-500/20 transition duration-200">הבנתי, בוא נשחק! 🃏</button>
+      </div>
+    </div>
+  </div>
+
   <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col min-h-screen gap-3">
     
     <!-- Title / Logo Header -->
@@ -478,6 +551,12 @@
       </div>
 
       <div class="w-full max-w-md bg-slate-900/75 border border-slate-800 border-t-2 border-t-[#d4af37]/60 rounded-3xl p-6 sm:p-8 backdrop-blur-3xl shadow-2xl flex flex-col gap-6 relative">
+        <!-- Rules Button -->
+        <button id="rules-btn" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800/80 border border-slate-700/60 text-[#d4af37] flex items-center justify-center hover:scale-105 hover:bg-slate-700 active:scale-95 transition-all duration-200 shadow-md group z-20" title="חוקי המשחק">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5 text-[#d4af37] group-hover:text-yellow-400 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
         <!-- Royal Crest & Header -->
         <div class="text-center relative z-10 flex flex-col items-center">
           <!-- Minimalist Gold Card SVG Logo -->
@@ -1781,6 +1860,20 @@
         // Modal rematch listeners
         el('rematch-btn').addEventListener('click', handleRematch);
         el('win-lobby-btn').addEventListener('click', resetToLobby);
+
+        // Rules Modal triggers
+        el('rules-btn').addEventListener('click', function () {
+          el('rules-modal').classList.remove('hidden');
+          Snd.play('click');
+        });
+        el('close-rules-btn').addEventListener('click', function () {
+          el('rules-modal').classList.add('hidden');
+          Snd.play('click');
+        });
+        el('rules-understand-btn').addEventListener('click', function () {
+          el('rules-modal').classList.add('hidden');
+          Snd.play('click');
+        });
       }
 
       // Auto start setup
