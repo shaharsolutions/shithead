@@ -557,58 +557,117 @@
       </button>
 
       <div class="text-center pt-2">
-        <h2 class="text-xl font-bold text-white tracking-tight">חוקי המשחק שיטהד (Shithead)</h2>
-        <p class="text-xs text-indigo-400 font-bold mt-1">גרסה אסטרטגית טקטית עם בחירת קלפים מותאמת</p>
+        <h2 class="text-xl font-bold text-white tracking-tight">חוקי המשחק בקיצור 🃏</h2>
+        <p class="text-xs text-slate-400 mt-1">מדריך ויזואלי מהיר למשחק שיטהד אונליין</p>
       </div>
 
-      <div class="flex-1 overflow-y-auto text-right text-sm text-slate-300 space-y-4 px-1" dir="rtl">
+      <div class="flex-1 overflow-y-auto text-right space-y-6 px-1" dir="rtl">
+        <!-- Game Phases (3 steps) -->
         <div>
-          <h3 class="text-base font-bold text-slate-200 mb-1 border-b border-slate-800 pb-1">🃏 מטרה ומבנה המשחק</h3>
-          <p class="leading-relaxed">
-            המטרה היא להיפטר מכל הקלפים שברשותך (מהיד ומהשולחן). השחקן האחרון שנשאר עם קלפים הוא ה**שיטהד** ומפסיד במשחק!
-          </p>
+          <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center justify-end gap-1.5">
+            שלבי המשחק
+            <span class="w-1 h-1 rounded-full bg-indigo-500"></span>
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            
+            <!-- Step 1 -->
+            <div class="p-3 bg-slate-950/60 border border-slate-800/80 rounded-xl flex flex-col gap-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md">שלב 1</span>
+                <span class="text-lg">🃏</span>
+              </div>
+              <h4 class="text-xs font-bold text-white">החלפה ובחירה</h4>
+              <p class="text-[11px] text-slate-400 leading-normal">מתוך 6 קלפים שקיבלת, בוחרים 3 לשולחן (הפוכים) ומשאירים 3 ביד. זכור מה בחרת!</p>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="p-3 bg-slate-950/60 border border-slate-800/80 rounded-xl flex flex-col gap-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">שלב 2</span>
+                <span class="text-lg">⚔️</span>
+              </div>
+              <h4 class="text-xs font-bold text-white">מהלכים חוקיים</h4>
+              <p class="text-[11px] text-slate-400 leading-normal">עליך להניח קלף שווה או גבוה מהערימה. אין מהלך חוקי? לוקחים את כל הערימה ליד.</p>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="p-3 bg-slate-950/60 border border-slate-800/80 rounded-xl flex flex-col gap-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md">שלב 3</span>
+                <span class="text-lg">🧠</span>
+              </div>
+              <h4 class="text-xs font-bold text-white">משחק עיוור</h4>
+              <p class="text-[11px] text-slate-400 leading-normal">היד והקופה התרוקנו? משחקים את קלפי השולחן ההפוכים מהזיכרון. טעית? לקחת ערימה!</p>
+            </div>
+
+          </div>
         </div>
 
+        <!-- Special Card Powers (Visual grid of Mini cards) -->
         <div>
-          <h3 class="text-base font-bold text-slate-200 mb-1 border-b border-slate-800 pb-1">⚙️ שלב ההחלפה והבחירה (Swap Phase)</h3>
-          <p class="leading-relaxed">
-            בתחילת המשחק כל שחקן מקבל **6 קלפים סודיים** לידו.
-            עליך לבחור בדיוק **3 קלפים** מתוכם ולהניח אותם על השולחן כקלפי קבע. 
-            3 הקלפים הנותרים יישארו כיד המשחק שלך. 
-            <span class="text-[#d4af37] font-bold">שים לב:</span> במהלך המשחק, קלפי השולחן יהיו מוסתרים (קלפים עיוורים), ועליך לזכור מה בחרת כדי לשחק אותם בהצלחה בהמשך!
-          </p>
-        </div>
+          <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center justify-end gap-1.5">
+            קלפי הכוח המיוחדים
+            <span class="w-1 h-1 rounded-full bg-indigo-500"></span>
+          </h3>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            
+            <!-- Power 2 -->
+            <div class="p-2.5 bg-slate-950/40 border border-slate-800/60 rounded-xl flex flex-col gap-1.5 items-center text-center">
+              <div class="w-7 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-black text-sm">2</div>
+              <span class="text-xs font-bold text-slate-200">אתחול</span>
+              <p class="text-[10px] text-slate-500 leading-tight">ניתן לשחק על כל קלף. מאתחל את הערימה ל-2.</p>
+            </div>
 
-        <div>
-          <h3 class="text-base font-bold text-slate-200 mb-1 border-b border-slate-800 pb-1">⚔️ מהלך המשחק</h3>
-          <ul class="list-disc list-inside space-y-1.5 leading-relaxed mr-2">
-            <li>בכל תור, שחקן רשאי להניח קלף אחד או יותר מאותו הדירוג (למשל: שני קלפי 5).</li>
-            <li>דירוג הקלף המשוחק חייב להיות **שווה או גבוה יותר** מהקלף שבראש הערימה.</li>
-            <li>לאחר כל מהלך, השחקן מושך קלפים מהקופה כדי להחזיק תמיד **לפחות 3 קלפים ביד** (כל עוד הקופה לא התרוקנה).</li>
-            <li>אם לשחקן אין מהלך חוקי, עליו **לקחת את כל הערימה** לידו!</li>
-          </ul>
-        </div>
+            <!-- Power 3 -->
+            <div class="p-2.5 bg-slate-950/40 border border-slate-800/60 rounded-xl flex flex-col gap-1.5 items-center text-center">
+              <div class="w-7 h-9 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-black text-sm">3</div>
+              <span class="text-xs font-bold text-slate-200">שקוף</span>
+              <p class="text-[10px] text-slate-500 leading-tight">קלף שקוף שמחקה את דירוג הקלף שמתחתיו.</p>
+            </div>
 
-        <div>
-          <h3 class="text-base font-bold text-slate-200 mb-1 border-b border-slate-800 pb-1">✨ קלפים מיוחדים</h3>
-          <ul class="list-none space-y-2 leading-relaxed">
-            <li><strong>🟢 קלף 2 (אתחול):</strong> ניתן לשחק על כל קלף. מאתחל את דירוג הערימה ל-2.</li>
-            <li><strong>🔵 קלף 3 (שקוף):</strong> קלף שקוף שמחקה את הקלף שמתחתיו ושומר על חוקי הערימה הנוכחיים.</li>
-            <li><strong>⚡ קלף 4 (התפרצות):</strong> כאשר הערימה ריקה, ניתן להתפרץ ולשחק אותו גם שלא בתורך כדי לגנוב את התור!</li>
-            <li><strong>🟡 קלף 7 (מתחת):</strong> הופך את חוקי המשחק זמנית! הקלף הבא אחריו חייב להיות **בדיוק 7 ומטה**.</li>
-            <li><strong>🚫 קלף 8 (עצור/דילוג):</strong> מדלג על התור של השחקן הבא. משחק מרובה של 8 מדלג על מספר שחקנים בהתאם!</li>
-            <li><strong>🔥 קלף 10 (שריפה):</strong> שורף ומעלים את כל ערימת הדיסקארד מהמשחק, ומקנה לשחקן ששיחק אותו תור נוסף מיידי.</li>
-            <li><strong>💥 רביעייה זהה (שריפה אוטומטית):</strong> הנחת 4 קלפים זהים ברצף על הערימה שורפת אותה מיד ומקנה תור נוסף.</li>
-          </ul>
-        </div>
+            <!-- Power 4 -->
+            <div class="p-2.5 bg-slate-950/40 border border-slate-800/60 rounded-xl flex flex-col gap-1.5 items-center text-center">
+              <div class="w-7 h-9 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 flex items-center justify-center font-black text-sm">4</div>
+              <span class="text-xs font-bold text-slate-200">התפרצות</span>
+              <p class="text-[10px] text-slate-500 leading-tight">כשהערימה ריקה, שחק 4 וגנוב את התור מחוץ לתורך!</p>
+            </div>
 
-        <div>
-          <h3 class="text-base font-bold text-slate-200 mb-1 border-b border-slate-800 pb-1">🧠 קלפי השולחן (Play Phase)</h3>
-          <p class="leading-relaxed">
-            רק לאחר שהיד שלך והקופה התרוקנו לחלוטין, תוכל להתחיל לשחק מקלפי השולחן. 
-            המשחק מהשולחן מתבצע באופן **עיוור/עיוורון זיכרון**: עליך לבחור קלף ולנסות לשחק אותו. 
-            אם הוא חוקי, הוא ישוחק בהצלחה. אם בחרת קלף לא חוקי, הוא ייחשף לערימה ותיאלץ לקחת את כל ערימת הדיסקארד לידך!
-          </p>
+            <!-- Power 7 -->
+            <div class="p-2.5 bg-slate-950/40 border border-slate-800/60 rounded-xl flex flex-col gap-1.5 items-center text-center">
+              <div class="w-7 h-9 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center font-black text-sm">7</div>
+              <span class="text-xs font-bold text-slate-200">מתחת</span>
+              <p class="text-[10px] text-slate-500 leading-tight">הפוך חוקים! הקלף הבא חייב להיות בדיוק 7 ומטה.</p>
+            </div>
+
+            <!-- Power 8 -->
+            <div class="p-2.5 bg-slate-950/40 border border-slate-800/60 rounded-xl flex flex-col gap-1.5 items-center text-center">
+              <div class="w-7 h-9 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center font-black text-sm">8</div>
+              <span class="text-xs font-bold text-slate-200">עצור/דילוג</span>
+              <p class="text-[10px] text-slate-500 leading-tight">מדלג על תור השחקן הבא. צמד 8 מדלג על שניים.</p>
+            </div>
+
+            <!-- Power 10 -->
+            <div class="p-2.5 bg-slate-950/40 border border-slate-800/60 rounded-xl flex flex-col gap-1.5 items-center text-center">
+              <div class="w-7 h-9 rounded-lg bg-orange-500/10 border border-orange-500/30 text-orange-400 flex items-center justify-center font-black text-sm">10</div>
+              <span class="text-xs font-bold text-slate-200">שריפה</span>
+              <p class="text-[10px] text-slate-500 leading-tight">שורף ומעלים את הערימה מהמשחק ומקבל תור נוסף.</p>
+            </div>
+
+            <!-- Power 4-of-a-kind -->
+            <div class="p-2.5 bg-slate-950/40 border border-slate-800/60 rounded-xl flex flex-col gap-1.5 items-center text-center">
+              <div class="w-7 h-9 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 flex items-center justify-center font-black text-xs">x4</div>
+              <span class="text-xs font-bold text-slate-200">שריפה אוט'</span>
+              <p class="text-[10px] text-slate-500 leading-tight">הנחת 4 קלפים זהים ברצף שורפת ערימה ומקנה תור נוסף.</p>
+            </div>
+
+            <!-- Goal info -->
+            <div class="p-2.5 bg-slate-950/40 border border-slate-800/60 rounded-xl flex flex-col gap-1.5 items-center text-center justify-center">
+              <span class="text-lg">👑</span>
+              <span class="text-xs font-bold text-slate-200">המטרה</span>
+              <p class="text-[10px] text-slate-500 leading-tight">להיפטר מכל הקלפים ראשון. האחרון שנשאר מפסיד!</p>
+            </div>
+
+          </div>
         </div>
       </div>
 
