@@ -282,26 +282,44 @@
     .hand-fan > * { margin-inline-end: -28px; }
     .hand-fan > *:last-child { margin-inline-end: 0; }
 
-    /* ===== HUMAN HAND FAN ===== */
+    /* ===== HUMAN HAND SCROLLABLE ===== */
     #human-hand {
       display: flex !important;
+      justify-content: safe center;
       justify-content: center;
       align-items: flex-end;
       flex-wrap: nowrap !important;
-      min-height: 96px;
+      overflow-x: auto !important;
+      overflow-y: hidden !important;
+      min-height: 126px;
+      height: 126px;
+      padding-top: 24px;
+      padding-bottom: 6px;
+      gap: 8px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(212, 175, 55, 0.2) transparent;
+    }
+    #human-hand::-webkit-scrollbar {
+      height: 4px;
+    }
+    #human-hand::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    #human-hand::-webkit-scrollbar-thumb {
+      background: rgba(212, 175, 55, 0.2);
+      border-radius: 99px;
+    }
+    #human-hand::-webkit-scrollbar-thumb:hover {
+      background: rgba(212, 175, 55, 0.45);
     }
     #human-hand > * {
-      margin-left: -8px;
-      margin-right: -8px;
-      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      flex: 0 0 auto !important;
+      margin: 0 !important;
       position: relative;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    #human-hand > *:first-child { margin-left: 0 !important; }
-    #human-hand > *:last-child { margin-right: 0 !important; }
     #human-hand > *:hover {
       z-index: 50 !important;
-      margin-left: 2px;
-      margin-right: 2px;
     }
 
     /* ===== RESPONSIVE ===== */
@@ -312,7 +330,13 @@
       .tslot { width: 54px; min-height: 76px; }
       .pile-stack { width: 54px; height: 76px; }
       .hand-fan > * { margin-inline-end: -22px; }
-      #human-hand > * { margin-left: -12px; margin-right: -12px; }
+      #human-hand {
+        min-height: 106px;
+        height: 106px;
+        padding-top: 22px;
+        padding-bottom: 6px;
+        gap: 6px;
+      }
       .table-arena { min-height: 650px; border-radius: 32px; overflow: visible; }
       .table-seat { width: 44vw; min-width: 148px; padding: 8px; border-radius: 14px; }
       .table-center { width: 210px; }
