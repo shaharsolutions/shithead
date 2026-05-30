@@ -1402,13 +1402,21 @@
           if (myInfo.ready) return; // Cannot swap after lock
 
           if (src === 'hand') {
-            // Select or deselect hand card
-            if (swapSel && swapSel.src === 'hand' && swapSel.idx === idx) {
+            // Automatically place hand card in the first empty slot if available
+            const firstEmptyIdx = myInfo.ts.findIndex(slot => slot.card === null);
+            if (firstEmptyIdx !== -1) {
+              socket.emit('swap-cards', { handIdx: idx, slotIdx: firstEmptyIdx });
+              Snd.play('swap');
               swapSel = null;
-              Snd.play('click');
             } else {
-              swapSel = { src: 'hand', idx };
-              Snd.play('click');
+              // No empty slot available: fall back to selection for direct swapping
+              if (swapSel && swapSel.src === 'hand' && swapSel.idx === idx) {
+                swapSel = null;
+                Snd.play('click');
+              } else {
+                swapSel = { src: 'hand', idx };
+                Snd.play('click');
+              }
             }
           } else if (src === 'table') {
             if (swapSel && swapSel.src === 'hand') {
@@ -1596,8 +1604,18 @@
         const hasCard = slot.hasCard || slot.card !== null;
         if (!hasCard) {
           // Empty slot: clickable in swap phase to receive card from hand
+          let showIndicator = false;
+          if (isSelf && G && G.phase === 'swap') {
+            const myInfo = G.players.find(p => p.isSelf);
+            if (myInfo) {
+              const firstEmptyIdx = myInfo.ts.findIndex(s => s.card === null);
+              if (firstEmptyIdx === i) {
+                showIndicator = true;
+              }
+            }
+          }
           const canClickEmpty = isSelf && G.phase === 'swap';
-          return '<div class="tslot"' + (canClickEmpty ? ' data-empty-slot="' + i + '"' : '') + '>' + cEmpty(canClickEmpty) + '</div>';
+          return '<div class="tslot"' + (canClickEmpty ? ' data-empty-slot="' + i + '"' : '') + '>' + cEmpty(showIndicator) + '</div>';
         }
 
         const myIdx = G.players.findIndex(p => p.isSelf);
