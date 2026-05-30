@@ -1457,49 +1457,24 @@
 
         if (src === 'hand') {
           const card = myInfo.hand[idx];
-          Snd.play('click');
-          if (selSrc === 'hand') {
-            const selectIdx = sel.indexOf(idx);
-            if (selectIdx !== -1) {
-              sel.splice(selectIdx, 1);
-              if (!sel.length) selSrc = null;
-            } else {
-              // Only allow selecting multiples of same rank
-              const existingCard = myInfo.hand[sel[0]];
-              if (existingCard.rank === card.rank) {
-                sel.push(idx);
-              } else {
-                sel = [idx];
-              }
+          if (!card) return;
+          // Automatically play all cards of the same rank from hand
+          const sameRankIndices = [];
+          for (let i = 0; i < myInfo.hand.length; i++) {
+            if (myInfo.hand[i] && myInfo.hand[i].rank === card.rank) {
+              sameRankIndices.push(i);
             }
-          } else {
-            sel = [idx];
-            selSrc = 'hand';
           }
+          socket.emit('play-cards', { indices: sameRankIndices });
+          sel = [];
+          selSrc = null;
         } else if (src === 'table') {
           const slot = myInfo.ts[idx];
-          const card = slot.card;
-          if (!card) return;
-          Snd.play('click');
-
-          if (selSrc === 'table') {
-            const selectIdx = sel.indexOf(idx);
-            if (selectIdx !== -1) {
-              sel.splice(selectIdx, 1);
-              if (!sel.length) selSrc = null;
-            } else {
-              // Multiples of same rank from table cards
-              const existingCard = myInfo.ts[sel[0]].card;
-              if (existingCard.rank === card.rank) {
-                sel.push(idx);
-              } else {
-                sel = [idx];
-              }
-            }
-          } else {
-            sel = [idx];
-            selSrc = 'table';
-          }
+          if (!slot || slot.card === null) return;
+          // Table cards (memory blind play) are played one by one
+          socket.emit('play-cards', { indices: [idx] });
+          sel = [];
+          selSrc = null;
         }
         render();
       }
@@ -1924,13 +1899,7 @@
         el('human-hand').innerHTML = myHandHtml;
 
         // --- Controls Button States ---
-        el('play-btn').classList.toggle('hidden', G.phase !== 'play');
-        const isInterjecting = sel.length && G.discardCount === 0 && selSrc && (
-          selSrc === 'hand' 
-            ? myInfo.hand[sel[0]].rank === 4 
-            : (myInfo.ts[sel[0]] && myInfo.ts[sel[0]].card && myInfo.ts[sel[0]].card.rank === 4)
-        );
-        el('play-btn').disabled = !sel.length || (!myTurn && !isInterjecting);
+        el('play-btn').classList.add('hidden');
 
         el('pick-btn').classList.toggle('hidden', G.phase !== 'play');
         const hasLegalPlay = myActiveSrc === 'hand' 
