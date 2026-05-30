@@ -19,6 +19,9 @@
     }
   </script>
   <style>
+    *, ::before, ::after {
+      box-sizing: border-box;
+    }
     body { font-family: 'Inter', system-ui, sans-serif; }
 
     /* ===== CARDS ===== */
@@ -346,6 +349,61 @@
       .seat-upper-right { right: 6px !important; top: 8px !important; transform: none !important; }
       .seat-left { left: 4px; top: 38%; transform: none; }
       .seat-right { right: 4px; top: 38%; transform: none; }
+
+      /* Opponent Seat Scaling on Mobile to prevent overlapping */
+      #opponents-wrap .card {
+        width: 34px !important;
+        height: 48px !important;
+        border-radius: 5px !important;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3) !important;
+      }
+      #opponents-wrap .tslot {
+        width: 34px !important;
+        min-height: 48px !important;
+      }
+      #opponents-wrap .hand-fan > * {
+        margin-inline-end: -18px !important;
+      }
+      #opponents-wrap .hand-fan {
+        min-height: 48px !important;
+        margin-bottom: 4px !important;
+      }
+      #opponents-wrap .table-seat {
+        width: 44vw !important;
+        min-width: 120px !important;
+        max-width: 128px !important;
+        padding: 5px !important;
+        border-radius: 10px !important;
+        box-sizing: border-box !important;
+      }
+      #opponents-wrap .table-seat .text-sm {
+        font-size: 9px !important;
+      }
+      #opponents-wrap .table-seat .mb-2 {
+        margin-bottom: 4px !important;
+      }
+      #opponents-wrap .table-seat .gap-4 {
+        gap: 4px !important;
+      }
+      #opponents-wrap .table-seat span.inline-flex {
+        padding: 1px 4px !important;
+        font-size: 8px !important;
+        border-radius: 4px !important;
+        gap: 2px !important;
+      }
+      #opponents-wrap .table-seat .badge-dot {
+        width: 4px !important;
+        height: 4px !important;
+      }
+      #opponents-wrap .c-tl, #opponents-wrap .c-br {
+        font-size: 7px !important;
+        left: 2px !important;
+        top: 1px !important;
+        line-height: 1 !important;
+      }
+      #opponents-wrap .c-mid {
+        font-size: 11px !important;
+      }
     }
 
     /* ===== SKIP ANNIHILATION ANIMATION ===== */
