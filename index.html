@@ -718,7 +718,10 @@
         <!-- Name Input -->
         <div class="flex flex-col gap-2 relative z-10">
           <label for="player-name" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">השם שלך</label>
-          <input type="text" id="player-name" placeholder="הכנס שם שחקן..." maxlength="12" class="px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition duration-200">
+          <div class="relative flex items-center">
+            <input type="text" id="player-name" placeholder="הכנס שם שחקן..." maxlength="12" class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition duration-200">
+            <button id="random-name-btn" class="absolute left-2 w-7 h-7 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-200 z-20" title="כינוי אקראי">🎲</button>
+          </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1363,6 +1366,7 @@
           toast('נא להזין שם לפני שמתחילים', 'warning');
           return;
         }
+        localStorage.setItem('shithead_player_name', input);
         name = input;
         connectSocket();
         socket.emit('create-room', {
@@ -1383,6 +1387,7 @@
           toast('קוד החדר חייב להיות בן 4 אותיות', 'warning');
           return;
         }
+        localStorage.setItem('shithead_player_name', input);
         name = input;
         connectSocket();
         socket.emit('join-room', { name, roomId: code });
@@ -1395,6 +1400,7 @@
           el('player-name').focus();
           return;
         }
+        localStorage.setItem('shithead_player_name', input);
         name = input;
         connectSocket();
         socket.emit('join-room', { name, roomId });
@@ -2019,6 +2025,26 @@
         });
 
         // Lobby view listeners
+        el('random-name-btn').addEventListener('click', function () {
+          const nicknames = [
+            'כריש קלפים', 'אלוף השיטהד', 'קוסם הערימה', 'ג\'וקר טקטי', 'נסיך הקופה', 
+            'שועל שולחנות', 'שורף הערימות', 'הלוחש לקלפים', 'מאסטר הבלוף', 'קיסר הג\'וקר', 
+            'השחקן העיוור', 'מלך השיטהד', 'פנתר הקזינו', 'טקטיקן ברק', 'קפטן קלפים', 
+            'רב-מג שיטהד', 'קוסם הטארוט', 'כריש הבלופים', 'פוקר פייס', 'השורף הזריז',
+            'אביר השיטהד', 'לורד הקלפים', 'הרוח של הלוח', 'הקוסם העיוור', 'שועל הקופות'
+          ];
+          const randomIdx = Math.floor(Math.random() * nicknames.length);
+          const randomName = nicknames[randomIdx];
+          el('player-name').value = randomName;
+          localStorage.setItem('shithead_player_name', randomName);
+          Snd.play('click');
+        });
+
+        const savedName = localStorage.getItem('shithead_player_name');
+        if (savedName) {
+          el('player-name').value = savedName;
+        }
+
         el('create-btn').addEventListener('click', handleCreate);
         el('join-btn').addEventListener('click', handleJoin);
         el('waiting-code-display').addEventListener('click', handleCopyCode);
