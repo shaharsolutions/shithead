@@ -422,6 +422,11 @@ io.on('connection', (socket) => {
 
     if (!activeRoom || activeRoom.phase !== 'swap') return;
 
+    const placedCount = player.ts.filter(s => s.card !== null).length;
+    if (placedCount !== 3) {
+      return socket.emit('error-msg', 'עליך לבחור בדיוק 3 קלפים לשולחן לפני שתוכל להתחיל.');
+    }
+
     player.ready = true;
     
     const allReady = activeRoom.players.every(p => p.ready);

@@ -1271,6 +1271,13 @@
 
       function handleLockReady() {
         if (!socket) return;
+        const myInfo = G.players.find(p => p.isSelf);
+        if (!myInfo) return;
+        const placedCount = myInfo.ts.filter(s => s.card !== null).length;
+        if (placedCount !== 3) {
+          toast('עליך לבחור בדיוק 3 קלפים לשולחן לפני שתוכל להתחיל.', 'warning');
+          return;
+        }
         socket.emit('ready');
         swapSel = null;
       }
@@ -1662,8 +1669,26 @@
         el('pick-btn').disabled = !myTurn || !G.discardCount;
         el('pick-btn').classList.toggle('btn-glow', canPick);
 
-        el('start-btn').classList.toggle('hidden', G.phase !== 'swap');
-        el('start-btn').disabled = myInfo.ready;
+        const placedCount = myInfo.ts.filter(s => s.card !== null).length;
+        const btn = el('start-btn');
+        const isHidden = G.phase !== 'swap';
+        btn.classList.toggle('hidden', isHidden);
+        
+        const baseClass = "px-6 py-2 rounded-xl font-bold text-sm transition duration-200 shadow-lg";
+        if (placedCount < 3) {
+          btn.disabled = true;
+          btn.textContent = `בחר עוד ${3 - placedCount} קלפים לשולחן 🃏`;
+          btn.className = `${baseClass} bg-zinc-800/80 text-zinc-500 border border-zinc-700/50 cursor-not-allowed ${isHidden ? 'hidden' : ''}`;
+        } else {
+          btn.disabled = myInfo.ready;
+          if (myInfo.ready) {
+            btn.textContent = 'מחכים לשחקנים... ⌛';
+            btn.className = `${baseClass} bg-zinc-800 text-zinc-500 border border-zinc-700 cursor-not-allowed ${isHidden ? 'hidden' : ''}`;
+          } else {
+            btn.textContent = 'סיימתי להחליף, בוא נתחיל! 🎮';
+            btn.className = `${baseClass} bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white hover:scale-105 cursor-pointer ${isHidden ? 'hidden' : ''}`;
+          }
+        }
 
         el('human-zone').classList.toggle('zone-glow', G.phase === 'play' && myTurn);
       }
