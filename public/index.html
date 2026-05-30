@@ -282,6 +282,28 @@
     .hand-fan > * { margin-inline-end: -28px; }
     .hand-fan > *:last-child { margin-inline-end: 0; }
 
+    /* ===== HUMAN HAND FAN ===== */
+    #human-hand {
+      display: flex !important;
+      justify-content: center;
+      align-items: flex-end;
+      flex-wrap: nowrap !important;
+      min-height: 96px;
+    }
+    #human-hand > * {
+      margin-left: -8px;
+      margin-right: -8px;
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+    }
+    #human-hand > *:first-child { margin-left: 0 !important; }
+    #human-hand > *:last-child { margin-right: 0 !important; }
+    #human-hand > *:hover {
+      z-index: 50 !important;
+      margin-left: 2px;
+      margin-right: 2px;
+    }
+
     /* ===== RESPONSIVE ===== */
     @media (max-width: 640px) {
       .card { width: 54px; height: 76px; border-radius: 8px; }
@@ -290,7 +312,8 @@
       .tslot { width: 54px; min-height: 76px; }
       .pile-stack { width: 54px; height: 76px; }
       .hand-fan > * { margin-inline-end: -22px; }
-      .table-arena { min-height: 600px; border-radius: 32px; overflow: visible; }
+      #human-hand > * { margin-left: -12px; margin-right: -12px; }
+      .table-arena { min-height: 650px; border-radius: 32px; overflow: visible; }
       .table-seat { width: 44vw; min-width: 148px; padding: 8px; border-radius: 14px; }
       .table-center { width: 210px; }
       .seat-self { width: calc(100% - 20px); bottom: 8px; }
@@ -556,10 +579,13 @@
     <div id="game-view" class="hidden flex-1 flex flex-col gap-3">
       
       <!-- Room Code / Status Header -->
-      <div class="flex items-center justify-between px-3 py-1 bg-slate-900/40 rounded-xl border border-slate-800/60 text-xs">
+      <div class="flex items-center justify-between px-3 py-1.5 bg-slate-900/40 rounded-xl border border-slate-800/60 text-xs">
         <span class="text-slate-400">חדר: <span id="game-room-id" class="font-black text-cyan-400 tracking-wider">----</span></span>
-        <div id="swap-notification" class="hidden text-indigo-400 font-bold animate-pulse">שלב החלפה</div>
-        <div id="play-notification" class="hidden text-emerald-400 font-bold">שלב משחק</div>
+        <div class="flex items-center gap-3">
+          <div id="swap-notification" class="hidden text-indigo-400 font-bold animate-pulse">שלב החלפה</div>
+          <div id="play-notification" class="hidden text-emerald-400 font-bold">שלב משחק</div>
+          <button id="lobby-btn" class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition duration-200">צא מהחדר 🚪</button>
+        </div>
       </div>
 
       <div id="table-arena" class="table-arena">
@@ -604,14 +630,13 @@
           <!-- Human Table Slots -->
           <div id="human-table" class="flex justify-center gap-4 sm:gap-5 mb-3"></div>
           <!-- Human Hand -->
-          <div id="human-hand" class="flex justify-center flex-wrap gap-1.5 mb-3 min-h-[96px] items-end"></div>
+          <div id="human-hand" class="mb-3"></div>
           
           <!-- Controls Buttons Bar -->
           <div class="flex justify-center gap-2.5 flex-wrap mt-auto pt-1">
             <button id="play-btn" class="hidden px-6 py-2 rounded-xl font-bold text-sm bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-900/30 transition duration-200 disabled:opacity-30 disabled:cursor-not-allowed">שחק קלפים</button>
             <button id="pick-btn" class="hidden px-6 py-2 rounded-xl font-bold text-sm bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-900/30 transition duration-200 disabled:opacity-30 disabled:cursor-not-allowed">קח ערימה</button>
             <button id="start-btn" class="hidden px-6 py-2 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white shadow-lg transition duration-200 hover:scale-105">סיימתי להחליף, בוא נתחיל! 🎮</button>
-            <button id="lobby-btn" class="px-5 py-2 rounded-xl font-bold text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition duration-200">חזרה ללובי</button>
           </div>
         </div>
       </div>
@@ -1647,7 +1672,8 @@
           const isPlayable = G.phase === 'swap' 
             ? isHandPlayable 
             : (myTurn ? (isHandPlayable && isCardPlayable(c)) : (isHandPlayable && c.rank === 4));
-          myHandHtml += '<div data-hand="' + i + '">' + cFace(c, isSelected, isPlayable) + '</div>';
+          const wrapperClass = isSelected ? 'relative z-30' : 'relative';
+          myHandHtml += '<div data-hand="' + i + '" class="' + wrapperClass + '">' + cFace(c, isSelected, isPlayable) + '</div>';
         }
         el('human-hand').innerHTML = myHandHtml;
 
