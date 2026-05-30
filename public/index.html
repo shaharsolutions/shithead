@@ -1525,14 +1525,7 @@
         if (src === 'hand') {
           const card = myInfo.hand[idx];
           if (!card) return;
-          // Automatically play all cards of the same rank from hand
-          const sameRankIndices = [];
-          for (let i = 0; i < myInfo.hand.length; i++) {
-            if (myInfo.hand[i] && myInfo.hand[i].rank === card.rank) {
-              sameRankIndices.push(i);
-            }
-          }
-          socket.emit('play-cards', { indices: sameRankIndices });
+          socket.emit('play-cards', { indices: [idx] });
           sel = [];
           selSrc = null;
         } else if (src === 'table') {
