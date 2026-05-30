@@ -323,11 +323,32 @@ function playBotTurn(room) {
   }
 }
 
+function getOpenRooms() {
+  const list = [];
+  for (const room of rooms.values()) {
+    if (room.mode === 'online' && room.phase === 'lobby' && room.players.length < room.maxPlayers) {
+      list.push({
+        roomId: room.id,
+        hostName: room.players[0] ? room.players[0].name : 'אנונימי',
+        playerCount: room.players.length,
+        maxPlayers: room.maxPlayers
+      });
+    }
+  }
+  return list;
+}
+
+function broadcastOpenRooms() {
+  io.to('lobby').emit('open-rooms-list', getOpenRooms());
+}
+
 // ═══════════════════════════════════════════
 //  SOCKET.IO EVENT HANDLER
 // ═══════════════════════════════════════════
 io.on('connection', (socket) => {
   console.log(`Connected: ${socket.id}`);
+  socket.join('lobby');
+  socket.emit('open-rooms-list', getOpenRooms());
 
   // 1. Create Room
   socket.on('create-room', ({ name, mode, playerCount }) => {
@@ -350,6 +371,7 @@ io.on('connection', (socket) => {
       winners: []
     };
     rooms.set(roomId, room);
+    socket.leave('lobby');
     socket.join(roomId);
     socket.emit('room-created', { roomId, player: room.players[0], maxPlayers, playerCount: room.players.length });
     console.log(`Room created: ${roomId} by ${name}`);
@@ -357,6 +379,8 @@ io.on('connection', (socket) => {
     if (room.mode === 'computer') {
       addBots(room, maxPlayers);
       startRoomGame(room);
+    } else {
+      broadcastOpenRooms();
     }
   });
 
@@ -375,6 +399,7 @@ io.on('connection', (socket) => {
     }
 
     room.players.push(createPlayer(socket.id, name.trim()));
+    socket.leave('lobby');
     socket.join(id);
     console.log(`${name} joined room ${id}`);
 
@@ -383,6 +408,7 @@ io.on('connection', (socket) => {
     if (room.players.length === room.maxPlayers) {
       startRoomGame(room);
     }
+    broadcastOpenRooms();
   });
 
   // 3. Swap Cards (in swap phase)
@@ -622,6 +648,7 @@ io.on('connection', (socket) => {
         break;
       }
     }
+    broadcastOpenRooms();
   });
 });
 

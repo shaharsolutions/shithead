@@ -626,6 +626,17 @@
             <p class="text-[10px] text-slate-500 text-center">הכנס קוד חדר בן 4 אותיות</p>
           </div>
         </div>
+
+        <!-- Open Rooms Section -->
+        <div id="open-rooms-section" class="flex flex-col gap-3 pt-3 border-t border-slate-800/60 relative z-10 text-right">
+          <label class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-end gap-1.5">
+            חדרי חברים פתוחים להצטרפות 🌐
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          </label>
+          <div id="open-rooms-list" class="flex flex-col gap-2 max-h-[160px] overflow-y-auto pr-1 text-xs" dir="rtl">
+            <!-- Dynamically populated open rooms -->
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1100,6 +1111,9 @@
         // ═══════════════════════════════════════════
         //  SOCKET SOCKET LISTENERS
         // ═══════════════════════════════════════════
+        socket.on('open-rooms-list', (openRooms) => {
+          renderOpenRooms(openRooms);
+        });
         socket.on('room-created', ({ roomId }) => {
           el('lobby-view').classList.add('hidden');
           el('waiting-view').classList.remove('hidden');
@@ -1184,6 +1198,7 @@
           socket.disconnect();
           socket = null;
         }
+        connectSocket();
       }
 
       // ═══════════════════════════════════════════
@@ -1218,6 +1233,50 @@
         name = input;
         connectSocket();
         socket.emit('join-room', { name, roomId: code });
+      }
+
+      function handleJoinRoom(roomId) {
+        const input = el('player-name').value.trim();
+        if (!input) {
+          toast('נא להזין שם לפני שמצטרפים', 'warning');
+          el('player-name').focus();
+          return;
+        }
+        name = input;
+        connectSocket();
+        socket.emit('join-room', { name, roomId });
+      }
+      window.handleJoinRoom = handleJoinRoom;
+
+      function renderOpenRooms(openRooms) {
+        const container = el('open-rooms-list');
+        if (!container) return;
+
+        if (!openRooms || openRooms.length === 0) {
+          container.innerHTML = `
+            <div class="text-center py-4 text-slate-500 font-medium italic">
+              אין חדרים פתוחים כרגע. צור חדר והזמן חברים! ✉️
+            </div>
+          `;
+          return;
+        }
+
+        let html = '';
+        openRooms.forEach(room => {
+          html += `
+            <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/50 border border-slate-800/80 hover:border-slate-700/50 hover:bg-slate-950/80 transition duration-200">
+              <div class="flex items-center gap-2">
+                <span class="inline-flex items-center justify-center px-2 min-w-[36px] h-5 rounded-lg bg-indigo-500/10 text-indigo-400 font-bold border border-indigo-500/20 text-[10px] select-all cursor-pointer" title="העתק קוד" onclick="navigator.clipboard.writeText('${room.roomId}').then(() => toast('הקוד הועתק','info'))">${room.roomId}</span>
+                <span class="text-slate-300 font-bold">החדר של ${room.hostName}</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="text-slate-400 font-medium font-sans">👥 ${room.playerCount}/${room.maxPlayers}</span>
+                <button onclick="handleJoinRoom('${room.roomId}')" class="px-3 py-1 rounded-lg font-bold text-[10px] bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white shadow-md hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer">הצטרף ⚡</button>
+              </div>
+            </div>
+          `;
+        });
+        container.innerHTML = html;
       }
 
       function handleCopyCode() {
@@ -1882,6 +1941,9 @@
       // Initialize sound mute from local storage
       Snd.muted = localStorage.getItem('shithead_sound_muted') === '1';
       updateMuteUI();
+
+      // Connect socket on load to receive open rooms list
+      connectSocket();
 
     })();
   </script>
