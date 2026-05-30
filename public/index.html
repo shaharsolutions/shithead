@@ -73,6 +73,16 @@
     .c-mid { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 26px; opacity: 0.85; }
     .c-br { position: absolute; bottom: 4px; right: 6px; font-size: 11px; font-weight: 800; line-height: 1.1; text-align: center; transform: rotate(180deg); }
     .card-empty { border: 2px dashed rgba(148,163,184,0.15); background: rgba(15,23,42,0.4); }
+    .card-empty-active {
+      border: 2px dashed rgba(34, 211, 238, 0.4) !important;
+      box-shadow: inset 0 0 10px rgba(34, 211, 238, 0.1) !important;
+      animation: emptyPulse 2s infinite ease-in-out;
+      cursor: pointer;
+    }
+    @keyframes emptyPulse {
+      0%, 100% { border-color: rgba(34, 211, 238, 0.25); box-shadow: inset 0 0 8px rgba(34, 211, 238, 0.05); }
+      50% { border-color: rgba(34, 211, 238, 0.6); box-shadow: inset 0 0 16px rgba(34, 211, 238, 0.25); }
+    }
 
     /* ===== CARD STATES ===== */
     .card-play { cursor: pointer; }
@@ -1571,7 +1581,14 @@
           '<span class="c-br">' + RD[c.rank] + '<br>' + SS[c.suit] + '</span></div>';
       }
 
-      function cEmpty() {
+      function cEmpty(showIndicator) {
+        if (showIndicator) {
+          return '<div class="card card-empty card-empty-active flex flex-col items-center justify-center p-1 text-center select-none">' +
+            '<span class="text-[9px] sm:text-[10px] text-slate-400 font-extrabold leading-tight">הקלף הבא</span>' +
+            '<span class="text-[8px] sm:text-[9px] text-slate-500 font-bold leading-tight">שתבחר מהיד</span>' +
+            '<span class="text-[9px] sm:text-[10px] text-cyan-400 font-extrabold leading-tight mt-0.5">יונח כאן</span>' +
+          '</div>';
+        }
         return '<div class="card card-empty"></div>';
       }
 
@@ -1580,7 +1597,7 @@
         if (!hasCard) {
           // Empty slot: clickable in swap phase to receive card from hand
           const canClickEmpty = isSelf && G.phase === 'swap';
-          return '<div class="tslot"' + (canClickEmpty ? ' data-empty-slot="' + i + '"' : '') + '>' + cEmpty() + '</div>';
+          return '<div class="tslot"' + (canClickEmpty ? ' data-empty-slot="' + i + '"' : '') + '>' + cEmpty(canClickEmpty) + '</div>';
         }
 
         const myIdx = G.players.findIndex(p => p.isSelf);
