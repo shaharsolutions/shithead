@@ -1481,8 +1481,8 @@
           if (myInfo.ready) return; // Cannot swap after lock
 
           if (src === 'hand') {
-            // Automatically place hand card in the first empty slot if available
-            const firstEmptyIdx = myInfo.ts.findIndex(slot => slot.card === null);
+            // Automatically place hand card in the first empty faceup slot if available
+            const firstEmptyIdx = myInfo.ts.findIndex(slot => slot.faceup === null);
             if (firstEmptyIdx !== -1) {
               socket.emit('swap-cards', { handIdx: idx, slotIdx: firstEmptyIdx });
               Snd.play('swap');
@@ -1505,7 +1505,7 @@
               swapSel = null;
             } else {
               // No hand card selected, click table card to return it to hand
-              const slotCard = myInfo.ts[idx].card;
+              const slotCard = myInfo.ts[idx].faceup;
               if (slotCard !== null) {
                 socket.emit('swap-cards', { handIdx: -1, slotIdx: idx });
                 Snd.play('swap');
@@ -1524,16 +1524,22 @@
         const myIdx = G.players.findIndex(p => p.isSelf);
         let canInteract = G.turnIdx === myIdx;
 
+        const currentSrc = getActivePlayerSource(myInfo);
+        let resolvedSrc = src;
+        if (src === 'table') {
+          resolvedSrc = currentSrc;
+        }
+
         if (!canInteract) {
           // Check if we can interject with a 4 on empty pile
           if (G.discardCount === 0) {
             let card = null;
-            if (src === 'hand') {
+            if (resolvedSrc === 'hand') {
               card = myInfo.hand[idx];
-            } else if (src === 'table') {
-              card = myInfo.ts[idx].card;
+            } else if (resolvedSrc === 'faceup') {
+              card = myInfo.ts[idx].faceup;
             }
-            if (card && card.rank === 4) {
+            if (card && card.rank === 4 && currentSrc === resolvedSrc) {
               canInteract = true;
             }
           }
@@ -1544,21 +1550,25 @@
           return;
         }
 
-        const currentSrc = getActivePlayerSource(myInfo);
-        if (currentSrc !== src) {
-          return; // Can only select cards from current source
+        if (currentSrc !== resolvedSrc) {
+          return; // Can only select/play cards from current source
         }
 
-        if (src === 'hand') {
+        if (resolvedSrc === 'hand') {
           const card = myInfo.hand[idx];
           if (!card) return;
           socket.emit('play-cards', { indices: [idx] });
           sel = [];
           selSrc = null;
-        } else if (src === 'table') {
+        } else if (resolvedSrc === 'faceup') {
           const slot = myInfo.ts[idx];
-          if (!slot || slot.card === null) return;
-          // Table cards (memory blind play) are played one by one
+          if (!slot || slot.faceup === null) return;
+          socket.emit('play-cards', { indices: [idx] });
+          sel = [];
+          selSrc = null;
+        } else if (resolvedSrc === 'facedown') {
+          const slot = myInfo.ts[idx];
+          if (!slot || !slot.hasFacedown) return;
           socket.emit('play-cards', { indices: [idx] });
           sel = [];
           selSrc = null;
@@ -1577,7 +1587,8 @@
       function getActivePlayerSource(player) {
         if (player.handCount > 0) return 'hand';
         if (G.deckCount > 0) return 'hand';
-        if (player.ts.some(s => s.hasCard || s.card !== null)) return 'table';
+        if (player.ts.some(s => s.faceup !== null)) return 'faceup';
+        if (player.ts.some(s => s.hasFacedown)) return 'facedown';
         return null;
       }
 
@@ -1592,7 +1603,7 @@
         if (!socket) return;
         const myInfo = G.players.find(p => p.isSelf);
         if (!myInfo) return;
-        const placedCount = myInfo.ts.filter(s => s.card !== null).length;
+        const placedCount = myInfo.ts.filter(s => s.faceup !== null).length;
         if (placedCount !== 3) {
           toast('עליך לבחור בדיוק 3 קלפים לשולחן לפני שתוכל להתחיל.', 'warning');
           return;
@@ -1648,46 +1659,68 @@
       }
 
       function renderSlot(slot, isSelf, i, src) {
-        const hasCard = slot.hasCard || slot.card !== null;
-        if (!hasCard) {
-          // Empty slot: clickable in swap phase to receive card from hand
-          let showIndicator = false;
-          if (isSelf && G && G.phase === 'swap') {
-            const myInfo = G.players.find(p => p.isSelf);
-            if (myInfo) {
-              const firstEmptyIdx = myInfo.ts.findIndex(s => s.card === null);
-              if (firstEmptyIdx === i) {
-                showIndicator = true;
-              }
-            }
-          }
-          const canClickEmpty = isSelf && G.phase === 'swap';
-          return '<div class="tslot"' + (canClickEmpty ? ' data-empty-slot="' + i + '"' : '') + '>' + cEmpty(showIndicator) + '</div>';
-        }
+        const hasFacedown = slot.hasFacedown;
+        const faceup = slot.faceup; // card object or null
 
         const myIdx = G.players.findIndex(p => p.isSelf);
         const myTurn = G.turnIdx === myIdx;
         let html = '';
 
-        if (isSelf) {
-          // My own table slot card
-          if (G.phase === 'swap') {
-            // Swap phase: visible to me so I can choose!
-            const playable = !G.players[myIdx].ready;
-            const isSelected = (swapSel && swapSel.src === 'table' && swapSel.idx === i);
-            html += '<div class="relative z-10" data-table-slot="' + i + '">' + cFace(slot.card, isSelected, playable) + '</div>';
+        const clickAttr = (isSelf && G.phase === 'swap') ? ' data-table-slot="' + i + '"' : '';
+
+        // Case 1: Swap phase
+        if (G.phase === 'swap') {
+          // Bottom layer: facedown card back (always visual, non-interactive)
+          html += '<div class="relative z-0 opacity-80">' + cBack(false) + '</div>';
+
+          // Top layer: faceup card or active indicator (interactive)
+          let topHtml = '';
+          if (faceup !== null) {
+            const playable = isSelf && !G.players[myIdx].ready;
+            const isSelected = isSelf && (swapSel && swapSel.src === 'table' && swapSel.idx === i);
+            topHtml = cFace(faceup, isSelected, playable);
           } else {
-            // Play phase: hidden from me! Show card back!
-            const playable = myTurn && src === 'table';
-            const isSelected = (selSrc === 'table' && sel.includes(i));
-            html += '<div class="relative z-10" data-table-slot="' + i + '">' + cBack(playable, isSelected) + '</div>';
+            let showIndicator = false;
+            if (isSelf) {
+              const myInfo = G.players.find(p => p.isSelf);
+              if (myInfo) {
+                const firstEmptyIdx = myInfo.ts.findIndex(s => s.faceup === null);
+                if (firstEmptyIdx === i) showIndicator = true;
+              }
+            }
+            topHtml = cEmpty(showIndicator);
           }
-        } else {
-          // Opponent's table slot card (hidden from me - show card back!)
-          html += '<div>' + cBack(false) + '</div>';
+
+          const emptyAttr = (isSelf && faceup === null) ? ' data-empty-slot="' + i + '"' : clickAttr;
+          html += '<div class="absolute top-0 left-0 z-10 transform -translate-y-4 sm:-translate-y-6 pointer-events-auto"' + emptyAttr + '>' + topHtml + '</div>';
+        }
+        // Case 2: Play phase
+        else {
+          if (faceup !== null) {
+            // Bottom layer: facedown card back
+            if (hasFacedown) {
+              html += '<div class="relative z-0 opacity-60">' + cBack(false) + '</div>';
+            }
+            // Top layer: playable face-up card
+            const playable = isSelf && myTurn && src === 'faceup';
+            const isSelected = isSelf && (selSrc === 'faceup' && sel.includes(i));
+            const topClickAttr = isSelf ? ' data-table-slot="' + i + '"' : '';
+
+            html += '<div class="absolute top-0 left-0 z-10 transform -translate-y-4 sm:-translate-y-6"' + topClickAttr + '>' + cFace(faceup, isSelected, playable) + '</div>';
+          } else if (hasFacedown) {
+            // Only facedown card left: active & playable blindly
+            const playable = isSelf && myTurn && src === 'facedown';
+            const isSelected = isSelf && (selSrc === 'facedown' && sel.includes(i));
+            const baseClickAttr = isSelf ? ' data-table-slot="' + i + '"' : '';
+
+            html += '<div class="relative z-10"' + baseClickAttr + '>' + cBack(playable, isSelected) + '</div>';
+          } else {
+            // Fully empty
+            html += cEmpty(false);
+          }
         }
 
-        return '<div class="tslot">' + html + '</div>';
+        return '<div class="tslot relative">' + html + '</div>';
       }
 
       // ═══════════════════════════════════════════
@@ -1937,14 +1970,16 @@
           }
         } else if (myTurn) {
           const activeSrc = getActivePlayerSource(myInfo);
-          if (activeSrc === 'table') {
-            message = 'בחר קלף מהשולחן ולחץ שחק קלפים (זכור מה בחרת!)';
+          if (activeSrc === 'faceup') {
+            message = 'התור שלך! לחץ על קלף גלוי מהשולחן כדי לשחק 🃏';
+          } else if (activeSrc === 'facedown') {
+            message = 'התור שלך! לחץ על קלף מוסתר מהשולחן באופן עיוור 💥 (נסה את מזלך!)';
           } else {
             const hasLegalPlay = myInfo.hand.some(c => isCardPlayable(c));
             if (!hasLegalPlay && G.discardCount > 0) {
-              message = 'אין קלף חוקי ביד. קח את הערימה';
+              message = 'אין קלף חוקי ביד. קח את הערימה 📥';
             } else {
-              message = 'בחר קלף מהיד ולחץ שחק קלפים';
+              message = 'התור שלך! לחץ על קלף מהיד כדי לשחק 🃏';
             }
           }
         } else {

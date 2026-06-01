@@ -72,9 +72,9 @@ function dealGame(room) {
   room.players.forEach(p => {
     p.hand = [];
     p.ts = [
-      { card: null },
-      { card: null },
-      { card: null }
+      { facedown: deck.pop(), faceup: null },
+      { facedown: deck.pop(), faceup: null },
+      { facedown: deck.pop(), faceup: null }
     ];
     p.ready = false;
     p.finished = false;
@@ -85,11 +85,11 @@ function dealGame(room) {
     p.hand = [deck.pop(), deck.pop(), deck.pop(), deck.pop(), deck.pop(), deck.pop()];
     sortH(p.hand);
 
-    // Bots strategically select their 3 highest cards to put on the table immediately!
+    // Bots strategically select their 3 highest cards to put face-up on the table immediately!
     if (p.isBot) {
-      p.ts[0].card = p.hand.pop();
-      p.ts[1].card = p.hand.pop();
-      p.ts[2].card = p.hand.pop();
+      p.ts[0].faceup = p.hand.pop();
+      p.ts[1].faceup = p.hand.pop();
+      p.ts[2].faceup = p.hand.pop();
       sortH(p.hand);
       p.ready = true; // Bot is ready!
     }
@@ -123,7 +123,8 @@ function getEffectiveTopCard(room) {
 function pSrc(player, deckLength) {
   if (player.hand.length > 0) return 'hand';
   if (deckLength > 0) return 'hand';
-  if (player.ts.some(s => s.card !== null)) return 'table';
+  if (player.ts.some(s => s.faceup !== null)) return 'faceup';
+  if (player.ts.some(s => s.facedown !== null)) return 'facedown';
   return null;
 }
 
@@ -147,7 +148,7 @@ function burnPile(room) {
 }
 
 function isWin(player, deckLength) {
-  return !player.hand.length && deckLength === 0 && player.ts.every(s => !s.card);
+  return !player.hand.length && deckLength === 0 && player.ts.every(s => !s.faceup && !s.facedown);
 }
 
 // Determine who starts based on lowest card in hand (excluding 2 and 10)
@@ -195,8 +196,9 @@ function getSanitizedState(room, socketId) {
         hand: isSelf ? p.hand : [],
         // Send table cards to the player themselves, others only see boolean hasCard indicator
         ts: p.ts.map(s => ({
-          card: isSelf ? s.card : null,
-          hasCard: s.card !== null
+          facedown: null,
+          hasFacedown: s.facedown !== null,
+          faceup: s.faceup
         }))
       };
     }),
@@ -300,8 +302,8 @@ function playBotTurn(room) {
     return;
   }
 
-  if (src === 'table') {
-    const tableCards = bot.ts.map(slot => slot.card);
+  if (src === 'faceup') {
+    const tableCards = bot.ts.map(slot => slot.faceup);
     const indices = choosePlayableGroup(tableCards, room);
     if (!indices.length) {
       if (room.discardPile.length) {
@@ -316,9 +318,43 @@ function playBotTurn(room) {
       }
       return;
     }
-    const cards = indices.map(idx => bot.ts[idx].card);
-    indices.forEach(idx => { bot.ts[idx].card = null; });
+    const cards = indices.map(idx => bot.ts[idx].faceup);
+    indices.forEach(idx => { bot.ts[idx].faceup = null; });
     executePlayState(room, bot, cards);
+    return;
+  }
+
+  if (src === 'facedown') {
+    const indices = bot.ts.map((s, idx) => s.facedown !== null ? idx : -1).filter(idx => idx !== -1);
+    if (!indices.length) return;
+    const chosenIdx = indices[0];
+    const card = bot.ts[chosenIdx].facedown;
+    const isPlayable = canPlay(room, card);
+
+    if (isPlayable) {
+      bot.ts[chosenIdx].facedown = null;
+      executePlayState(room, bot, [card]);
+    } else {
+      room.discardPile.push(card);
+      bot.ts[chosenIdx].facedown = null;
+      broadcastState(room);
+
+      const cardString = getCardString(card);
+      io.to(room.id).emit('toast-msg', {
+        msg: `${bot.name} ניסה לשחק קלף שולחן מוסתר (${cardString}) - לא חוקי! לוקח את הערימה`,
+        type: 'warning'
+      });
+
+      setTimeout(() => {
+        bot.hand.push(...room.discardPile);
+        room.discardPile = [];
+        room.seven = false;
+        sortH(bot.hand);
+        nextTurn(room);
+        broadcastState(room);
+        scheduleBotTurn(room);
+      }, 1200);
+    }
     return;
   }
 }
@@ -419,23 +455,23 @@ io.on('connection', (socket) => {
     if (!activeRoom || activeRoom.phase !== 'swap' || player.ready) return;
 
     if (slotIdx >= 0 && slotIdx < 3) {
-      const tableCard = player.ts[slotIdx].card;
+      const tableCard = player.ts[slotIdx].faceup;
 
       if (handIdx >= 0 && handIdx < player.hand.length) {
         const handCard = player.hand[handIdx];
         if (tableCard === null) {
           // Move from hand to empty table slot
-          player.ts[slotIdx].card = handCard;
+          player.ts[slotIdx].faceup = handCard;
           player.hand.splice(handIdx, 1);
         } else {
           // Swap hand card and table card
           player.hand[handIdx] = tableCard;
-          player.ts[slotIdx].card = handCard;
+          player.ts[slotIdx].faceup = handCard;
         }
       } else if (handIdx === -1 && tableCard !== null) {
         // Move from table slot back to hand
         player.hand.push(tableCard);
-        player.ts[slotIdx].card = null;
+        player.ts[slotIdx].faceup = null;
       }
       sortH(player.hand);
       broadcastState(activeRoom);
@@ -448,7 +484,7 @@ io.on('connection', (socket) => {
 
     if (!activeRoom || activeRoom.phase !== 'swap') return;
 
-    const placedCount = player.ts.filter(s => s.card !== null).length;
+    const placedCount = player.ts.filter(s => s.faceup !== null).length;
     if (placedCount !== 3) {
       return socket.emit('error-msg', 'עליך לבחור בדיוק 3 קלפים לשולחן לפני שתוכל להתחיל.');
     }
@@ -489,8 +525,8 @@ io.on('connection', (socket) => {
         let cards = [];
         if (src === 'hand') {
           cards = indices.map(idx => player.hand[idx]);
-        } else if (src === 'table') {
-          cards = indices.map(idx => player.ts[idx].card);
+        } else if (src === 'faceup') {
+          cards = indices.map(idx => player.ts[idx].faceup);
         }
         if (cards.length && cards.every(c => c && c.rank === 4)) {
           isInterjection = true;
@@ -525,33 +561,43 @@ io.on('connection', (socket) => {
 
       // Execute play
       executePlayState(activeRoom, player, cards);
-    } else if (src === 'table') {
-      const cards = indices.map(idx => player.ts[idx].card);
-      if (!cards.length) return socket.emit('error-msg', 'בחירת הקלפים אינה תקינה.');
+    } else if (src === 'faceup') {
+      const cards = indices.map(idx => player.ts[idx].faceup);
+      if (!cards.length || cards.some(c => c === null)) return socket.emit('error-msg', 'בחירת הקלפים אינה תקינה.');
 
-      // Check if all selected cards are of the same rank AND legally playable
       const allSameRank = cards.every(c => c.rank === cards[0].rank);
-      const isPlayable = allSameRank && canPlay(activeRoom, cards[0]);
+      if (!allSameRank) return socket.emit('error-msg', 'על כל הקלפים להיות מאותו הדרגה.');
+      if (!canPlay(activeRoom, cards[0])) {
+        return socket.emit('error-msg', 'אי אפשר לשחק את הקלף הזה על הערימה.');
+      }
 
+      // Valid play! Remove from faceup table slots
+      indices.forEach(idx => {
+        player.ts[idx].faceup = null;
+      });
+      executePlayState(activeRoom, player, cards);
+    } else if (src === 'facedown') {
+      if (indices.length !== 1) return socket.emit('error-msg', 'במשחק עיוור עליך לבחור קלף אחד בכל פעם.');
+
+      const idx = indices[0];
+      const card = player.ts[idx].facedown;
+      if (!card) return socket.emit('error-msg', 'אין קלף בסלוט הנבחר.');
+
+      const isPlayable = canPlay(activeRoom, card);
       if (isPlayable) {
-        // Valid play! Remove from table slots
-        indices.forEach(idx => {
-          player.ts[idx].card = null;
-        });
-        executePlayState(activeRoom, player, cards);
+        player.ts[idx].facedown = null;
+        executePlayState(activeRoom, player, [card]);
       } else {
-        // Illegal blind play! Reveal all selected cards by putting them on the discard pile,
+        // Illegal blind play! Reveal card by putting it on discard pile,
         // and player must pick up the entire pile.
-        indices.forEach(idx => {
-          activeRoom.discardPile.push(player.ts[idx].card);
-          player.ts[idx].card = null;
-        });
+        activeRoom.discardPile.push(card);
+        player.ts[idx].facedown = null;
         
         broadcastState(activeRoom);
         
-        const cardStrings = cards.map(getCardString).join(', ');
+        const cardString = getCardString(card);
         io.to(activeRoom.id).emit('toast-msg', {
-          msg: `${player.name} ניסה לשחק קלף שולחן מוסתר (${cardStrings}) - לא חוקי! לוקח את הערימה`,
+          msg: `${player.name} ניסה לשחק קלף שולחן מוסתר (${cardString}) - לא חוקי! לוקח את הערימה`,
           type: 'warning'
         });
 
