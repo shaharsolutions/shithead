@@ -90,11 +90,12 @@
       border: 1.5px solid #cbd5e1;
       box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15), inset 0 -2px 5px rgba(0, 0, 0, 0.05);
     }
-    .card-three-ghost {
-      background: rgba(255, 255, 255, 0.25) !important;
-      border: 1.5px solid rgba(203, 213, 225, 0.5) !important;
-      backdrop-filter: blur(2px);
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08) !important;
+    .card-3 {
+      background: rgba(255, 255, 255, 0.4) !important;
+      backdrop-filter: blur(3px) !important;
+      -webkit-backdrop-filter: blur(3px) !important;
+      border: 1.5px solid rgba(6, 182, 212, 0.45) !important;
+      box-shadow: inset 0 0 8px rgba(6, 182, 212, 0.12), 0 6px 12px rgba(0, 0, 0, 0.2) !important;
     }
     .card-red { color: #ef4444; }
     .card-black { color: #1e293b; }
@@ -1649,7 +1650,7 @@
       function cFace(c, isSelected, playable) {
         const red = c.suit === 'hearts' || c.suit === 'diamonds';
         let cls = 'card card-face ' + (red ? 'card-red' : 'card-black');
-        if (c.rank === 3) cls += ' card-three-ghost';
+        if (c.rank === 3) cls += ' card-3';
         if (isSelected) cls += ' card-sel';
         if (playable) cls += ' card-play';
         return '<div class="' + cls + '">' +
