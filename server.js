@@ -16,6 +16,11 @@ const MAX_PLAYERS = 4;
 // Serve static files from public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Route to serve the admin dashboard
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
 // Fallback to index.html for all other routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -53,6 +58,79 @@ function sortH(h) {
 //  ROOM DATA STRUCTURE
 // ═══════════════════════════════════════════
 const rooms = new Map(); // roomId -> roomState
+
+// ═══════════════════════════════════════════
+//  ADMIN PANEL STATISTICS
+// ═══════════════════════════════════════════
+const stats = {
+  totalConnections: 0,
+  uniqueUsers: new Set(),
+  totalGamesCount: 0,
+  computerGamesCount: 0,
+  friendGamesCount: 0,
+  historyLog: []
+};
+
+function addLog(type, message) {
+  stats.historyLog.push({
+    timestamp: new Date().toISOString(),
+    type,
+    message
+  });
+  if (stats.historyLog.length > 200) {
+    stats.historyLog.shift();
+  }
+  broadcastAdminStats();
+}
+
+function getAdminStats() {
+  const activeRooms = [];
+  for (const room of rooms.values()) {
+    activeRooms.push({
+      id: room.id,
+      mode: room.mode,
+      phase: room.phase,
+      maxPlayers: room.maxPlayers,
+      playerCount: room.players.length,
+      players: room.players.map(p => ({
+        name: p.name,
+        isBot: p.isBot,
+        ready: p.ready,
+        finished: p.finished
+      }))
+    });
+  }
+
+  const activeOnlinePlayers = [];
+  for (const room of rooms.values()) {
+    for (const p of room.players) {
+      if (!p.isBot) {
+        activeOnlinePlayers.push({
+          name: p.name,
+          roomId: room.id,
+          id: p.id
+        });
+      }
+    }
+  }
+
+  return {
+    totalConnections: stats.totalConnections,
+    uniqueUsersCount: stats.uniqueUsers.size,
+    totalGames: stats.totalGamesCount,
+    computerGames: stats.computerGamesCount,
+    friendGames: stats.friendGamesCount,
+    activeConnections: io.engine.clientsCount,
+    activeOnlinePlayers,
+    activeRooms,
+    historyLog: stats.historyLog
+  };
+}
+
+function broadcastAdminStats() {
+  io.to('admin_room').emit('admin_stats_update', getAdminStats());
+}
+
 
 function generateRoomId() {
   let id = '';
@@ -235,6 +313,11 @@ function startRoomGame(room) {
   room.players.filter(p => p.isBot).forEach(p => { p.ready = true; });
   io.to(room.id).emit('game-start', { roomId: room.id });
   broadcastState(room);
+
+  // Stats tracking
+  stats.totalGamesCount++;
+  const modeText = room.mode === 'computer' ? 'נגד המחשב' : 'של חברים';
+  addLog('game_start', `המשחק בחדר ${room.id} (${modeText}) התחיל!`);
 }
 
 function getRoomForSocket(socketId) {
@@ -383,6 +466,14 @@ function broadcastOpenRooms() {
 // ═══════════════════════════════════════════
 io.on('connection', (socket) => {
   console.log(`Connected: ${socket.id}`);
+  stats.totalConnections++;
+  addLog('connection', `מכשיר חדש התחבר (מזהה: ${socket.id})`);
+
+  socket.on('admin_register', () => {
+    socket.join('admin_room');
+    socket.emit('admin_stats_update', getAdminStats());
+  });
+
   socket.join('lobby');
   socket.emit('open-rooms-list', getOpenRooms());
 
@@ -412,6 +503,16 @@ io.on('connection', (socket) => {
     socket.emit('room-created', { roomId, player: room.players[0], maxPlayers, playerCount: room.players.length });
     console.log(`Room created: ${roomId} by ${name}`);
 
+    // Stats tracking
+    stats.uniqueUsers.add(name.trim());
+    if (room.mode === 'computer') {
+      stats.computerGamesCount++;
+      addLog('room_created_bot', `השחקן ${name.trim()} יצר משחק נגד המחשב בחדר ${roomId} (${maxPlayers} שחקנים)`);
+    } else {
+      stats.friendGamesCount++;
+      addLog('room_created_friend', `השחקן ${name.trim()} פתח חדר משחק של חברים: ${roomId} (${maxPlayers} שחקנים)`);
+    }
+
     if (room.mode === 'computer') {
       addBots(room, maxPlayers);
       startRoomGame(room);
@@ -438,6 +539,10 @@ io.on('connection', (socket) => {
     socket.leave('lobby');
     socket.join(id);
     console.log(`${name} joined room ${id}`);
+
+    // Stats tracking
+    stats.uniqueUsers.add(name.trim());
+    addLog('player_joined', `השחקן ${name.trim()} הצטרף לחדר ${id}`);
 
     io.to(id).emit('toast-msg', { msg: `${name.trim()} הצטרף לחדר`, type: 'info' });
 
@@ -672,6 +777,7 @@ io.on('connection', (socket) => {
   // 9. Disconnect handling
   socket.on('disconnect', () => {
     console.log(`Disconnected: ${socket.id}`);
+    addLog('disconnection', `מכשיר התנתק (מזהה: ${socket.id})`);
     
     for (const [roomId, room] of rooms.entries()) {
       const idx = room.players.findIndex(p => p.id === socket.id);
@@ -684,12 +790,14 @@ io.on('connection', (socket) => {
           // Room empty, delete it
           rooms.delete(roomId);
           console.log(`Deleted empty room ${roomId}`);
+          addLog('room_deleted', `חדר ${roomId} נסגר כי לא נשארו בו שחקנים`);
         } else {
           room.phase = 'lobby';
           io.to(roomId).emit('opponent-disconnected', {
             msg: `${leaver.name} התנתק. חוזרים ללובי.`
           });
           console.log(`Player left room ${roomId}. Room reset to lobby.`);
+          addLog('player_left', `השחקן ${leaver.name} עזב את חדר ${roomId}. החדר חזר למצב לובי.`);
         }
         break;
       }
@@ -787,6 +895,7 @@ function executePlayState(room, player, cards) {
       }
       room.phase = 'over';
       broadcastState(room);
+      addLog('game_over', `המשחק בחדר ${room.id} הסתיים! המנצח: ${room.winners[0] || 'אנונימי'}`);
       return;
     }
     

@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>שיטהד אונליין – פאנל ניהול</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&family=Rubik:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Rubik', 'Inter', 'system-ui', 'sans-serif'],
+            outfit: ['Outfit', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom Styles for premium aesthetics -->
+  <style>
+    body {
+      background: radial-gradient(circle at 50% 0%, rgba(30, 27, 75, 0.4) 0%, rgba(15, 23, 42, 0.05) 50%), #090d16;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(99, 102, 241, 0.2) transparent;
+    }
+    
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(99, 102, 241, 0.25);
+      border-radius: 99px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(99, 102, 241, 0.5);
+    }
+
+    .glass {
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .glow-indigo {
+      box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
+    }
+    
+    .glow-green {
+      box-shadow: 0 0 30px rgba(34, 197, 94, 0.1);
+    }
+
+    /* Live pulse animation */
+    .pulse-green {
+      animation: pulseGreen 2s infinite;
+    }
+    @keyframes pulseGreen {
+      0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+
+    /* Card hover micro-animations */
+    .kpi-card {
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .kpi-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(99, 102, 241, 0.25);
+      background: rgba(15, 23, 42, 0.65);
+    }
+
+    /* Log item animation */
+    .log-item {
+      animation: logFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes logFadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Tab transitions */
+    .tab-active {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
+      border-color: rgba(99, 102, 241, 0.4);
+      color: #fff;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-100 font-sans antialiased pb-12">
+
+  <!-- Main Container -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+
+    <!-- Top Navigation Header -->
+    <header class="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-6 rounded-2xl glass mb-8 border border-slate-800/80 shadow-2xl">
+      <div class="flex items-center gap-3">
+        <div class="relative w-12 h-12 bg-slate-950/80 rounded-xl flex items-center justify-center border border-slate-800 shadow-inner">
+          <img src="/favicon.png" alt="שיטהד" class="w-9 h-9 object-contain">
+          <!-- Live Indicator Badge -->
+          <span class="absolute -top-1 -left-1 w-3.5 h-3.5 bg-green-500 border-2 border-slate-900 rounded-full pulse-green"></span>
+        </div>
+        <div>
+          <h1 class="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
+            <span>שיטהד אונליין</span>
+            <span class="text-xs font-medium text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20 font-outfit uppercase">Admin Panel</span>
+          </h1>
+          <p class="text-xs text-slate-400">לוח בקרה וניהול בזמן אמת</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <!-- Live status description -->
+        <div class="hidden md:flex items-center gap-2 bg-slate-950/50 px-3.5 py-1.5 rounded-xl border border-slate-800/60">
+          <span class="w-2 h-2 rounded-full bg-green-500"></span>
+          <span id="connection-status" class="text-xs text-slate-300 font-medium">מחובר לשרת המשחק</span>
+        </div>
+
+        <!-- Back to Game Link -->
+        <a href="/" class="flex items-center gap-1.5 px-4 py-2 text-xs font-bold bg-slate-800 hover:bg-slate-700 hover:text-white text-slate-300 border border-slate-700/80 rounded-xl transition duration-200 shadow-md">
+          <span>חזרה למשחק</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+        </a>
+      </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════
+      KPI STATISTICS GRID
+    ═══════════════════════════════════════════ -->
+    <section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+      
+      <!-- Card 1: Active Connections -->
+      <div class="kpi-card p-4 rounded-2xl glass flex flex-col justify-between min-h-[110px]">
+        <div class="flex items-center justify-between text-slate-400">
+          <span class="text-xs font-medium">חיבורים כעת</span>
+          <div class="p-1.5 bg-blue-500/10 rounded-lg text-blue-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-2 flex items-baseline gap-1.5">
+          <span id="stat-active-connections" class="text-2xl font-black text-white font-outfit">0</span>
+          <span class="text-[10px] text-slate-400">אקטיביים</span>
+        </div>
+      </div>
+
+      <!-- Card 2: Active Players -->
+      <div class="kpi-card p-4 rounded-2xl glass flex flex-col justify-between min-h-[110px]">
+        <div class="flex items-center justify-between text-slate-400">
+          <span class="text-xs font-medium">שחקנים בחדרים</span>
+          <div class="p-1.5 bg-emerald-500/10 rounded-lg text-emerald-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-2 flex items-baseline gap-1.5">
+          <span id="stat-active-players" class="text-2xl font-black text-white font-outfit">0</span>
+          <span class="text-[10px] text-slate-400">שחקנים</span>
+        </div>
+      </div>
+
+      <!-- Card 3: Total Games -->
+      <div class="kpi-card p-4 rounded-2xl glass flex flex-col justify-between min-h-[110px]">
+        <div class="flex items-center justify-between text-slate-400">
+          <span class="text-xs font-medium">סך משחקים</span>
+          <div class="p-1.5 bg-amber-500/10 rounded-lg text-amber-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-2 flex items-baseline gap-1.5">
+          <span id="stat-total-games" class="text-2xl font-black text-white font-outfit">0</span>
+          <span class="text-[10px] text-slate-400">שהתחילו</span>
+        </div>
+      </div>
+
+      <!-- Card 4: vs Computer -->
+      <div class="kpi-card p-4 rounded-2xl glass flex flex-col justify-between min-h-[110px]">
+        <div class="flex items-center justify-between text-slate-400">
+          <span class="text-xs font-medium">משחקים נגד מחשב</span>
+          <div class="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-2 flex items-baseline gap-1.5">
+          <span id="stat-computer-games" class="text-2xl font-black text-white font-outfit">0</span>
+          <span class="text-[10px] text-slate-400">משחקים</span>
+        </div>
+      </div>
+
+      <!-- Card 5: Friend Rooms -->
+      <div class="kpi-card p-4 rounded-2xl glass flex flex-col justify-between min-h-[110px]">
+        <div class="flex items-center justify-between text-slate-400">
+          <span class="text-xs font-medium">חדרי חברים</span>
+          <div class="p-1.5 bg-purple-500/10 rounded-lg text-purple-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-2 flex items-baseline gap-1.5">
+          <span id="stat-friend-games" class="text-2xl font-black text-white font-outfit">0</span>
+          <span class="text-[10px] text-slate-400">חדרים</span>
+        </div>
+      </div>
+
+      <!-- Card 6: Unique Users -->
+      <div class="kpi-card p-4 rounded-2xl glass flex flex-col justify-between min-h-[110px]">
+        <div class="flex items-center justify-between text-slate-400">
+          <span class="text-xs font-medium">שחקנים ייחודיים</span>
+          <div class="p-1.5 bg-rose-500/10 rounded-lg text-rose-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-2 flex items-baseline gap-1.5">
+          <span id="stat-unique-users" class="text-2xl font-black text-white font-outfit">0</span>
+          <span class="text-[10px] text-slate-400">מצטברים</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+      ANALYTICS & DISTRIBUTION CHARTS
+    ═══════════════════════════════════════════ -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+      
+      <!-- Analytics Card -->
+      <div class="lg:col-span-1 rounded-2xl glass p-6 border border-slate-800/80 flex flex-col justify-between">
+        <div>
+          <h2 class="text-sm font-bold text-white mb-1">פילוח סוגי משחקים</h2>
+          <p class="text-xs text-slate-400 mb-6">התפלגות יצירת חדרים: נגד מחשב מול חדרי חברים</p>
+          
+          <div class="space-y-5">
+            <!-- Computer vs Friends Progress bar -->
+            <div>
+              <div class="flex justify-between text-xs font-semibold mb-2">
+                <span class="text-indigo-400">💻 נגד המחשב</span>
+                <span id="pct-computer-games" class="font-outfit text-indigo-300">0%</span>
+              </div>
+              <div class="w-full bg-slate-950/80 rounded-full h-3 border border-slate-800/80 overflow-hidden">
+                <div id="bar-computer-games" class="bg-gradient-to-r from-indigo-500 to-indigo-600 h-full rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs font-semibold mb-2">
+                <span class="text-purple-400">👥 חדרי חברים אונליין</span>
+                <span id="pct-friend-games" class="font-outfit text-purple-300">0%</span>
+              </div>
+              <div class="w-full bg-slate-950/80 rounded-full h-3 border border-slate-800/80 overflow-hidden">
+                <div id="bar-friend-games" class="bg-gradient-to-r from-purple-500 to-purple-600 h-full rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-slate-800/50 text-center flex justify-around">
+          <div>
+            <span class="block text-[10px] text-slate-400">סך חדרים שנוצרו</span>
+            <span id="total-rooms-ratio" class="text-lg font-black text-white font-outfit">0</span>
+          </div>
+          <div class="w-px h-8 bg-slate-800"></div>
+          <div>
+            <span class="block text-[10px] text-slate-400">שחקנים לחדר בממוצע</span>
+            <span id="avg-players-per-room" class="text-lg font-black text-white font-outfit">0.0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Activity Log (Feed) -->
+      <div class="lg:col-span-2 rounded-2xl glass p-6 border border-slate-800/80 flex flex-col">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 class="text-sm font-bold text-white mb-1">יומן פעילות בזמן אמת</h2>
+            <p class="text-xs text-slate-400">היסטוריית אירועים אחרונים במערכת</p>
+          </div>
+          
+          <!-- Category Filters -->
+          <div class="flex flex-wrap gap-1.5 p-1 bg-slate-950/80 rounded-xl border border-slate-800/60 max-w-max">
+            <button onclick="setLogFilter('all')" id="filter-all" class="px-2.5 py-1 text-[10px] font-bold rounded-lg text-slate-400 hover:text-white transition duration-150 tab-active">הכל</button>
+            <button onclick="setLogFilter('connection')" id="filter-connection" class="px-2.5 py-1 text-[10px] font-bold rounded-lg text-slate-400 hover:text-white transition duration-150">חיבורים</button>
+            <button onclick="setLogFilter('rooms')" id="filter-rooms" class="px-2.5 py-1 text-[10px] font-bold rounded-lg text-slate-400 hover:text-white transition duration-150">חדרים</button>
+            <button onclick="setLogFilter('games')" id="filter-games" class="px-2.5 py-1 text-[10px] font-bold rounded-lg text-slate-400 hover:text-white transition duration-150">משחקים</button>
+          </div>
+        </div>
+
+        <!-- Scrollable Feed Container -->
+        <div id="logs-container" class="flex-1 overflow-y-auto max-h-[260px] min-h-[220px] bg-slate-950/50 border border-slate-900 rounded-xl p-3 space-y-2 flex flex-col-reverse">
+          <!-- Live events inserted dynamically -->
+          <div class="text-slate-500 text-xs text-center py-12">אין פעילות מתועדת...</div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+      ACTIVE ROOMS & ACTIVE PLAYERS SECTION
+    ═══════════════════════════════════════════ -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      
+      <!-- Rooms Table -->
+      <div class="lg:col-span-2 rounded-2xl glass p-6 border border-slate-800/80 flex flex-col">
+        <div class="mb-5">
+          <h2 class="text-sm font-bold text-white mb-1">חדרי משחק פעילים בזמן אמת</h2>
+          <p class="text-xs text-slate-400">רשימת החדרים הפעילים בשרת, מצבם והשחקנים בהם</p>
+        </div>
+
+        <div class="flex-1 overflow-x-auto">
+          <table class="w-full text-right text-xs">
+            <thead>
+              <tr class="border-b border-slate-800 text-slate-400 font-semibold">
+                <th class="pb-3 pr-2">מזהה חדר</th>
+                <th class="pb-3">סוג משחק</th>
+                <th class="pb-3">שלב במשחק</th>
+                <th class="pb-3 text-center">שחקנים</th>
+                <th class="pb-3 pl-2">רשימת שחקנים</th>
+              </tr>
+            </thead>
+            <tbody id="rooms-list-body" class="divide-y divide-slate-900">
+              <!-- Rendered dynamically -->
+              <tr>
+                <td colspan="5" class="py-10 text-center text-slate-500">אין חדרים פעילים כעת בשרת.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Connected Sockets List -->
+      <div class="lg:col-span-1 rounded-2xl glass p-6 border border-slate-800/80 flex flex-col">
+        <div class="mb-5 flex justify-between items-center">
+          <div>
+            <h2 class="text-sm font-bold text-white mb-1">שחקנים פעילים אונליין</h2>
+            <p class="text-xs text-slate-400">רשימת השחקנים הרשומים בחדרים</p>
+          </div>
+          <span id="active-players-count-badge" class="px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 text-[10px] font-bold border border-indigo-500/20 font-outfit">0</span>
+        </div>
+
+        <div class="flex-1 overflow-y-auto max-h-[300px] bg-slate-950/40 rounded-xl p-3 border border-slate-900/50">
+          <ul id="players-list" class="space-y-2">
+            <!-- Rendered dynamically -->
+            <li class="text-slate-500 text-xs text-center py-10">אין שחקנים אקטיביים רשומים.</li>
+          </ul>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <!-- Socket.io client setup -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // Safe socket instantiation
+    let socket;
+    try {
+      socket = io();
+    } catch(e) {
+      console.warn("Could not connect natively. Using CDN script fallback...", e);
+      // fallback script insertion if /socket.io/socket.io.js fails (offline mock/sandbox scenarios)
+      const script = document.createElement('script');
+      script.src = "https://cdn.socket.io/4.7.5/socket.io.min.js";
+      script.onload = () => { socket = io(); setupSocketListeners(); };
+      document.head.appendChild(script);
+    }
+
+    if (socket) {
+      setupSocketListeners();
+    }
+
+    let activeFilter = 'all';
+    let rawLogs = [];
+
+    function setupSocketListeners() {
+      // Connect / Disconnect monitoring
+      socket.on('connect', () => {
+        document.getElementById('connection-status').innerText = "מחובר לשרת המשחק";
+        document.getElementById('connection-status').parentElement.classList.remove('border-red-500/20');
+        document.getElementById('connection-status').parentElement.classList.add('border-slate-800/60');
+        document.getElementById('connection-status').previousElementSibling.className = "w-2 h-2 rounded-full bg-green-500";
+        
+        // Handshake as admin
+        socket.emit('admin_register');
+      });
+
+      socket.on('disconnect', () => {
+        document.getElementById('connection-status').innerText = "החיבור לשרת נותק";
+        document.getElementById('connection-status').parentElement.classList.remove('border-slate-800/60');
+        document.getElementById('connection-status').parentElement.classList.add('border-red-500/20');
+        document.getElementById('connection-status').previousElementSibling.className = "w-2 h-2 rounded-full bg-red-500";
+      });
+
+      // Core Admin Update event
+      socket.on('admin_stats_update', (data) => {
+        console.log("Admin update received:", data);
+        rawLogs = data.historyLog || [];
+        
+        updateKPIs(data);
+        updateAnalytics(data);
+        updateLogsFeed();
+        updateRoomsTable(data.activeRooms || []);
+        updatePlayersList(data.activeOnlinePlayers || []);
+      });
+    }
+
+    // 1. Update KPI Card numbers
+    function updateKPIs(data) {
+      document.getElementById('stat-active-connections').innerText = data.activeConnections || 0;
+      document.getElementById('stat-active-players').innerText = (data.activeOnlinePlayers || []).length;
+      document.getElementById('stat-total-games').innerText = data.totalGames || 0;
+      document.getElementById('stat-computer-games').innerText = data.computerGames || 0;
+      document.getElementById('stat-friend-games').innerText = data.friendGames || 0;
+      document.getElementById('stat-unique-users').innerText = data.uniqueUsersCount || 0;
+      document.getElementById('active-players-count-badge').innerText = (data.activeOnlinePlayers || []).length;
+    }
+
+    // 2. Update Charts & metrics
+    function updateAnalytics(data) {
+      const comp = data.computerGames || 0;
+      const friend = data.friendGames || 0;
+      const total = comp + friend;
+      
+      document.getElementById('total-rooms-ratio').innerText = total;
+      
+      let compPct = 0;
+      let friendPct = 0;
+      
+      if (total > 0) {
+        compPct = Math.round((comp / total) * 100);
+        friendPct = Math.round((friend / total) * 100);
+      }
+      
+      // Update bar width
+      document.getElementById('bar-computer-games').style.width = compPct + '%';
+      document.getElementById('bar-friend-games').style.width = friendPct + '%';
+      
+      // Update text
+      document.getElementById('pct-computer-games').innerText = compPct + '%';
+      document.getElementById('pct-friend-games').innerText = friendPct + '%';
+
+      // Avg players per room calculation (excluding bot games, only online rooms if they exist, or overall)
+      let roomCount = (data.activeRooms || []).length;
+      if (roomCount > 0) {
+        let totalP = (data.activeRooms || []).reduce((acc, r) => acc + r.playerCount, 0);
+        let avg = (totalP / roomCount).toFixed(1);
+        document.getElementById('avg-players-per-room').innerText = avg;
+      } else {
+        document.getElementById('avg-players-per-room').innerText = "0.0";
+      }
+    }
+
+    // 3. Set Activity Logs Filter
+    function setLogFilter(filterType) {
+      activeFilter = filterType;
+      
+      // Toggle button states
+      const filterIds = ['all', 'connection', 'rooms', 'games'];
+      filterIds.forEach(id => {
+        const btn = document.getElementById('filter-' + id);
+        if (id === filterType) {
+          btn.classList.add('tab-active');
+        } else {
+          btn.classList.remove('tab-active');
+        }
+      });
+
+      updateLogsFeed();
+    }
+
+    // 4. Render logs feed
+    function updateLogsFeed() {
+      const container = document.getElementById('logs-container');
+      
+      // Filter list
+      let filtered = rawLogs;
+      if (activeFilter === 'connection') {
+        filtered = rawLogs.filter(log => log.type === 'connection' || log.type === 'disconnection');
+      } else if (activeFilter === 'rooms') {
+        filtered = rawLogs.filter(log => log.type.startsWith('room_') || log.type.startsWith('player_'));
+      } else if (activeFilter === 'games') {
+        filtered = rawLogs.filter(log => log.type.startsWith('game_'));
+      }
+
+      if (!filtered || filtered.length === 0) {
+        container.innerHTML = `<div class="text-slate-500 text-xs text-center py-12">אין פעילות תואמת מסוג זה...</div>`;
+        return;
+      }
+
+      // Generate HTML items in reverse chronological order (newest at bottom of list)
+      container.innerHTML = filtered.map(log => {
+        const time = new Date(log.timestamp).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        
+        let typeClass = 'bg-slate-900 border-slate-800 text-slate-300';
+        let badgeIcon = '⚙️';
+        let badgeText = 'מערכת';
+
+        switch(log.type) {
+          case 'connection':
+            typeClass = 'bg-blue-950/20 border-blue-900/30 text-blue-300';
+            badgeIcon = '🔌';
+            badgeText = 'חיבור';
+            break;
+          case 'disconnection':
+            typeClass = 'bg-slate-900/50 border-slate-800/80 text-slate-400';
+            badgeIcon = '💤';
+            badgeText = 'ניתוק';
+            break;
+          case 'room_created_bot':
+            typeClass = 'bg-indigo-950/20 border-indigo-900/30 text-indigo-300';
+            badgeIcon = '🤖';
+            badgeText = 'משחק בוט';
+            break;
+          case 'room_created_friend':
+            typeClass = 'bg-purple-950/20 border-purple-900/30 text-purple-300';
+            badgeIcon = '🔑';
+            badgeText = 'חדר חברים';
+            break;
+          case 'player_joined':
+            typeClass = 'bg-emerald-950/20 border-emerald-900/30 text-emerald-300';
+            badgeIcon = '👤';
+            badgeText = 'הצטרפות';
+            break;
+          case 'player_left':
+            typeClass = 'bg-orange-950/20 border-orange-900/30 text-orange-300';
+            badgeIcon = '🚪';
+            badgeText = 'עזיבה';
+            break;
+          case 'room_deleted':
+            typeClass = 'bg-rose-950/20 border-rose-900/30 text-rose-300';
+            badgeIcon = '🗑️';
+            badgeText = 'סגירת חדר';
+            break;
+          case 'game_start':
+            typeClass = 'bg-amber-950/20 border-amber-900/30 text-amber-300';
+            badgeIcon = '⚔️';
+            badgeText = 'התחלה';
+            break;
+          case 'game_over':
+            typeClass = 'bg-yellow-950/30 border-yellow-800/40 text-yellow-300';
+            badgeIcon = '👑';
+            badgeText = 'סיום';
+            break;
+        }
+
+        return `
+          <div class="log-item p-2.5 rounded-xl border ${typeClass} flex items-center justify-between text-xs gap-3">
+            <div class="flex items-center gap-2">
+              <span class="text-base select-none">${badgeIcon}</span>
+              <span class="font-bold text-[10px] bg-slate-900/60 border border-white/5 px-2 py-0.5 rounded-md font-outfit uppercase">${badgeText}</span>
+              <span class="leading-normal">${log.message}</span>
+            </div>
+            <span class="text-[10px] text-slate-500 whitespace-nowrap font-outfit">${time}</span>
+          </div>
+        `;
+      }).join('');
+
+      // Auto scroll container to bottom
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // 5. Render active rooms table
+    function updateRoomsTable(rooms) {
+      const tbody = document.getElementById('rooms-list-body');
+      if (!rooms || rooms.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="py-10 text-center text-slate-500">אין חדרים פעילים כעת בשרת.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = rooms.map(room => {
+        // Mode badge
+        const modeBadge = room.mode === 'computer' 
+          ? `<span class="px-2 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-bold text-[10px]">💻 נגד המחשב</span>` 
+          : `<span class="px-2 py-0.5 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20 font-bold text-[10px]">👥 חדר חברים</span>`;
+
+        // Phase badge
+        let phaseColor = 'bg-slate-500/10 text-slate-400 border-slate-500/20';
+        let phaseText = 'לובי';
+        if (room.phase === 'play' || room.phase === 'swap') {
+          phaseColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+          phaseText = room.phase === 'swap' ? 'החלפת קלפים' : 'משחקים';
+        } else if (room.phase === 'over') {
+          phaseColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+          phaseText = 'הסתיים';
+        }
+        const phaseBadge = `<span class="px-2 py-0.5 rounded-lg ${phaseColor} border font-bold text-[10px]">${phaseText}</span>`;
+
+        // Players tags list
+        const playerTags = room.players.map(p => {
+          let badge = '';
+          if (p.isBot) {
+            badge = `<span class="px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 text-[8px] mr-1">בוט</span>`;
+          } else {
+            badge = p.ready 
+              ? `<span class="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 text-[8px] mr-1">מוכן</span>` 
+              : `<span class="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 text-[8px] mr-1">ממתין</span>`;
+          }
+          return `
+            <span class="inline-flex items-center bg-slate-900 border border-slate-800 text-slate-300 px-2 py-1 rounded-lg text-[10px] font-medium">
+              ${p.name}
+              ${badge}
+            </span>
+          `;
+        }).join(' ');
+
+        return `
+          <tr class="hover:bg-slate-950/20 transition duration-150">
+            <td class="py-3.5 pr-2 font-bold font-outfit text-white text-sm">${room.id}</td>
+            <td class="py-3.5">${modeBadge}</td>
+            <td class="py-3.5">${phaseBadge}</td>
+            <td class="py-3.5 text-center font-outfit font-bold">${room.playerCount} / ${room.maxPlayers}</td>
+            <td class="py-3.5 pl-2">
+              <div class="flex flex-wrap gap-1 justify-start">
+                ${playerTags}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // 6. Render online players list
+    function updatePlayersList(players) {
+      const list = document.getElementById('players-list');
+      if (!players || players.length === 0) {
+        list.innerHTML = `
+          <li class="text-slate-500 text-xs text-center py-10">אין שחקנים אקטיביים רשומים.</li>
+        `;
+        return;
+      }
+
+      list.innerHTML = players.map(p => {
+        return `
+          <li class="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+              <div class="w-2.5 h-2.5 rounded-full bg-indigo-500/70 border border-indigo-400"></div>
+              <span class="font-semibold text-slate-200">${p.name}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[9px] text-slate-500 font-outfit uppercase bg-slate-950 px-2 py-0.5 rounded border border-white/5">${p.id.substring(0, 6)}...</span>
+              <span class="px-2 py-0.5 bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded font-bold text-[9px] font-outfit">חדר: ${p.roomId}</span>
+            </div>
+          </li>
+        `;
+      }).join('');
+    }
+  </script>
+</body>
+</html>
