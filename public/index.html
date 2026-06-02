@@ -1955,7 +1955,7 @@
             const shiftY = Math.sin(i * 8.91) * 3; // -3 to 3 px shift Y
             
             let style = 'top:' + (offset * 2 + shiftY) + 'px;left:' + (offset + shiftX) + 'px;transform:rotate(' + rot + 'deg)';
-            if (card.rank === 3) style += ';opacity: 0.25';
+            if (card.rank === 3) style += ';opacity: 0.55';
             
             discHtml += '<div class="pile-layer" style="' + style + '">' + cFace(card) + '</div>';
           }
