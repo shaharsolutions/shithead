@@ -469,7 +469,12 @@ io.on('connection', (socket) => {
   stats.totalConnections++;
   addLog('connection', `מכשיר חדש התחבר (מזהה: ${socket.id})`);
 
-  socket.on('admin_register', () => {
+  socket.on('admin_register', ({ password } = {}) => {
+    if (password !== '1627') {
+      socket.emit('error-msg', 'גישה נדחתה: סיסמה שגויה');
+      socket.disconnect();
+      return;
+    }
     socket.join('admin_room');
     socket.emit('admin_stats_update', getAdminStats());
   });

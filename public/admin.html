@@ -103,8 +103,40 @@
 </head>
 <body class="min-h-screen text-slate-100 font-sans antialiased pb-12">
 
-  <!-- Main Container -->
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+  <!-- Lock Screen Overlay -->
+  <div id="lock-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 backdrop-blur-xl transition-all duration-500">
+    <!-- Subtle modern background glow -->
+    <div class="absolute w-[300px] h-[300px] rounded-full bg-indigo-500/10 blur-[120px] pointer-events-none"></div>
+    
+    <div class="w-full max-w-md bg-slate-900/90 border border-slate-800/80 rounded-3xl p-8 shadow-2xl flex flex-col items-center gap-6 relative mx-4">
+      <div class="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center text-2xl shadow-inner select-none mb-2">
+        🔒
+      </div>
+      
+      <div class="text-center">
+        <h2 class="text-xl font-black text-white tracking-tight">אזור ניהול מאובטח</h2>
+        <p class="text-xs text-slate-400 mt-1">נדרשת סיסמת גישה כדי להציג נתוני שרת</p>
+      </div>
+      
+      <form id="login-form" class="w-full flex flex-col gap-4" onsubmit="handleLoginSubmit(event)">
+        <div class="flex flex-col gap-2">
+          <label for="admin-pass" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">סיסמת גישה</label>
+          <input type="password" id="admin-pass" inputmode="numeric" pattern="[0-9]*" placeholder="••••" class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 text-center tracking-[0.6em] text-xl font-bold transition duration-200" autocomplete="current-password">
+        </div>
+        
+        <div id="login-error" class="hidden text-xs text-rose-500 text-center font-bold">
+          ❌ סיסמה שגויה, גישה נדחתה.
+        </div>
+        
+        <button type="submit" class="w-full py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-500/10 transition duration-200 hover:scale-[1.01] active:scale-95">
+          כניסה למערכת 🔑
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main Container (hidden by default) -->
+  <div id="main-content" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 opacity-0 pointer-events-none transition-all duration-500">
 
     <!-- Top Navigation Header -->
     <header class="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-6 rounded-2xl glass mb-8 border border-slate-800/80 shadow-2xl">
@@ -376,27 +408,42 @@
   <!-- Socket.io client setup -->
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    // Safe socket instantiation
-    let socket;
-    try {
-      socket = io();
-    } catch(e) {
-      console.warn("Could not connect natively. Using CDN script fallback...", e);
-      // fallback script insertion if /socket.io/socket.io.js fails (offline mock/sandbox scenarios)
-      const script = document.createElement('script');
-      script.src = "https://cdn.socket.io/4.7.5/socket.io.min.js";
-      script.onload = () => { socket = io(); setupSocketListeners(); };
-      document.head.appendChild(script);
-    }
-
-    if (socket) {
-      setupSocketListeners();
-    }
-
+    let socket = null;
     let activeFilter = 'all';
     let rawLogs = [];
 
-    function setupSocketListeners() {
+    function initAdminConnection(password) {
+      try {
+        if (!socket) {
+          // Initialize socket without connecting immediately
+          socket = io({ autoConnect: false });
+        }
+        
+        if (!socket.connected) {
+          socket.connect();
+        }
+
+        setupSocketListeners(password);
+      } catch(e) {
+        console.warn("Could not connect natively. Using CDN script fallback...", e);
+        const script = document.createElement('script');
+        script.src = "https://cdn.socket.io/4.7.5/socket.io.min.js";
+        script.onload = () => {
+          socket = io({ autoConnect: false });
+          socket.connect();
+          setupSocketListeners(password);
+        };
+        document.head.appendChild(script);
+      }
+    }
+
+    function setupSocketListeners(password) {
+      // Clear previous listeners to avoid duplicates on reconnect/re-authentication
+      socket.off('connect');
+      socket.off('disconnect');
+      socket.off('error-msg');
+      socket.off('admin_stats_update');
+
       // Connect / Disconnect monitoring
       socket.on('connect', () => {
         document.getElementById('connection-status').innerText = "מחובר לשרת המשחק";
@@ -404,8 +451,8 @@
         document.getElementById('connection-status').parentElement.classList.add('border-slate-800/60');
         document.getElementById('connection-status').previousElementSibling.className = "w-2 h-2 rounded-full bg-green-500";
         
-        // Handshake as admin
-        socket.emit('admin_register');
+        // Handshake as admin with password
+        socket.emit('admin_register', { password });
       });
 
       socket.on('disconnect', () => {
@@ -415,10 +462,22 @@
         document.getElementById('connection-status').previousElementSibling.className = "w-2 h-2 rounded-full bg-red-500";
       });
 
+      socket.on('error-msg', (msg) => {
+        if (msg && msg.includes('גישה נדחתה')) {
+          sessionStorage.removeItem('admin_pass');
+          showLockScreen();
+          document.getElementById('login-error').innerText = "❌ גישה נדחתה: סיסמת שרת שגויה.";
+          document.getElementById('login-error').classList.remove('hidden');
+        }
+      });
+
       // Core Admin Update event
       socket.on('admin_stats_update', (data) => {
         console.log("Admin update received:", data);
         rawLogs = data.historyLog || [];
+        
+        // Hide lock screen and reveal content on successful stats load
+        hideLockScreen();
         
         updateKPIs(data);
         updateAnalytics(data);
@@ -426,7 +485,59 @@
         updateRoomsTable(data.activeRooms || []);
         updatePlayersList(data.activeOnlinePlayers || []);
       });
+
+      // If already connected, trigger registration manually
+      if (socket.connected) {
+        socket.emit('admin_register', { password });
+      }
     }
+
+    function handleLoginSubmit(e) {
+      e.preventDefault();
+      const passInput = document.getElementById('admin-pass').value;
+      if (passInput === '1627') {
+        sessionStorage.setItem('admin_pass', passInput);
+        document.getElementById('login-error').classList.add('hidden');
+        initAdminConnection(passInput);
+      } else {
+        document.getElementById('login-error').innerText = "❌ סיסמה שגויה, גישה נדחתה.";
+        document.getElementById('login-error').classList.remove('hidden');
+        document.getElementById('admin-pass').value = '';
+        document.getElementById('admin-pass').focus();
+      }
+    }
+
+    function hideLockScreen() {
+      const lockScreen = document.getElementById('lock-screen');
+      const mainContent = document.getElementById('main-content');
+      
+      lockScreen.classList.add('opacity-0', 'pointer-events-none');
+      mainContent.classList.remove('opacity-0', 'pointer-events-none');
+      mainContent.classList.add('opacity-100');
+    }
+
+    function showLockScreen() {
+      const lockScreen = document.getElementById('lock-screen');
+      const mainContent = document.getElementById('main-content');
+      
+      lockScreen.classList.remove('opacity-0', 'pointer-events-none');
+      mainContent.classList.add('opacity-0', 'pointer-events-none');
+      mainContent.classList.remove('opacity-100');
+      
+      if (socket) {
+        socket.disconnect();
+      }
+    }
+
+    // Auto-login on load if password already exists in session storage
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedPass = sessionStorage.getItem('admin_pass');
+      if (savedPass === '1627') {
+        initAdminConnection(savedPass);
+      } else {
+        showLockScreen();
+      }
+    });
 
     // 1. Update KPI Card numbers
     function updateKPIs(data) {
