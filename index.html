@@ -293,6 +293,10 @@
       opacity: 0.85; animation: confettiDrop var(--d) linear infinite;
       top: -10px; left: var(--x); background-color: var(--c);
     }
+    .confetti-p.poop {
+      width: auto !important; height: auto !important; background-color: transparent !important;
+      user-select: none;
+    }
     @keyframes confettiDrop {
       0% { transform: translateY(0) rotate(0); }
       100% { transform: translateY(500px) rotate(720deg); opacity: 0; }
@@ -558,7 +562,7 @@
   <!-- Win / Game Over Modal -->
   <div id="win-modal" class="hidden fixed inset-0 z-40 flex items-center justify-center win-overlay">
     <div class="win-card text-center max-w-md mx-4">
-      <div class="text-6xl mb-4">👑</div>
+      <div id="win-badge" class="text-6xl mb-4 select-none">👑</div>
       <h2 id="win-title" class="text-4xl font-black mb-2 tracking-tight"></h2>
       <p id="win-sub" class="text-slate-400 mb-6 text-sm"></p>
       <div class="flex gap-3 justify-center">
@@ -1766,15 +1770,21 @@
         }, 950);
       }
 
-      function spawnConfetti(container) {
+      function spawnConfetti(container, isPoop = false) {
         container.innerHTML = '';
         const colors = ['#d4af37', '#22d3ee', '#34d399', '#f43f5e', '#a855f7', '#fb923c'];
         for (let i = 0; i < 80; i++) {
           const p = document.createElement('div');
-          p.className = 'confetti-p';
+          p.className = 'confetti-p' + (isPoop ? ' poop' : '');
           p.style.setProperty('--x', Math.random() * 100 + '%');
           p.style.setProperty('--d', (Math.random() * 2 + 1.5) + 's');
-          p.style.setProperty('--c', colors[Math.floor(Math.random() * colors.length)]);
+          if (isPoop) {
+            p.textContent = '💩';
+            const size = Math.floor(Math.random() * 8) + 12; // 12px to 20px
+            p.style.fontSize = size + 'px';
+          } else {
+            p.style.setProperty('--c', colors[Math.floor(Math.random() * colors.length)]);
+          }
           p.style.animationDelay = (Math.random() * 1.5) + 's';
           container.appendChild(p);
         }
@@ -1783,7 +1793,18 @@
       function showWinModal(winnersList) {
         el('win-modal').classList.remove('hidden');
         
-        // Spawn confetti inside modal card
+        // Find if I won (I am 1st) or finished earlier
+        const myRank = winnersList.indexOf(name) + 1; // 1-indexed rank
+        const isLoser = myRank === 0 || myRank === winnersList.length;
+
+        // Set crown or poop badge
+        if (isLoser) {
+          el('win-badge').textContent = '💩';
+        } else {
+          el('win-badge').textContent = '👑';
+        }
+
+        // Spawn confetti inside modal card (poop emojis for loser, normal confetti for winners)
         let confContainer = el('win-confetti');
         if (!confContainer) {
           confContainer = document.createElement('div');
@@ -1791,10 +1812,7 @@
           confContainer.className = 'confetti-container';
           el('win-modal').firstElementChild.appendChild(confContainer);
         }
-        spawnConfetti(confContainer);
-        
-        // Find if I won (I am 1st) or finished earlier
-        const myRank = winnersList.indexOf(name) + 1; // 1-indexed rank
+        spawnConfetti(confContainer, isLoser);
         
         if (myRank === 1) {
           el('win-title').textContent = '🥇 ניצחת במקום הראשון!';
