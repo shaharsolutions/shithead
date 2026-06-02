@@ -1958,9 +1958,17 @@
             const card = G.discardHistory[offset];
             
             // Deterministic organic stack offsets to mimic real cards
-            const rot = Math.sin(i * 12.34) * 8; // -8 to 8 degrees rotation
-            const shiftX = Math.cos(i * 5.67) * 4; // -4 to 4 px shift X
-            const shiftY = Math.sin(i * 8.91) * 3; // -3 to 3 px shift Y
+            let rot = Math.sin(i * 12.34) * 8; // -8 to 8 degrees rotation
+            let shiftX = Math.cos(i * 5.67) * 4; // -4 to 4 px shift X
+            let shiftY = Math.sin(i * 8.91) * 3; // -3 to 3 px shift Y
+            
+            // If this card is directly underneath a transparent card (rank 3), make it peek out to the top-left!
+            const isUnderThree = (offset + 1 < G.discardHistory.length && G.discardHistory[offset + 1].rank === 3);
+            if (isUnderThree) {
+              shiftX -= 22;
+              shiftY -= 10;
+              rot -= 6;
+            }
             
             let style = 'top:' + (offset * 2 + shiftY) + 'px;left:' + (offset + shiftX) + 'px;transform:rotate(' + rot + 'deg)';
             
