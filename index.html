@@ -90,6 +90,12 @@
       border: 1.5px solid #cbd5e1;
       box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15), inset 0 -2px 5px rgba(0, 0, 0, 0.05);
     }
+    .card-three-ghost {
+      background: rgba(255, 255, 255, 0.25) !important;
+      border: 1.5px solid rgba(203, 213, 225, 0.5) !important;
+      backdrop-filter: blur(2px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08) !important;
+    }
     .card-red { color: #ef4444; }
     .card-black { color: #1e293b; }
     .c-tl { position: absolute; top: 4px; left: 6px; font-size: 11px; font-weight: 800; line-height: 1.1; text-align: center; }
@@ -1643,6 +1649,7 @@
       function cFace(c, isSelected, playable) {
         const red = c.suit === 'hearts' || c.suit === 'diamonds';
         let cls = 'card card-face ' + (red ? 'card-red' : 'card-black');
+        if (c.rank === 3) cls += ' card-three-ghost';
         if (isSelected) cls += ' card-sel';
         if (playable) cls += ' card-play';
         return '<div class="' + cls + '">' +
@@ -1955,7 +1962,6 @@
             const shiftY = Math.sin(i * 8.91) * 3; // -3 to 3 px shift Y
             
             let style = 'top:' + (offset * 2 + shiftY) + 'px;left:' + (offset + shiftX) + 'px;transform:rotate(' + rot + 'deg)';
-            if (card.rank === 3) style += ';opacity: 0.55';
             
             discHtml += '<div class="pile-layer" style="' + style + '">' + cFace(card) + '</div>';
           }
