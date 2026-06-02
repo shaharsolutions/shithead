@@ -1647,10 +1647,10 @@
         return '<div class="' + cls + '"><div class="card-back-pat"></div></div>';
       }
 
-      function cFace(c, isSelected, playable) {
+      function cFace(c, isSelected, playable, isOnPile = false) {
         const red = c.suit === 'hearts' || c.suit === 'diamonds';
         let cls = 'card card-face ' + (red ? 'card-red' : 'card-black');
-        if (c.rank === 3) cls += ' card-3';
+        if (c.rank === 3 && isOnPile) cls += ' card-3';
         if (isSelected) cls += ' card-sel';
         if (playable) cls += ' card-play';
         return '<div class="' + cls + '">' +
@@ -1964,7 +1964,7 @@
             
             let style = 'top:' + (offset * 2 + shiftY) + 'px;left:' + (offset + shiftX) + 'px;transform:rotate(' + rot + 'deg)';
             
-            discHtml += '<div class="pile-layer" style="' + style + '">' + cFace(card) + '</div>';
+            discHtml += '<div class="pile-layer" style="' + style + '">' + cFace(card, false, false, true) + '</div>';
           }
           discHtml += '</div>';
           discEl.innerHTML = discHtml;
