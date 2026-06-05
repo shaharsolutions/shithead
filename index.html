@@ -339,32 +339,27 @@
 
     /* ===== HUMAN HAND SCROLLABLE ===== */
     #human-hand {
-      display: flex !important;
+      display: block !important;
       width: 100%;
       max-width: 100%;
-      justify-content: center;
-      justify-content: safe center;
-      align-items: flex-end;
-      flex-wrap: nowrap !important;
       overflow-x: auto !important;
       overflow-y: hidden !important;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(212, 175, 55, 0.2) transparent;
+    }
+    .hand-inner {
+      display: inline-flex;
+      min-width: 100%;
+      justify-content: center;
+      align-items: flex-end;
       min-height: 126px;
       height: 126px;
       padding-top: 24px;
       padding-bottom: 6px;
-      padding-left: 0;
-      padding-right: 0;
+      padding-left: 24px;
+      padding-right: 24px;
       gap: 8px;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(212, 175, 55, 0.2) transparent;
-    }
-    #human-hand::before,
-    #human-hand::after {
-      content: "";
-      display: block;
-      flex: 0 0 24px;
-      width: 24px;
-      height: 1px;
+      box-sizing: border-box;
     }
     #human-hand::-webkit-scrollbar {
       height: 4px;
@@ -398,19 +393,18 @@
       .pile-stack { width: 54px; height: 76px; }
       .hand-fan > * { margin-inline-end: -22px; }
        #human-hand {
-        min-height: 106px;
-        height: 106px;
-        padding-top: 22px;
-        padding-bottom: 6px;
-        padding-left: 0;
-        padding-right: 0;
-        gap: 6px;
-      }
-      #human-hand::before,
-      #human-hand::after {
-        flex: 0 0 20px;
-        width: 20px;
-      }
+         min-height: 106px;
+         height: 106px;
+       }
+       .hand-inner {
+         min-height: 106px;
+         height: 106px;
+         padding-top: 22px;
+         padding-bottom: 6px;
+         padding-left: 20px;
+         padding-right: 20px;
+         gap: 6px;
+       }
       .table-arena { min-height: 650px; border-radius: 32px; overflow: visible; }
       .table-seat { width: 44vw; min-width: 148px; padding: 8px; border-radius: 14px; }
       .table-center { width: 210px; top: 38% !important; }
@@ -2104,7 +2098,7 @@
           const wrapperClass = isSelected ? 'relative z-30' : 'relative';
           myHandHtml += '<div data-hand="' + i + '" class="' + wrapperClass + '">' + cFace(c, isSelected, isPlayable) + '</div>';
         }
-        el('human-hand').innerHTML = myHandHtml;
+        el('human-hand').innerHTML = '<div class="hand-inner">' + myHandHtml + '</div>';
 
         // --- Controls Button States ---
         el('play-btn').classList.add('hidden');

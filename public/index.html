@@ -150,13 +150,21 @@
 
     /* ===== ZONES ===== */
     .game-zone {
-      background: rgba(10, 15, 30, 0.45);
-      backdrop-filter: blur(35px) saturate(180%);
-      -webkit-backdrop-filter: blur(35px) saturate(180%);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 24px; padding: 18px;
       transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255,255,255,0.05);
+    }
+    .game-zone::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: rgba(10, 15, 30, 0.45);
+      backdrop-filter: blur(35px) saturate(180%);
+      -webkit-backdrop-filter: blur(35px) saturate(180%);
+      z-index: -1;
+      pointer-events: none;
     }
     .zone-glow {
       border-color: rgba(34, 211, 238, 0.4);
@@ -331,20 +339,27 @@
 
     /* ===== HUMAN HAND SCROLLABLE ===== */
     #human-hand {
-      display: flex !important;
-      justify-content: safe center;
-      justify-content: center;
-      align-items: flex-end;
-      flex-wrap: nowrap !important;
+      display: block !important;
+      width: 100%;
+      max-width: 100%;
       overflow-x: auto !important;
       overflow-y: hidden !important;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(212, 175, 55, 0.2) transparent;
+    }
+    .hand-inner {
+      display: inline-flex;
+      min-width: 100%;
+      justify-content: center;
+      align-items: flex-end;
       min-height: 126px;
       height: 126px;
       padding-top: 24px;
       padding-bottom: 6px;
+      padding-left: 24px;
+      padding-right: 24px;
       gap: 8px;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(212, 175, 55, 0.2) transparent;
+      box-sizing: border-box;
     }
     #human-hand::-webkit-scrollbar {
       height: 4px;
@@ -377,13 +392,19 @@
       .tslot { width: 54px; min-height: 76px; }
       .pile-stack { width: 54px; height: 76px; }
       .hand-fan > * { margin-inline-end: -22px; }
-      #human-hand {
-        min-height: 106px;
-        height: 106px;
-        padding-top: 22px;
-        padding-bottom: 6px;
-        gap: 6px;
-      }
+       #human-hand {
+         min-height: 106px;
+         height: 106px;
+       }
+       .hand-inner {
+         min-height: 106px;
+         height: 106px;
+         padding-top: 22px;
+         padding-bottom: 6px;
+         padding-left: 20px;
+         padding-right: 20px;
+         gap: 6px;
+       }
       .table-arena { min-height: 650px; border-radius: 32px; overflow: visible; }
       .table-seat { width: 44vw; min-width: 148px; padding: 8px; border-radius: 14px; }
       .table-center { width: 210px; top: 38% !important; }
@@ -1640,11 +1661,19 @@
       // ═══════════════════════════════════════════
       //  CARD HTML RENDER GENERATORS
       // ═══════════════════════════════════════════
-      function cBack(playable, isSelected) {
+      function cBack(playable, isSelected, overlayText = '') {
         let cls = 'card card-back';
         if (playable) cls += ' card-play';
         if (isSelected) cls += ' card-sel';
-        return '<div class="' + cls + '"><div class="card-back-pat"></div></div>';
+        
+        let overlayHtml = '';
+        if (overlayText) {
+          overlayHtml = '<div class="absolute inset-0 flex items-center justify-center bg-slate-950/75 backdrop-blur-[1px] rounded-[inherit] z-10 border border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.25)]">' +
+            '<span class="text-[11px] sm:text-lg font-black text-amber-400 drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.9)] select-none">' + overlayText + '</span>' +
+          '</div>';
+        }
+        
+        return '<div class="' + cls + '">' + overlayHtml + '<div class="card-back-pat"></div></div>';
       }
 
       function cFace(c, isSelected, playable, isOnPile = false) {
@@ -1874,10 +1903,28 @@
         return ['seat-right', 'seat-top', 'seat-left'][displayIdx] || 'seat-top';
       }
 
+      function getOpponentHandLimit() {
+        const w = window.innerWidth;
+        if (w <= 640) return 5;
+        if (w < 800) return 4;
+        if (w < 970) return 5;
+        return 6;
+      }
+
       function renderOpponent(player, idx, isTurn, seatClass) {
+        const limit = getOpponentHandLimit();
         let handHtml = '';
-        for (let i = 0; i < player.handCount; i++) {
-          handHtml += '<div>' + cBack(false) + '</div>';
+        if (player.handCount > limit) {
+          const showCount = limit;
+          const extraCount = player.handCount - limit + 1;
+          for (let i = 0; i < showCount - 1; i++) {
+            handHtml += '<div>' + cBack(false) + '</div>';
+          }
+          handHtml += '<div>' + cBack(false, false, '+' + extraCount) + '</div>';
+        } else {
+          for (let i = 0; i < player.handCount; i++) {
+            handHtml += '<div>' + cBack(false) + '</div>';
+          }
         }
 
         let tableHtml = '';
@@ -2051,7 +2098,7 @@
           const wrapperClass = isSelected ? 'relative z-30' : 'relative';
           myHandHtml += '<div data-hand="' + i + '" class="' + wrapperClass + '">' + cFace(c, isSelected, isPlayable) + '</div>';
         }
-        el('human-hand').innerHTML = myHandHtml;
+        el('human-hand').innerHTML = '<div class="hand-inner">' + myHandHtml + '</div>';
 
         // --- Controls Button States ---
         el('play-btn').classList.add('hidden');
@@ -2196,6 +2243,10 @@
 
       // Connect socket on load to receive open rooms list
       connectSocket();
+
+      window.addEventListener('resize', () => {
+        if (G) render();
+      });
 
     })();
   </script>
