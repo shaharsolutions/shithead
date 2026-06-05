@@ -150,13 +150,21 @@
 
     /* ===== ZONES ===== */
     .game-zone {
-      background: rgba(10, 15, 30, 0.45);
-      backdrop-filter: blur(35px) saturate(180%);
-      -webkit-backdrop-filter: blur(35px) saturate(180%);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 24px; padding: 18px;
       transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255,255,255,0.05);
+    }
+    .game-zone::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: rgba(10, 15, 30, 0.45);
+      backdrop-filter: blur(35px) saturate(180%);
+      -webkit-backdrop-filter: blur(35px) saturate(180%);
+      z-index: -1;
+      pointer-events: none;
     }
     .zone-glow {
       border-color: rgba(34, 211, 238, 0.4);
@@ -332,6 +340,8 @@
     /* ===== HUMAN HAND SCROLLABLE ===== */
     #human-hand {
       display: flex !important;
+      width: 100%;
+      max-width: 100%;
       justify-content: center;
       justify-content: safe center;
       align-items: flex-end;
