@@ -219,6 +219,13 @@ function chk4(room) {
   return t.every(c => c.rank === t[0].rank);
 }
 
+function validatePlayIndices(indices, maxLength) {
+  if (!Array.isArray(indices) || indices.length === 0) return null;
+  if (!indices.every(idx => Number.isInteger(idx) && idx >= 0 && idx < maxLength)) return null;
+  if (new Set(indices).size !== indices.length) return null;
+  return indices;
+}
+
 function burnPile(room) {
   room.burned.push(...room.discardPile);
   room.discardPile = [];
@@ -628,15 +635,20 @@ io.on('connection', (socket) => {
 
     const player = activeRoom.players[playerIdx];
     const src = pSrc(player, activeRoom.deck.length);
+    const maxLength = src === 'hand' ? player.hand.length : player.ts.length;
+    const selectedIndices = validatePlayIndices(indices, maxLength);
+    if (!selectedIndices) {
+      return socket.emit('error-msg', 'בחירת הקלפים אינה תקינה.');
+    }
     let isInterjection = false;
 
     if (activeRoom.turnIdx !== playerIdx) {
       if (activeRoom.discardPile.length === 0) {
         let cards = [];
         if (src === 'hand') {
-          cards = indices.map(idx => player.hand[idx]);
+          cards = selectedIndices.map(idx => player.hand[idx]);
         } else if (src === 'faceup') {
-          cards = indices.map(idx => player.ts[idx].faceup);
+          cards = selectedIndices.map(idx => player.ts[idx].faceup);
         }
         if (cards.length && cards.every(c => c && c.rank === 4)) {
           isInterjection = true;
@@ -657,8 +669,8 @@ io.on('connection', (socket) => {
     }
 
     if (src === 'hand') {
-      const cards = indices.map(idx => player.hand[idx]);
-      if (!cards.length || !cards.every(c => c.rank === cards[0].rank)) {
+      const cards = selectedIndices.map(idx => player.hand[idx]);
+      if (!cards.length || cards.some(c => !c) || !cards.every(c => c.rank === cards[0].rank)) {
         return socket.emit('error-msg', 'בחירת הקלפים אינה תקינה.');
       }
       if (!canPlay(activeRoom, cards[0])) {
@@ -666,13 +678,13 @@ io.on('connection', (socket) => {
       }
 
       // Valid play! Remove from hand. Sort indices descending to avoid shifting issues
-      const sortedIdxs = [...indices].sort((a, b) => b - a);
+      const sortedIdxs = [...selectedIndices].sort((a, b) => b - a);
       sortedIdxs.forEach(idx => player.hand.splice(idx, 1));
 
       // Execute play
       executePlayState(activeRoom, player, cards);
     } else if (src === 'faceup') {
-      const cards = indices.map(idx => player.ts[idx].faceup);
+      const cards = selectedIndices.map(idx => player.ts[idx].faceup);
       if (!cards.length || cards.some(c => c === null)) return socket.emit('error-msg', 'בחירת הקלפים אינה תקינה.');
 
       const allSameRank = cards.every(c => c.rank === cards[0].rank);
@@ -682,14 +694,14 @@ io.on('connection', (socket) => {
       }
 
       // Valid play! Remove from faceup table slots
-      indices.forEach(idx => {
+      selectedIndices.forEach(idx => {
         player.ts[idx].faceup = null;
       });
       executePlayState(activeRoom, player, cards);
     } else if (src === 'facedown') {
-      if (indices.length !== 1) return socket.emit('error-msg', 'במשחק עיוור עליך לבחור קלף אחד בכל פעם.');
+      if (selectedIndices.length !== 1) return socket.emit('error-msg', 'במשחק עיוור עליך לבחור קלף אחד בכל פעם.');
 
-      const idx = indices[0];
+      const idx = selectedIndices[0];
       const card = player.ts[idx].facedown;
       if (!card) return socket.emit('error-msg', 'אין קלף בסלוט הנבחר.');
 

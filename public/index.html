@@ -28,6 +28,11 @@
   <meta property="twitter:title" content="שיטהד אונליין – משחק קלפים בזמן אמת">
   <meta property="twitter:description" content="משחק קלפים אסטרטגי וטקטי בזמן אמת מול חברים או מול המחשב. פותח ע״י שחר פתרונות דיגיטליים.">
   <meta property="twitter:image" content="https://shithead-3g5n.onrender.com/og-image.png">
+  <script>
+    if (window.location.protocol === 'file:') {
+      window.location.replace('http://localhost:3000/');
+    }
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1586,18 +1591,28 @@
           return; // Can only select/play cards from current source
         }
 
-        if (resolvedSrc === 'hand') {
-          const card = myInfo.hand[idx];
+        if (resolvedSrc === 'hand' || resolvedSrc === 'faceup') {
+          const card = resolvedSrc === 'hand' ? myInfo.hand[idx] : myInfo.ts[idx]?.faceup;
           if (!card) return;
-          socket.emit('play-cards', { indices: [idx] });
-          sel = [];
-          selSrc = null;
-        } else if (resolvedSrc === 'faceup') {
-          const slot = myInfo.ts[idx];
-          if (!slot || slot.faceup === null) return;
-          socket.emit('play-cards', { indices: [idx] });
-          sel = [];
-          selSrc = null;
+
+          if (selSrc !== resolvedSrc) {
+            selSrc = resolvedSrc;
+            sel = [idx];
+          } else if (sel.includes(idx)) {
+            sel = sel.filter(selectedIdx => selectedIdx !== idx);
+            if (!sel.length) selSrc = null;
+          } else {
+            const firstSelectedCard = resolvedSrc === 'hand'
+              ? myInfo.hand[sel[0]]
+              : myInfo.ts[sel[0]]?.faceup;
+
+            if (firstSelectedCard && firstSelectedCard.rank === card.rank) {
+              sel.push(idx);
+            } else {
+              sel = [idx];
+            }
+          }
+          Snd.play('click');
         } else if (resolvedSrc === 'facedown') {
           const slot = myInfo.ts[idx];
           if (!slot || !slot.hasFacedown) return;
@@ -2051,7 +2066,7 @@
         } else if (myTurn) {
           const activeSrc = getActivePlayerSource(myInfo);
           if (activeSrc === 'faceup') {
-            message = 'התור שלך! לחץ על קלף גלוי מהשולחן כדי לשחק 🃏';
+            message = 'בחר קלף אחד או יותר מאותו מספר ולחץ על כפתור ההורדה 🃏';
           } else if (activeSrc === 'facedown') {
             message = 'התור שלך! לחץ על קלף מוסתר מהשולחן באופן עיוור 💥 (נסה את מזלך!)';
           } else {
@@ -2059,7 +2074,7 @@
             if (!hasLegalPlay && G.discardCount > 0) {
               message = 'אין קלף חוקי ביד. קח את הערימה 📥';
             } else {
-              message = 'התור שלך! לחץ על קלף מהיד כדי לשחק 🃏';
+              message = 'בחר קלף אחד או יותר מאותו מספר ולחץ על כפתור ההורדה 🃏';
             }
           }
         } else {
@@ -2101,7 +2116,19 @@
         el('human-hand').innerHTML = '<div class="hand-inner">' + myHandHtml + '</div>';
 
         // --- Controls Button States ---
-        el('play-btn').classList.add('hidden');
+        const playBtn = el('play-btn');
+        const selectedCard = sel.length
+          ? (selSrc === 'hand' ? myInfo.hand[sel[0]] : myInfo.ts[sel[0]]?.faceup)
+          : null;
+        const canInterjectWithSelection = !myTurn && G.discardCount === 0 && selectedCard?.rank === 4;
+        const canShowPlayButton = G.phase === 'play' && myActiveSrc !== 'facedown' && (myTurn || canInterjectWithSelection);
+        playBtn.classList.toggle('hidden', !canShowPlayButton);
+        playBtn.disabled = !sel.length || (!myTurn && !canInterjectWithSelection);
+        playBtn.textContent = sel.length === 0
+          ? 'בחר קלפים'
+          : sel.length === 1
+            ? 'הורד קלף'
+            : `הורד ${sel.length} קלפים`;
 
         el('pick-btn').classList.toggle('hidden', G.phase !== 'play');
         const hasLegalPlay = myActiveSrc === 'hand' 
