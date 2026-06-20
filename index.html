@@ -944,6 +944,27 @@
 
   </div>
 
+  <!-- Firebase App & Analytics SDKs from CDN (ES Modules) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAl0OIRMFh8W4H6EtCY_NRBbkO80YpBfNQ",
+      authDomain: "shithead-d1aad.firebaseapp.com",
+      projectId: "shithead-d1aad",
+      storageBucket: "shithead-d1aad.firebasestorage.app",
+      messagingSenderId: "999225193371",
+      appId: "1:999225193371:web:5f0233c502a6c9643fa73e",
+      measurementId: "G-22M357GWM7"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+  </script>
+
   <!-- Socket.IO library from CDN -->
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script>
@@ -1311,8 +1332,10 @@
       // Connect to websocket server
       function connectSocket() {
         if (socket) return;
-        // If opened as local file, connect explicitly to the localhost server
-        const socketUrl = window.location.protocol === 'file:' ? 'http://localhost:3000' : undefined;
+        // If hosted on Firebase Hosting, connect to the Render backend server. If local file, connect to localhost.
+        const socketUrl = (window.location.hostname.endsWith('firebaseapp.com') || window.location.hostname.endsWith('web.app'))
+          ? 'https://shithead-3g5n.onrender.com'
+          : (window.location.protocol === 'file:' ? 'http://localhost:3000' : undefined);
         socket = io(socketUrl, {
           transports: ['websocket']
         });

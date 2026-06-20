@@ -3,3 +3,5 @@ node_modules/
 *.log
 npm-debug.log*
 .system_generated/
+stats.json
+.firebase/

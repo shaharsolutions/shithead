@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
@@ -71,15 +72,60 @@ const stats = {
   historyLog: []
 };
 
+const STATS_FILE = path.join(__dirname, 'stats.json');
+
+function saveStats() {
+  try {
+    const dataToSave = {
+      totalConnections: stats.totalConnections,
+      uniqueUsers: Array.from(stats.uniqueUsers),
+      totalGamesCount: stats.totalGamesCount,
+      computerGamesCount: stats.computerGamesCount,
+      friendGamesCount: stats.friendGamesCount,
+      historyLog: stats.historyLog
+    };
+    fs.writeFileSync(STATS_FILE, JSON.stringify(dataToSave, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Failed to save stats to file:', err);
+  }
+}
+
+function loadStats() {
+  try {
+    if (fs.existsSync(STATS_FILE)) {
+      const data = fs.readFileSync(STATS_FILE, 'utf8');
+      const loaded = JSON.parse(data);
+      stats.totalConnections = loaded.totalConnections || 0;
+      stats.uniqueUsers = new Set(loaded.uniqueUsers || []);
+      stats.totalGamesCount = loaded.totalGamesCount || 0;
+      stats.computerGamesCount = loaded.computerGamesCount || 0;
+      stats.friendGamesCount = loaded.friendGamesCount || 0;
+      stats.historyLog = loaded.historyLog || [];
+      console.log('Successfully loaded stats from file. Total logs:', stats.historyLog.length);
+    } else {
+      saveStats();
+      console.log('Created initial stats file.');
+    }
+  } catch (err) {
+    console.error('Failed to load stats from file:', err);
+  }
+}
+
+// Load persisted statistics on startup
+loadStats();
+
 function addLog(type, message) {
   stats.historyLog.push({
     timestamp: new Date().toISOString(),
     type,
     message
   });
-  if (stats.historyLog.length > 200) {
-    stats.historyLog.shift();
-  }
+  
+  // Prune logs older than 35 days to prevent file size from growing infinitely
+  const thirtyFiveDaysAgo = Date.now() - 35 * 24 * 60 * 60 * 1000;
+  stats.historyLog = stats.historyLog.filter(log => new Date(log.timestamp).getTime() > thirtyFiveDaysAgo);
+
+  saveStats();
   broadcastAdminStats();
 }
 
@@ -468,13 +514,27 @@ function broadcastOpenRooms() {
   io.to('lobby').emit('open-rooms-list', getOpenRooms());
 }
 
+function getDeviceType(userAgent) {
+  if (!userAgent) return 'מחשב';
+  const ua = userAgent.toLowerCase();
+  if (/(ipad|tablet|(android(?!.*mobile))|(windows(?!.*phone)(.*touch))|kindle|playbook|silk|(puffin(?!.*mobile)))/.test(ua)) {
+    return 'טאבלט';
+  }
+  if (/(mobi|ipod|phone|blackberry|opera mini|fennec|minimo|symbian|psp|nintendo ds|archos|webos)/.test(ua)) {
+    return 'נייד';
+  }
+  return 'מחשב';
+}
+
 // ═══════════════════════════════════════════
 //  SOCKET.IO EVENT HANDLER
 // ═══════════════════════════════════════════
 io.on('connection', (socket) => {
   console.log(`Connected: ${socket.id}`);
   stats.totalConnections++;
-  addLog('connection', `מכשיר חדש התחבר (מזהה: ${socket.id})`);
+  const userAgent = socket.handshake.headers['user-agent'] || '';
+  const deviceType = getDeviceType(userAgent);
+  addLog('connection', `מכשיר חדש התחבר מסוג ${deviceType} (מזהה: ${socket.id})`);
 
   socket.on('admin_register', ({ password } = {}) => {
     if (password !== '1627') {
@@ -794,7 +854,9 @@ io.on('connection', (socket) => {
   // 9. Disconnect handling
   socket.on('disconnect', () => {
     console.log(`Disconnected: ${socket.id}`);
-    addLog('disconnection', `מכשיר התנתק (מזהה: ${socket.id})`);
+    const userAgent = socket.handshake.headers['user-agent'] || '';
+    const deviceType = getDeviceType(userAgent);
+    addLog('disconnection', `מכשיר התנתק מסוג ${deviceType} (מזהה: ${socket.id})`);
     
     for (const [roomId, room] of rooms.entries()) {
       const idx = room.players.findIndex(p => p.id === socket.id);
