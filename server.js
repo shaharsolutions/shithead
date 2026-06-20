@@ -80,29 +80,34 @@ const { getFirestore } = require('firebase-admin/firestore');
 let db = null;
 let useFirestore = false;
 
-try {
-  // 1. Try to initialize using Application Default Credentials (ADC) - works on Cloud Run
-  admin.initializeApp();
-  db = getFirestore();
-  useFirestore = true;
-  console.log('Firebase Admin SDK initialized using Application Default Credentials.');
-} catch (e) {
-  // 2. If ADC fails (e.g. running locally), check if we have a service account JSON env variable
-  if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-    try {
-      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-      });
-      db = getFirestore();
-      useFirestore = true;
-      console.log('Firebase Admin SDK initialized using FIREBASE_SERVICE_ACCOUNT_JSON environment variable.');
-    } catch (err) {
-      console.error('Failed to initialize Firebase Admin with service account JSON env variable:', err);
-    }
-  } else {
-    console.warn('Firebase Admin default credentials not found. Falling back to local stats.json file persistence.', e.message);
+const isGoogleCloud = !!process.env.K_SERVICE || !!process.env.GOOGLE_CLOUD_PROJECT;
+const hasGoogleCreds = !!process.env.GOOGLE_APPLICATION_CREDENTIALS;
+const hasServiceAccount = !!process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+
+if (isGoogleCloud || hasGoogleCreds) {
+  try {
+    // 1. Try to initialize using Application Default Credentials (ADC) - works on Cloud Run
+    admin.initializeApp();
+    db = getFirestore();
+    useFirestore = true;
+    console.log('Firebase Admin SDK initialized using Application Default Credentials.');
+  } catch (e) {
+    console.error('Failed to initialize Firebase Admin with default credentials:', e);
   }
+} else if (hasServiceAccount) {
+  try {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+    db = getFirestore();
+    useFirestore = true;
+    console.log('Firebase Admin SDK initialized using FIREBASE_SERVICE_ACCOUNT_JSON environment variable.');
+  } catch (err) {
+    console.error('Failed to initialize Firebase Admin with service account JSON env variable:', err);
+  }
+} else {
+  console.warn('Firebase Admin credentials not found. Falling back to local stats.json file persistence.');
 }
 
 async function saveStats() {
@@ -507,6 +512,7 @@ function choosePlayableGroup(cards, room) {
 
 function playBotTurn(room) {
   if (!room || room.phase !== 'play') return;
+  room.lastActiveAt = Date.now();
   const bot = room.players[room.turnIdx];
   if (!bot || !bot.isBot) return;
 
@@ -661,7 +667,8 @@ io.on('connection', (socket) => {
       seven: false,
       turnIdx: 0,
       phase: 'lobby',
-      winners: []
+      winners: [],
+      lastActiveAt: Date.now()
     };
     rooms.set(roomId, room);
     socket.leave('lobby');
@@ -702,6 +709,7 @@ io.on('connection', (socket) => {
     }
 
     room.players.push(createPlayer(socket.id, name.trim()));
+    room.lastActiveAt = Date.now();
     socket.leave('lobby');
     socket.join(id);
     console.log(`${name} joined room ${id}`);
@@ -724,6 +732,8 @@ io.on('connection', (socket) => {
     const { room: activeRoom, player } = getRoomForSocket(socket.id);
 
     if (!activeRoom || activeRoom.phase !== 'swap' || player.ready) return;
+
+    activeRoom.lastActiveAt = Date.now();
 
     if (slotIdx >= 0 && slotIdx < 3) {
       const tableCard = player.ts[slotIdx].faceup;
@@ -754,6 +764,8 @@ io.on('connection', (socket) => {
     const { room: activeRoom, player } = getRoomForSocket(socket.id);
 
     if (!activeRoom || activeRoom.phase !== 'swap') return;
+
+    activeRoom.lastActiveAt = Date.now();
 
     const placedCount = player.ts.filter(s => s.faceup !== null).length;
     if (placedCount !== 3) {
@@ -786,6 +798,8 @@ io.on('connection', (socket) => {
     const { room: activeRoom, playerIdx } = getRoomForSocket(socket.id);
 
     if (!activeRoom || activeRoom.phase !== 'play') return;
+
+    activeRoom.lastActiveAt = Date.now();
 
     const player = activeRoom.players[playerIdx];
     const src = pSrc(player, activeRoom.deck.length);
@@ -901,6 +915,8 @@ io.on('connection', (socket) => {
       return socket.emit('error-msg', 'זה לא התור שלך.');
     }
 
+    activeRoom.lastActiveAt = Date.now();
+
     if (!activeRoom.discardPile.length) return;
 
     const player = activeRoom.players[playerIdx];
@@ -933,6 +949,8 @@ io.on('connection', (socket) => {
 
     if (!activeRoom || activeRoom.phase !== 'over') return;
 
+    activeRoom.lastActiveAt = Date.now();
+
     // Reset game and deal again
     dealGame(activeRoom);
     activeRoom.players.filter(p => p.isBot).forEach(p => { p.ready = true; });
@@ -958,6 +976,7 @@ io.on('connection', (socket) => {
         // Player disconnected from a room!
         const leaver = room.players[idx];
         room.players.splice(idx, 1);
+        room.lastActiveAt = Date.now();
         
         if (room.players.filter(p => !p.isBot).length === 0) {
           // Room empty, delete it
@@ -981,6 +1000,7 @@ io.on('connection', (socket) => {
 
 // Helper play logic
 function executePlayState(room, player, cards) {
+  room.lastActiveAt = Date.now();
   cards.forEach(c => room.discardPile.push(c));
   let extraTurn = false;
   const r = cards[0].rank;
@@ -1091,6 +1111,51 @@ const SS = { spades:'♠', hearts:'♥', diamonds:'♦', clubs:'♣' };
 function getCardString(c) {
   return RD[c.rank] + SS[c.suit];
 }
+
+// Periodically check for inactive rooms (inactive for more than 2 minutes)
+setInterval(() => {
+  const now = Date.now();
+  const INACTIVITY_TIMEOUT = 2 * 60 * 1000; // 2 minutes
+  const roomsToDelete = [];
+
+  for (const [roomId, room] of rooms.entries()) {
+    const lastActive = room.lastActiveAt || now;
+    if (now - lastActive > INACTIVITY_TIMEOUT) {
+      roomsToDelete.push({ roomId, room });
+    }
+  }
+
+  for (const { roomId, room } of roomsToDelete) {
+    console.log(`Closing room ${roomId} due to inactivity (inactive for ${((now - (room.lastActiveAt || now)) / 1000).toFixed(1)}s)`);
+    
+    // Notify all players in the room
+    io.to(roomId).emit('opponent-disconnected', {
+      msg: 'החדר נסגר אוטומטית עקב חוסר פעילות.'
+    });
+
+    // Stats logging
+    addLog('room_closed_inactivity', `חדר ${roomId} נסגר אוטומטית עקב חוסר פעילות`);
+
+    // Make sockets in the room leave the socket.io room
+    const roomSockets = io.sockets.adapter.rooms.get(roomId);
+    if (roomSockets) {
+      for (const socketId of roomSockets) {
+        const socket = io.sockets.sockets.get(socketId);
+        if (socket) {
+          socket.leave(roomId);
+          socket.join('lobby');
+        }
+      }
+    }
+
+    // Delete the room
+    rooms.delete(roomId);
+  }
+
+  if (roomsToDelete.length > 0) {
+    broadcastOpenRooms();
+  }
+}, 10000); // Check every 10 seconds
 
 // Start Server
 server.listen(PORT, () => {
