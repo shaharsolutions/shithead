@@ -3,6 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
+const admin = require('firebase-admin');
 
 const app = express();
 const server = http.createServer(app);
@@ -74,58 +75,149 @@ const stats = {
 
 const STATS_FILE = path.join(__dirname, 'stats.json');
 
-function saveStats() {
-  try {
-    const dataToSave = {
-      totalConnections: stats.totalConnections,
-      uniqueUsers: Array.from(stats.uniqueUsers),
-      totalGamesCount: stats.totalGamesCount,
-      computerGamesCount: stats.computerGamesCount,
-      friendGamesCount: stats.friendGamesCount,
-      historyLog: stats.historyLog
-    };
-    fs.writeFileSync(STATS_FILE, JSON.stringify(dataToSave, null, 2), 'utf8');
-  } catch (err) {
-    console.error('Failed to save stats to file:', err);
+let db = null;
+let useFirestore = false;
+
+try {
+  // 1. Try to initialize using Application Default Credentials (ADC) - works on Cloud Run
+  admin.initializeApp();
+  db = admin.firestore();
+  useFirestore = true;
+  console.log('Firebase Admin SDK initialized using Application Default Credentials.');
+} catch (e) {
+  // 2. If ADC fails (e.g. running locally), check if we have a service account JSON env variable
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+    try {
+      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount)
+      });
+      db = admin.firestore();
+      useFirestore = true;
+      console.log('Firebase Admin SDK initialized using FIREBASE_SERVICE_ACCOUNT_JSON environment variable.');
+    } catch (err) {
+      console.error('Failed to initialize Firebase Admin with service account JSON env variable:', err);
+    }
+  } else {
+    console.warn('Firebase Admin default credentials not found. Falling back to local stats.json file persistence.', e.message);
   }
 }
 
-function loadStats() {
-  try {
-    if (fs.existsSync(STATS_FILE)) {
-      const data = fs.readFileSync(STATS_FILE, 'utf8');
-      const loaded = JSON.parse(data);
-      stats.totalConnections = loaded.totalConnections || 0;
-      stats.uniqueUsers = new Set(loaded.uniqueUsers || []);
-      stats.totalGamesCount = loaded.totalGamesCount || 0;
-      stats.computerGamesCount = loaded.computerGamesCount || 0;
-      stats.friendGamesCount = loaded.friendGamesCount || 0;
-      stats.historyLog = loaded.historyLog || [];
-      console.log('Successfully loaded stats from file. Total logs:', stats.historyLog.length);
-    } else {
-      saveStats();
-      console.log('Created initial stats file.');
+async function saveStats() {
+  if (useFirestore) {
+    try {
+      await db.collection('metadata').doc('stats').set({
+        totalConnections: stats.totalConnections,
+        uniqueUsers: Array.from(stats.uniqueUsers),
+        totalGamesCount: stats.totalGamesCount,
+        computerGamesCount: stats.computerGamesCount,
+        friendGamesCount: stats.friendGamesCount,
+        lastUpdated: new Date().toISOString()
+      }, { merge: true });
+    } catch (err) {
+      console.error('Failed to save stats to Firestore:', err);
     }
-  } catch (err) {
-    console.error('Failed to load stats from file:', err);
+  } else {
+    try {
+      const dataToSave = {
+        totalConnections: stats.totalConnections,
+        uniqueUsers: Array.from(stats.uniqueUsers),
+        totalGamesCount: stats.totalGamesCount,
+        computerGamesCount: stats.computerGamesCount,
+        friendGamesCount: stats.friendGamesCount,
+        historyLog: stats.historyLog
+      };
+      fs.writeFileSync(STATS_FILE, JSON.stringify(dataToSave, null, 2), 'utf8');
+    } catch (err) {
+      console.error('Failed to save stats to file:', err);
+    }
+  }
+}
+
+async function loadStats() {
+  if (useFirestore) {
+    try {
+      const statsDoc = await db.collection('metadata').doc('stats').get();
+      if (statsDoc.exists) {
+        const data = statsDoc.data();
+        stats.totalConnections = data.totalConnections || 0;
+        stats.uniqueUsers = new Set(data.uniqueUsers || []);
+        stats.totalGamesCount = data.totalGamesCount || 0;
+        stats.computerGamesCount = data.computerGamesCount || 0;
+        stats.friendGamesCount = data.friendGamesCount || 0;
+        console.log('Successfully loaded stats from Firestore metadata document.');
+      } else {
+        console.log('Firestore stats document not found. Creating it.');
+        await saveStats();
+      }
+
+      // Load last 2000 logs ordered by timestamp descending, then reverse to oldest first
+      const logsSnapshot = await db.collection('logs')
+        .orderBy('timestamp', 'desc')
+        .limit(2000)
+        .get();
+      
+      const loadedLogs = [];
+      logsSnapshot.forEach(doc => {
+        loadedLogs.push(doc.data());
+      });
+      
+      stats.historyLog = loadedLogs.reverse();
+      console.log('Successfully loaded logs from Firestore. Total logs:', stats.historyLog.length);
+    } catch (err) {
+      console.error('Failed to load stats/logs from Firestore:', err);
+    }
+  } else {
+    try {
+      if (fs.existsSync(STATS_FILE)) {
+        const data = fs.readFileSync(STATS_FILE, 'utf8');
+        const loaded = JSON.parse(data);
+        stats.totalConnections = loaded.totalConnections || 0;
+        stats.uniqueUsers = new Set(loaded.uniqueUsers || []);
+        stats.totalGamesCount = loaded.totalGamesCount || 0;
+        stats.computerGamesCount = loaded.computerGamesCount || 0;
+        stats.friendGamesCount = loaded.friendGamesCount || 0;
+        stats.historyLog = loaded.historyLog || [];
+        console.log('Successfully loaded stats from file. Total logs:', stats.historyLog.length);
+      } else {
+        saveStats();
+        console.log('Created initial stats file.');
+      }
+    } catch (err) {
+      console.error('Failed to load stats from file:', err);
+    }
   }
 }
 
 // Load persisted statistics on startup
 loadStats();
 
-function addLog(type, message) {
-  stats.historyLog.push({
+async function addLog(type, message) {
+  const logEntry = {
     timestamp: new Date().toISOString(),
     type,
     message
-  });
-  
-  // Prune logs older than 35 days to prevent file size from growing infinitely
-  const thirtyFiveDaysAgo = Date.now() - 35 * 24 * 60 * 60 * 1000;
-  stats.historyLog = stats.historyLog.filter(log => new Date(log.timestamp).getTime() > thirtyFiveDaysAgo);
+  };
 
-  saveStats();
+  stats.historyLog.push(logEntry);
+
+  if (stats.historyLog.length > 2000) {
+    stats.historyLog.shift();
+  }
+
+  if (useFirestore) {
+    try {
+      await db.collection('logs').add(logEntry);
+      await saveStats();
+    } catch (err) {
+      console.error('Failed to save log to Firestore:', err);
+    }
+  } else {
+    const thirtyFiveDaysAgo = Date.now() - 35 * 24 * 60 * 60 * 1000;
+    stats.historyLog = stats.historyLog.filter(log => new Date(log.timestamp).getTime() > thirtyFiveDaysAgo);
+    saveStats();
+  }
+
   broadcastAdminStats();
 }
 
