@@ -75,13 +75,15 @@ const stats = {
 
 const STATS_FILE = path.join(__dirname, 'stats.json');
 
+const { getFirestore } = require('firebase-admin/firestore');
+
 let db = null;
 let useFirestore = false;
 
 try {
   // 1. Try to initialize using Application Default Credentials (ADC) - works on Cloud Run
   admin.initializeApp();
-  db = admin.firestore();
+  db = getFirestore();
   useFirestore = true;
   console.log('Firebase Admin SDK initialized using Application Default Credentials.');
 } catch (e) {
@@ -92,7 +94,7 @@ try {
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount)
       });
-      db = admin.firestore();
+      db = getFirestore();
       useFirestore = true;
       console.log('Firebase Admin SDK initialized using FIREBASE_SERVICE_ACCOUNT_JSON environment variable.');
     } catch (err) {
