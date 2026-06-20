@@ -440,9 +440,7 @@
     let latestServerData = null;
 
     function initAdminConnection(password) {
-      const socketUrl = (window.location.hostname.endsWith('firebaseapp.com') || window.location.hostname.endsWith('web.app'))
-        ? 'https://shithead-3g5n.onrender.com'
-        : undefined;
+      const socketUrl = window.location.protocol === 'file:' ? 'http://localhost:3000' : undefined;
 
       if (!socket) {
         // Initialize socket without connecting immediately

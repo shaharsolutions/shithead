@@ -1338,10 +1338,8 @@
       // Connect to websocket server
       function connectSocket() {
         if (socket) return;
-        // If hosted on Firebase Hosting, connect to the Render backend server. If local file, connect to localhost.
-        const socketUrl = (window.location.hostname.endsWith('firebaseapp.com') || window.location.hostname.endsWith('web.app'))
-          ? 'https://shithead-3g5n.onrender.com'
-          : (window.location.protocol === 'file:' ? 'http://localhost:3000' : undefined);
+        // If opened as local file, connect explicitly to the localhost server. Otherwise, connect to same-origin (proxied by Hosting).
+        const socketUrl = window.location.protocol === 'file:' ? 'http://localhost:3000' : undefined;
         socket = io(socketUrl, {
           transports: ['websocket']
         });

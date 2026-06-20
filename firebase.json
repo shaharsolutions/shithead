@@ -8,6 +8,13 @@
     ],
     "rewrites": [
       {
+        "source": "/socket.io/**",
+        "run": {
+          "serviceId": "shithead-server",
+          "region": "us-central1"
+        }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
