@@ -1332,10 +1332,12 @@
       // Connect to websocket server
       function connectSocket() {
         if (socket) return;
-        // If opened as local file, connect explicitly to the localhost server. Otherwise, connect to same-origin (proxied by Hosting).
-        const socketUrl = window.location.protocol === 'file:' ? 'http://localhost:3000' : undefined;
+        // If hosted on Firebase, connect directly to Cloud Run backend. Otherwise, localhost or same-origin.
+        const socketUrl = (window.location.hostname.endsWith('firebaseapp.com') || window.location.hostname.endsWith('web.app'))
+          ? 'https://shithead-server-999225193371.us-central1.run.app'
+          : (window.location.protocol === 'file:' ? 'http://localhost:3000' : undefined);
         socket = io(socketUrl, {
-          transports: ['websocket']
+          transports: ['polling', 'websocket']
         });
 
         // ═══════════════════════════════════════════
