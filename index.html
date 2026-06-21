@@ -748,96 +748,140 @@
     ═══════════════════════════════════════════ -->
     <div id="lobby-view" class="flex-1 flex items-center justify-center my-8 relative overflow-visible">
       
-      <!-- Subtle modern background glow -->
-      <div class="absolute w-[300px] h-[300px] rounded-full bg-indigo-500/5 blur-[100px] -z-10 pointer-events-none"></div>
+      <!-- Floating Background Cards (silhouettes for depth) -->
+      <div class="absolute -top-10 -left-10 w-24 h-36 card card-back float-card-1 opacity-20 pointer-events-none hidden lg:flex items-center justify-center">
+        <div class="card-back-pat"></div>
+      </div>
+      <div class="absolute -bottom-12 -right-12 w-24 h-36 card card-back float-card-2 opacity-25 pointer-events-none hidden lg:flex items-center justify-center">
+        <div class="card-back-pat"></div>
+      </div>
 
-      <div class="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 backdrop-blur-md shadow-xl flex flex-col gap-6 relative">
+      <!-- Modern background glow -->
+      <div class="absolute w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-[120px] -z-10 pointer-events-none"></div>
+
+      <!-- Main Container (Dual Panel on Large Screens) -->
+      <div class="w-full max-w-4xl bg-slate-900/40 border border-white/10 rounded-3xl backdrop-blur-xl shadow-2xl flex flex-col lg:flex-row overflow-hidden relative transition-all duration-300">
+        
         <!-- Rules Button -->
-        <button id="rules-btn" class="absolute top-4 right-4 w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 flex items-center justify-center hover:bg-slate-700 hover:text-white transition duration-200 z-20" title="חוקי המשחק">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <button id="rules-btn" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-950/60 border border-slate-800/80 text-slate-400 flex items-center justify-center hover:bg-slate-800 hover:text-white transition duration-200 z-30 shadow-lg" title="חוקי המשחק">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </button>
-        <!-- Royal Crest & Header -->
-        <div class="text-center relative z-10 flex flex-col items-center">
-          <!-- Premium Card Logo -->
-          <div class="w-40 h-40 rounded-[2rem] bg-slate-950/80 flex items-center justify-center border border-slate-800/80 shadow-[0_0_25px_rgba(212,175,55,0.18)] mb-5 overflow-hidden select-none">
-            <img src="/favicon.png" alt="לוגו שיטהד אונליין" class="w-32 h-32 object-contain hover:scale-105 transition-transform duration-300 drop-shadow-[0_0_12px_rgba(212,175,55,0.25)]">
-          </div>
-          <h2 class="text-lg font-bold text-white tracking-tight">כניסה ללובי</h2>
-          <p class="text-xs text-slate-400 mt-1">הזן שם, בחר מצב משחק והצטרף לשולחן</p>
-        </div>
 
-        <!-- Name Input -->
-        <div class="flex flex-col gap-2 relative z-10">
-          <label for="player-name" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">השם שלך</label>
-          <div class="relative flex items-center">
-            <input type="text" id="player-name" placeholder="הכנס שם שחקן..." maxlength="12" class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition duration-200">
-            <button id="random-name-btn" class="absolute left-2 w-7 h-7 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-200 z-20" title="כינוי אקראי">🎲</button>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <!-- Game Mode Selector -->
-          <div class="flex flex-col gap-2 relative z-10">
-            <label for="game-mode" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">מצב משחק</label>
-            <div class="relative">
-              <select id="game-mode" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition duration-200 appearance-none cursor-pointer">
-                <option value="computer">💻 נגד המחשב</option>
-                <option value="online">👥 חדר עם חברים</option>
-              </select>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-          </div>
+        <!-- Right Panel: Visual Hero & Game Features (Order first on desktop) -->
+        <div class="w-full lg:w-1/2 bg-gradient-to-br from-slate-950 to-indigo-950/80 p-8 flex flex-col justify-center items-center relative overflow-hidden border-b lg:border-b-0 lg:border-l border-white/5 select-none">
+          <!-- Decorative subtle gradient overlays -->
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80 z-10"></div>
           
-          <!-- Player Count Selector -->
-          <div class="flex flex-col gap-2 relative z-10">
-            <label for="player-count" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">מספר שחקנים</label>
-            <div class="relative">
-              <select id="player-count" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition duration-200 appearance-none cursor-pointer">
-                <option value="2">2 שחקנים</option>
-                <option value="3">3 שחקנים</option>
-                <option value="4">4 שחקנים</option>
-              </select>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
-              </svg>
+          <img src="/lobby_hero.png" alt="שיטהד קלפים מיוחדים" class="w-72 h-72 object-contain relative z-20 animate-pulse duration-[8s] drop-shadow-[0_0_20px_rgba(6,182,212,0.15)] hover:scale-105 transition-transform duration-300">
+          
+          <!-- Features list -->
+          <div class="text-right mt-6 relative z-20 space-y-3 w-full max-w-sm px-2">
+            <h3 class="text-sm font-bold text-indigo-300 tracking-wide uppercase border-b border-indigo-500/20 pb-1 mb-2">תכונות המשחק:</h3>
+            
+            <div class="flex items-start gap-2.5 justify-end text-right">
+              <div class="text-xs text-slate-300 font-medium leading-relaxed">
+                <span class="font-bold text-white">קרבות אונליין בזמן אמת:</span> שחק נגד חברים או פתח חדר ציבורי.
+              </div>
+              <span class="text-base flex-shrink-0 mt-0.5">⚔️</span>
+            </div>
+
+            <div class="flex items-start gap-2.5 justify-end text-right">
+              <div class="text-xs text-slate-300 font-medium leading-relaxed">
+                <span class="font-bold text-white">מצב אימון מול המחשב:</span> שחק נגד בינה מלאכותית חכמה ומאתגרת.
+              </div>
+              <span class="text-base flex-shrink-0 mt-0.5">💻</span>
+            </div>
+
+            <div class="flex items-start gap-2.5 justify-end text-right">
+              <div class="text-xs text-slate-300 font-medium leading-relaxed">
+                <span class="font-bold text-white">קלפי כוח מיוחדים:</span> הפעלת קלפי הכוח החזקים ביותר (2, 3, 10).
+              </div>
+              <span class="text-base flex-shrink-0 mt-0.5">✨</span>
             </div>
           </div>
         </div>
 
-        <hr class="border-slate-800/60">
-
-        <!-- Action Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <!-- Create Room -->
-          <div class="flex flex-col gap-2 relative z-10">
-            <button id="create-btn" class="w-full py-3 rounded-xl font-bold text-sm bg-indigo-600 hover:bg-indigo-500 text-white shadow-md transition duration-200 hover:scale-[1.01] active:scale-95">התחל משחק 🎮</button>
-            <p class="text-[10px] text-slate-500 text-center">פתח חדר חדש או משחק מול מחשב</p>
+        <!-- Left Panel: Interactive Form -->
+        <div class="w-full lg:w-1/2 p-6 sm:p-8 flex flex-col justify-between gap-6 relative z-20 text-right">
+          <div class="text-center lg:text-right mt-2">
+            <h2 class="text-xl font-black text-white tracking-tight">כניסה ללובי</h2>
+            <p class="text-xs text-slate-400 mt-1">הזן שם, בחר מצב משחק והצטרף לשולחן</p>
           </div>
 
-          <!-- Join Room -->
+          <!-- Name Input -->
           <div class="flex flex-col gap-2 relative z-10">
-            <div class="flex gap-2">
-              <input type="text" id="room-code" placeholder="קוד" class="w-20 text-center uppercase font-bold text-sm bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition duration-200">
-              <button id="join-btn" class="flex-1 py-3 rounded-xl font-bold text-sm bg-slate-800 hover:bg-slate-700 text-white shadow-md transition duration-200 hover:scale-[1.01] active:scale-95">הצטרף לחדר 👥</button>
+            <label for="player-name" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">השם שלך</label>
+            <div class="relative flex items-center">
+              <input type="text" id="player-name" placeholder="הכנס שם שחקן..." maxlength="12" class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition duration-200">
+              <button id="random-name-btn" class="absolute left-2 w-7 h-7 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-200 z-20" title="כינוי אקראי">🎲</button>
             </div>
-            <p class="text-[10px] text-slate-500 text-center">הכנס קוד חדר בן 4 אותיות</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Game Mode Selector -->
+            <div class="flex flex-col gap-2 relative z-10">
+              <label for="game-mode" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">מצב משחק</label>
+              <div class="relative">
+                <select id="game-mode" class="w-full px-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition duration-200 appearance-none cursor-pointer">
+                  <option value="computer">💻 נגד המחשב</option>
+                  <option value="online">👥 חדר עם חברים</option>
+                </select>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+            
+            <!-- Player Count Selector -->
+            <div class="flex flex-col gap-2 relative z-10">
+              <label for="player-count" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">מספר שחקנים</label>
+              <div class="relative">
+                <select id="player-count" class="w-full px-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition duration-200 appearance-none cursor-pointer">
+                  <option value="2">2 שחקנים</option>
+                  <option value="3">3 שחקנים</option>
+                  <option value="4">4 שחקנים</option>
+                </select>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <hr class="border-slate-800/60">
+
+          <!-- Action Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <!-- Create Room -->
+            <div class="flex flex-col gap-2 relative z-10">
+              <button id="create-btn" class="w-full py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white shadow-md transition duration-200 hover:scale-[1.01] active:scale-95">התחל משחק 🎮</button>
+              <p class="text-[10px] text-slate-500 text-center">פתח חדר חדש או משחק מול מחשב</p>
+            </div>
+
+            <!-- Join Room -->
+            <div class="flex flex-col gap-2 relative z-10">
+              <div class="flex gap-2">
+                <input type="text" id="room-code" placeholder="קוד" class="w-20 text-center uppercase font-bold text-sm bg-slate-950/80 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition duration-200">
+                <button id="join-btn" class="flex-1 py-3 rounded-xl font-bold text-sm bg-slate-800 hover:bg-slate-700 text-white shadow-md transition duration-200 hover:scale-[1.01] active:scale-95">הצטרף לחדר 👥</button>
+              </div>
+              <p class="text-[10px] text-slate-500 text-center">הכנס קוד חדר בן 4 אותיות</p>
+            </div>
+          </div>
+
+          <!-- Open Rooms Section -->
+          <div id="open-rooms-section" class="flex flex-col gap-3 pt-3 border-t border-slate-800/60 relative z-10">
+            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-end gap-1.5">
+              חדרי חברים פתוחים להצטרפות 🌐
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            </label>
+            <div id="open-rooms-list" class="flex flex-col gap-2 max-h-[160px] overflow-y-auto pr-1 text-xs" dir="rtl">
+              <!-- Dynamically populated open rooms -->
+            </div>
           </div>
         </div>
 
-        <!-- Open Rooms Section -->
-        <div id="open-rooms-section" class="flex flex-col gap-3 pt-3 border-t border-slate-800/60 relative z-10 text-right">
-          <label class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-end gap-1.5">
-            חדרי חברים פתוחים להצטרפות 🌐
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-          </label>
-          <div id="open-rooms-list" class="flex flex-col gap-2 max-h-[160px] overflow-y-auto pr-1 text-xs" dir="rtl">
-            <!-- Dynamically populated open rooms -->
-          </div>
-        </div>
       </div>
     </div>
 
