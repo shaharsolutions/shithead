@@ -713,7 +713,10 @@
       // Generate HTML items in reverse chronological order (newest at the top)
       const sorted = [...filtered].reverse();
       container.innerHTML = sorted.map(log => {
-        const time = new Date(log.timestamp).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const dateObj = new Date(log.timestamp);
+        const dateStr = dateObj.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: '2-digit' });
+        const timeStr = dateObj.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const time = `${dateStr} ${timeStr}`;
         
         let typeClass = 'bg-slate-900 border-slate-800 text-slate-300';
         let badgeIcon = '⚙️';
