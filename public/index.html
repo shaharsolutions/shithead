@@ -52,6 +52,120 @@
     }
     body { font-family: 'Inter', system-ui, sans-serif; }
 
+    .lobby-shell {
+      min-height: clamp(640px, calc(100vh - 112px), 860px);
+      border-radius: 28px;
+      background:
+        linear-gradient(90deg, rgba(3, 7, 18, 0.96) 0%, rgba(9, 14, 28, 0.8) 42%, rgba(9, 14, 28, 0.34) 100%),
+        linear-gradient(180deg, rgba(3, 7, 18, 0.14) 0%, rgba(3, 7, 18, 0.76) 100%),
+        url('/lobby_hero.png') center / cover no-repeat,
+        #050914;
+      box-shadow: 0 28px 90px rgba(0, 0, 0, 0.55);
+    }
+
+    .lobby-panel {
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(2, 6, 23, 0.7));
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 22px 48px rgba(0, 0, 0, 0.3);
+    }
+
+    .lobby-field {
+      background: rgba(2, 6, 23, 0.78);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+    }
+
+    .lobby-field:focus {
+      border-color: rgba(34, 211, 238, 0.75);
+      box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.12);
+    }
+
+    .lobby-shell,
+    .lobby-panel {
+      max-width: 100%;
+    }
+
+    .lobby-panel {
+      justify-self: center;
+      width: min(420px, calc(100vw - 64px)) !important;
+    }
+
+    .lobby-shell {
+      direction: ltr;
+    }
+
+    .lobby-shell > * {
+      direction: rtl;
+    }
+
+    .lobby-panel,
+    .lobby-panel * {
+      min-width: 0;
+    }
+
+    @media (max-width: 900px) {
+      .lobby-shell {
+        min-height: auto;
+        background:
+          linear-gradient(180deg, rgba(3, 7, 18, 0.48) 0%, rgba(3, 7, 18, 0.9) 34%, rgba(3, 7, 18, 0.98) 100%),
+          url('/lobby_hero.png') center top / min(92vw, 480px) auto no-repeat,
+          #050914;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .lobby-shell {
+        border-radius: 22px;
+      }
+
+      .lobby-panel {
+        width: min(100%, calc(100vw - 64px)) !important;
+        padding: 14px !important;
+        gap: 12px !important;
+        border-radius: 22px !important;
+      }
+
+      .lobby-panel h2 {
+        font-size: 22px;
+        line-height: 1.15;
+      }
+
+      .lobby-panel label {
+        font-size: 10px;
+      }
+
+      .lobby-field,
+      #create-btn,
+      #join-btn,
+      #room-code {
+        border-radius: 15px !important;
+      }
+
+      #player-name,
+      #game-mode,
+      #player-count,
+      #room-code {
+        padding-top: 10px !important;
+        padding-bottom: 10px !important;
+      }
+
+      #create-btn,
+      #join-btn {
+        padding-top: 11px !important;
+        padding-bottom: 11px !important;
+      }
+
+      #open-rooms-section {
+        gap: 8px !important;
+        padding-top: 10px !important;
+      }
+
+      #open-rooms-list {
+        max-height: 52px !important;
+      }
+    }
+
     /* ===== CARDS ===== */
     .card {
       width: 68px; height: 96px; border-radius: 12px;
@@ -572,6 +686,59 @@
         opacity: 0;
       }
     }
+
+    /* ===== TUTORIAL GUIDE HIGHLIGHT ===== */
+    .tutorial-highlight {
+      position: relative;
+      z-index: 40 !important;
+      animation: tutorialPulse 1.4s infinite alternate;
+      border-radius: 12px;
+    }
+    @keyframes tutorialPulse {
+      0% {
+        outline: 3px solid rgba(99, 102, 241, 0.4);
+        box-shadow: 0 0 10px rgba(99, 102, 241, 0.3), inset 0 0 8px rgba(99, 102, 241, 0.1);
+      }
+      100% {
+        outline: 3px solid rgba(99, 102, 241, 1);
+        box-shadow: 0 0 25px rgba(99, 102, 241, 0.7), inset 0 0 16px rgba(99, 102, 241, 0.3);
+      }
+    }
+
+    /* ===== MINI CARDS FOR COACH TIP ===== */
+    .coach-cards-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .coach-cards-row .card {
+      width: 48px !important;
+      height: 68px !important;
+      border-radius: 6px !important;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2) !important;
+      position: relative !important;
+      transform: none !important;
+      transition: none !important;
+      animation: none !important;
+    }
+    .coach-cards-row .c-tl {
+      font-size: 8px !important;
+      top: 2px !important;
+      left: 3px !important;
+      line-height: 1.0 !important;
+    }
+    .coach-cards-row .c-mid {
+      font-size: 16px !important;
+      opacity: 0.8 !important;
+    }
+    .coach-cards-row .c-br {
+      font-size: 8px !important;
+      bottom: 2px !important;
+      right: 3px !important;
+      line-height: 1.0 !important;
+    }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white overflow-x-hidden">
@@ -591,6 +758,33 @@
 
   <!-- Toasts container -->
   <div id="toasts" class="fixed top-4 right-4 z-50 flex flex-col gap-2 items-end"></div>
+
+  <!-- Tutorial Guide Box -->
+  <div id="tutorial-guide" class="hidden fixed bottom-4 right-4 left-4 sm:left-auto sm:w-[380px] z-50 bg-slate-900/95 border-2 border-indigo-500 rounded-2xl p-5 shadow-2xl backdrop-blur-xl transition-all duration-300 text-right" dir="rtl">
+    <div class="flex items-start justify-between gap-3 mb-2.5">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">🎓</span>
+        <h3 class="text-sm font-black text-indigo-400">מדריך למידה (Tutorial)</h3>
+      </div>
+      <button id="close-tutorial-btn" class="w-6 h-6 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-200" title="הסתר מדריך">✕</button>
+    </div>
+    <div id="tutorial-content" class="text-xs text-slate-200 leading-relaxed font-medium">
+      <!-- Dynamic content -->
+    </div>
+    <!-- Tutorial Coach Tip Container -->
+    <div id="tutorial-coach-tip" class="hidden mt-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex flex-col gap-1 text-[11px] text-amber-300 font-semibold">
+      <!-- Dynamic coach tip -->
+    </div>
+    <div class="mt-4 flex items-center justify-between border-t border-slate-800/80 pt-3">
+      <span id="tutorial-step-indicator" class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">שלב 1 מתוך 6</span>
+      <button id="tutorial-next-btn" class="px-4 py-1.5 rounded-lg font-bold text-[11px] bg-indigo-600 hover:bg-indigo-500 text-white shadow-md transition duration-200">הבנתי, המשך ➔</button>
+    </div>
+  </div>
+
+  <!-- Tutorial Minimize Toggle -->
+  <button id="tutorial-toggle-btn" class="hidden fixed bottom-4 right-4 z-50 px-4 py-2.5 rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 border border-indigo-400 flex items-center gap-2" dir="rtl">
+    <span>🎓 הצג מדריך</span>
+  </button>
 
   <!-- Win / Game Over Modal -->
   <div id="win-modal" class="hidden fixed inset-0 z-40 flex items-center justify-center win-overlay">
@@ -737,10 +931,10 @@
     </div>
   </div>
 
-  <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col min-h-screen gap-3">
+  <div class="max-w-6xl mx-auto px-4 py-2 sm:py-3 flex flex-col min-h-screen gap-2 sm:gap-3">
     
     <!-- Title / Logo Header -->
-    <header class="text-center pt-2 pb-1">
+    <header class="text-center pt-1 sm:pt-2 pb-0 sm:pb-1">
       <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center justify-center gap-2">
         <img src="/favicon.png" alt="שיטהד לוגו" class="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-[0_0_8px_rgba(212,175,55,0.25)] select-none">
         <span>שיטהד אונליין</span>
@@ -751,7 +945,7 @@
     <!-- ═══════════════════════════════════════════
       LOBBY VIEW
     ═══════════════════════════════════════════ -->
-    <div id="lobby-view" class="flex-1 flex items-center justify-center my-8 relative overflow-visible">
+    <div id="lobby-view" class="flex-1 flex items-center justify-center my-3 sm:my-7 relative overflow-visible">
       
       <!-- Floating Background Cards (silhouettes for depth) -->
       <div class="absolute -top-10 -left-10 w-24 h-36 card card-back float-card-1 opacity-20 pointer-events-none hidden lg:flex items-center justify-center">
@@ -761,130 +955,116 @@
         <div class="card-back-pat"></div>
       </div>
 
-      <!-- Modern background glow -->
-      <div class="absolute w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-[120px] -z-10 pointer-events-none"></div>
-
-      <!-- Main Container (Dual Panel on Large Screens) -->
-      <div class="w-full max-w-4xl bg-slate-900/40 border border-white/10 rounded-3xl backdrop-blur-xl shadow-2xl flex flex-col lg:flex-row overflow-hidden relative transition-all duration-300">
+      <!-- Main Lobby Surface -->
+      <div class="lobby-shell w-full max-w-6xl border border-white/10 overflow-hidden relative transition-all duration-300">
         
         <!-- Rules Button -->
-        <button id="rules-btn" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-950/60 border border-slate-800/80 text-slate-400 flex items-center justify-center hover:bg-slate-800 hover:text-white transition duration-200 z-30 shadow-lg" title="חוקי המשחק">
+        <button id="rules-btn" class="absolute top-4 right-4 w-9 h-9 rounded-xl bg-slate-950/70 border border-white/10 text-slate-300 flex items-center justify-center hover:bg-slate-800 hover:text-white transition duration-200 z-30 shadow-lg" title="חוקי המשחק">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </button>
 
-        <!-- Right Panel: Visual Hero & Game Features (Order first on desktop) -->
-        <div class="w-full lg:w-1/2 bg-gradient-to-br from-slate-950 to-indigo-950/80 p-8 flex flex-col justify-center items-center relative overflow-hidden border-b lg:border-b-0 lg:border-l border-white/5 select-none">
-          <!-- Decorative subtle gradient overlays -->
-          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80 z-10"></div>
-          
-          <img src="/lobby_hero.png" alt="שיטהד קלפים מיוחדים" class="w-72 h-72 object-contain relative z-20 animate-pulse duration-[8s] drop-shadow-[0_0_20px_rgba(6,182,212,0.15)] hover:scale-105 transition-transform duration-300">
-          
-          <!-- Features list -->
-          <div class="text-right mt-6 relative z-20 space-y-3 w-full max-w-sm px-2">
-            <h3 class="text-sm font-bold text-indigo-300 tracking-wide uppercase border-b border-indigo-500/20 pb-1 mb-2">תכונות המשחק:</h3>
-            
-            <div class="flex items-start gap-2.5 justify-end text-right">
-              <div class="text-xs text-slate-300 font-medium leading-relaxed">
-                <span class="font-bold text-white">קרבות אונליין בזמן אמת:</span> שחק נגד חברים או פתח חדר ציבורי.
+        <div class="relative z-20 grid lg:grid-cols-[minmax(0,1fr)_420px] gap-5 lg:gap-10 items-start lg:items-end min-h-[inherit] p-4 sm:p-7 lg:p-10 pt-12 sm:pt-16">
+          <section class="order-2 lg:order-1 text-right w-full min-w-0 max-w-2xl flex flex-col justify-end gap-4 sm:gap-5 min-h-0 lg:min-h-0">
+            <div class="inline-flex items-center gap-2 self-end rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-[10px] sm:text-[11px] font-bold text-cyan-200 max-w-full">
+              <span class="w-1.5 h-1.5 rounded-full bg-cyan-300"></span>
+              <span class="truncate">אונליין עם חברים או מול המחשב</span>
+            </div>
+            <div>
+              <h2 class="text-3xl sm:text-5xl lg:text-6xl font-black text-white leading-tight tracking-tight drop-shadow-2xl">שיטהד אונליין</h2>
+              <p class="text-sm sm:text-base text-slate-200 mt-3 max-w-xl leading-relaxed">פתח שולחן, שלח קוד לחברים, או התחמם במשחק מהיר מול המחשב. הכל נמצא כאן בלי מסכים מיותרים.</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 w-full max-w-2xl">
+              <div class="rounded-2xl bg-slate-950/55 border border-white/10 p-3">
+                <div class="text-lg mb-1">⚔️</div>
+                <p class="text-xs font-bold text-white">קרבות בזמן אמת</p>
+                <p class="text-[11px] text-slate-400 mt-1">חדרים פרטיים או פתוחים</p>
               </div>
-              <span class="text-base flex-shrink-0 mt-0.5">⚔️</span>
-            </div>
-
-            <div class="flex items-start gap-2.5 justify-end text-right">
-              <div class="text-xs text-slate-300 font-medium leading-relaxed">
-                <span class="font-bold text-white">מצב אימון מול המחשב:</span> שחק נגד בינה מלאכותית חכמה ומאתגרת.
+              <div class="rounded-2xl bg-slate-950/55 border border-white/10 p-3">
+                <div class="text-lg mb-1">💻</div>
+                <p class="text-xs font-bold text-white">אימון מול מחשב</p>
+                <p class="text-[11px] text-slate-400 mt-1">כניסה מהירה למשחק</p>
               </div>
-              <span class="text-base flex-shrink-0 mt-0.5">💻</span>
-            </div>
-
-            <div class="flex items-start gap-2.5 justify-end text-right">
-              <div class="text-xs text-slate-300 font-medium leading-relaxed">
-                <span class="font-bold text-white">קלפי כוח מיוחדים:</span> הפעלת קלפי הכוח החזקים ביותר (2, 3, 10).
+              <div class="rounded-2xl bg-slate-950/55 border border-white/10 p-3">
+                <div class="text-lg mb-1">✨</div>
+                <p class="text-xs font-bold text-white">קלפי כוח</p>
+                <p class="text-[11px] text-slate-400 mt-1">2, 3, 7, 8 ו-10</p>
               </div>
-              <span class="text-base flex-shrink-0 mt-0.5">✨</span>
             </div>
-          </div>
-        </div>
+          </section>
 
-        <!-- Left Panel: Interactive Form -->
-        <div class="w-full lg:w-1/2 p-6 sm:p-8 flex flex-col justify-between gap-6 relative z-20 text-right">
-          <div class="text-center lg:text-right mt-2">
-            <h2 class="text-xl font-black text-white tracking-tight">כניסה ללובי</h2>
-            <p class="text-xs text-slate-400 mt-1">הזן שם, בחר מצב משחק והצטרף לשולחן</p>
-          </div>
-
-          <!-- Name Input -->
-          <div class="flex flex-col gap-2 relative z-10">
-            <label for="player-name" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">השם שלך</label>
-            <div class="relative flex items-center">
-              <input type="text" id="player-name" placeholder="הכנס שם שחקן..." maxlength="12" class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition duration-200">
-              <button id="random-name-btn" class="absolute left-2 w-7 h-7 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-200 z-20" title="כינוי אקראי">🎲</button>
+          <section class="order-1 lg:order-2 lobby-panel rounded-3xl p-4 sm:p-6 flex flex-col gap-5 relative z-20 text-right w-full min-w-0">
+            <div>
+              <h2 class="text-2xl font-black text-white tracking-tight">כניסה למשחק</h2>
+              <p class="text-xs text-slate-400 mt-1">בחר שם, מצב משחק ומספר שחקנים</p>
             </div>
-          </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <!-- Game Mode Selector -->
+            <!-- Name Input -->
             <div class="flex flex-col gap-2 relative z-10">
-              <label for="game-mode" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">מצב משחק</label>
-              <div class="relative">
-                <select id="game-mode" class="w-full px-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition duration-200 appearance-none cursor-pointer">
-                  <option value="computer">💻 נגד המחשב</option>
-                  <option value="online">👥 חדר עם חברים</option>
-                </select>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
-                </svg>
+              <label for="player-name" class="text-xs font-semibold text-slate-300 uppercase tracking-wider">השם שלך</label>
+              <div class="relative flex items-center">
+                <input type="text" id="player-name" placeholder="הכנס שם שחקן..." maxlength="12" class="lobby-field w-full pl-11 pr-4 py-3 rounded-2xl text-white placeholder-slate-500 focus:outline-none transition duration-200">
+                <button id="random-name-btn" class="absolute left-2 w-8 h-8 rounded-xl bg-slate-900/90 border border-white/10 text-slate-300 hover:text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-200 z-20" title="כינוי אקראי">🎲</button>
               </div>
             </div>
-            
-            <!-- Player Count Selector -->
-            <div class="flex flex-col gap-2 relative z-10">
-              <label for="player-count" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">מספר שחקנים</label>
-              <div class="relative">
-                <select id="player-count" class="w-full px-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition duration-200 appearance-none cursor-pointer">
-                  <option value="2">2 שחקנים</option>
-                  <option value="3">3 שחקנים</option>
-                  <option value="4">4 שחקנים</option>
-                </select>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
-                </svg>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <!-- Game Mode Selector -->
+              <div class="flex flex-col gap-2 relative z-10">
+                <label for="game-mode" class="text-xs font-semibold text-slate-300 uppercase tracking-wider">מצב משחק</label>
+                <div class="relative">
+                  <select id="game-mode" class="lobby-field w-full px-4 py-3 rounded-2xl text-white focus:outline-none transition duration-200 appearance-none cursor-pointer">
+                    <option value="computer">💻 נגד המחשב</option>
+                    <option value="online">👥 חדר עם חברים</option>
+                    <option value="tutorial">🎓 משחק הדרכה (Tutorial)</option>
+                  </select>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Player Count Selector -->
+              <div class="flex flex-col gap-2 relative z-10">
+                <label for="player-count" class="text-xs font-semibold text-slate-300 uppercase tracking-wider">מספר שחקנים</label>
+                <div class="relative">
+                  <select id="player-count" class="lobby-field w-full px-4 py-3 rounded-2xl text-white focus:outline-none transition duration-200 appearance-none cursor-pointer">
+                    <option value="2">2 שחקנים</option>
+                    <option value="3">3 שחקנים</option>
+                    <option value="4">4 שחקנים</option>
+                  </select>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
               </div>
             </div>
-          </div>
 
-          <hr class="border-slate-800/60">
+            <!-- Action Grid -->
+            <div class="grid grid-cols-1 gap-3">
+              <!-- Create Room -->
+              <button id="create-btn" class="w-full py-3.5 rounded-2xl font-black text-sm bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white shadow-lg shadow-cyan-950/30 transition duration-200 hover:scale-[1.01] active:scale-95">התחל משחק 🎮</button>
 
-          <!-- Action Grid -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <!-- Create Room -->
-            <div class="flex flex-col gap-2 relative z-10">
-              <button id="create-btn" class="w-full py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white shadow-md transition duration-200 hover:scale-[1.01] active:scale-95">התחל משחק 🎮</button>
-              <p class="text-[10px] text-slate-500 text-center">פתח חדר חדש או משחק מול מחשב</p>
-            </div>
-
-            <!-- Join Room -->
-            <div class="flex flex-col gap-2 relative z-10">
-              <div class="flex gap-2">
-                <input type="text" id="room-code" placeholder="קוד" class="w-20 text-center uppercase font-bold text-sm bg-slate-950/80 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition duration-200">
-                <button id="join-btn" class="flex-1 py-3 rounded-xl font-bold text-sm bg-slate-800 hover:bg-slate-700 text-white shadow-md transition duration-200 hover:scale-[1.01] active:scale-95">הצטרף לחדר 👥</button>
+              <!-- Join Room -->
+              <div class="grid grid-cols-1 sm:grid-cols-[96px_minmax(0,1fr)] gap-2 relative z-10">
+                <input type="text" id="room-code" placeholder="קוד חדר" class="lobby-field w-full text-center uppercase font-black text-sm rounded-2xl text-white placeholder-slate-500 focus:outline-none transition duration-200 py-3 sm:py-0">
+                <button id="join-btn" class="py-3.5 rounded-2xl font-bold text-sm bg-white/10 hover:bg-white/15 text-white border border-white/10 shadow-md transition duration-200 hover:scale-[1.01] active:scale-95">הצטרף לחדר 👥</button>
               </div>
-              <p class="text-[10px] text-slate-500 text-center">הכנס קוד חדר בן 4 אותיות</p>
+              <p class="text-[11px] text-slate-500 text-center">קוד חדר בן 4 אותיות מאפשר להצטרף ישירות לשולחן של חברים</p>
             </div>
-          </div>
 
-          <!-- Open Rooms Section -->
-          <div id="open-rooms-section" class="flex flex-col gap-3 pt-3 border-t border-slate-800/60 relative z-10">
-            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-end gap-1.5">
-              חדרי חברים פתוחים להצטרפות 🌐
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            </label>
-            <div id="open-rooms-list" class="flex flex-col gap-2 max-h-[160px] overflow-y-auto pr-1 text-xs" dir="rtl">
-              <!-- Dynamically populated open rooms -->
+            <!-- Open Rooms Section -->
+            <div id="open-rooms-section" class="flex flex-col gap-3 pt-4 border-t border-white/10 relative z-10">
+              <label class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center justify-end gap-1.5">
+                חדרים פתוחים להצטרפות 🌐
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              </label>
+              <div id="open-rooms-list" class="flex flex-col gap-2 max-h-[150px] overflow-y-auto pr-1 text-xs" dir="rtl">
+                <!-- Dynamically populated open rooms -->
+              </div>
             </div>
-          </div>
+          </section>
         </div>
 
       </div>
@@ -1038,6 +1218,7 @@
       let swapSel = null; // { src, idx }
       let winSoundPlayed = false;
       let interjectionPending = false;
+      let currentTutorialStep = -1;
 
       // ═══════════════════════════════════════════
       //  SOUND ENGINE (Web Audio API Synthesizer)
@@ -1476,10 +1657,13 @@
         swapSel = null;
         winSoundPlayed = false;
         interjectionPending = false;
+        currentTutorialStep = -1;
         hideWinModal();
         el('lobby-view').classList.remove('hidden');
         el('waiting-view').classList.add('hidden');
         el('game-view').classList.add('hidden');
+        el('tutorial-guide').classList.add('hidden');
+        el('tutorial-toggle-btn').classList.add('hidden');
         if (socket) {
           socket.disconnect();
           socket = null;
@@ -2245,6 +2429,9 @@
         }
 
         el('human-zone').classList.toggle('zone-glow', G.phase === 'play' && myTurn);
+
+        // Update tutorial guide
+        updateTutorialGuide();
       }
 
       function updateMuteUI() {
@@ -2342,6 +2529,248 @@
         el('rules-understand-btn').addEventListener('click', function () {
           el('rules-modal').classList.add('hidden');
           Snd.play('click');
+        });
+
+        // Tutorial Event Listeners
+        el('game-mode').addEventListener('change', function () {
+          const pc = el('player-count');
+          if (this.value === 'tutorial') {
+            pc.value = '2';
+            pc.disabled = true;
+            pc.classList.add('opacity-50', 'cursor-not-allowed');
+          } else {
+            pc.disabled = false;
+            pc.classList.remove('opacity-50', 'cursor-not-allowed');
+          }
+        });
+
+        el('close-tutorial-btn').addEventListener('click', function () {
+          el('tutorial-guide').classList.add('hidden');
+          el('tutorial-toggle-btn').classList.remove('hidden');
+          Snd.play('click');
+        });
+
+        el('tutorial-toggle-btn').addEventListener('click', function () {
+          el('tutorial-guide').classList.remove('hidden');
+          el('tutorial-toggle-btn').classList.add('hidden');
+          Snd.play('click');
+        });
+
+        el('tutorial-next-btn').addEventListener('click', function () {
+          el('tutorial-guide').classList.add('hidden');
+          el('tutorial-toggle-btn').classList.remove('hidden');
+          Snd.play('click');
+        });
+      }
+
+      // ═══════════════════════════════════════════
+      //  TUTORIAL LOGIC
+      // ═══════════════════════════════════════════
+      function updateTutorialGuide() {
+        const guideEl = el('tutorial-guide');
+        const toggleEl = el('tutorial-toggle-btn');
+        if (!G || G.mode !== 'tutorial') {
+          guideEl.classList.add('hidden');
+          toggleEl.classList.add('hidden');
+          clearTutorialHighlights();
+          currentTutorialStep = -1;
+          return;
+        }
+
+        clearTutorialHighlights();
+
+        const myIdx = G.players.findIndex(p => p.isSelf);
+        const myInfo = G.players[myIdx];
+        const myTurn = G.turnIdx === myIdx;
+
+        let step = 0;
+        let title = '🎓 מדריך למידה (Tutorial)';
+        let text = '';
+        let stepText = '';
+        let highlights = [];
+        let coachTip = '';
+
+        function getCardStrength(card) {
+          if (card.rank === 10) return 100;
+          if (card.rank === 2) return 95;
+          if (card.rank === 3) return 90;
+          if (card.rank === 14) return 85; // A
+          if (card.rank === 13) return 80; // K
+          if (card.rank === 12) return 75; // Q
+          if (card.rank === 11) return 70; // J
+          return card.rank * 5;
+        }
+
+        if (G.phase === 'swap') {
+          if (!myInfo.ready) {
+            step = 1;
+            title = '🎓 שלב 1: החלפה ובחירה';
+            text = `ברוך הבא לשיטהד! 🃏<br><br>
+              המשחק מתחיל כאשר מונחים לפניך שלושה קלפים מוסתרים (הפוכים) על השולחן, ובידך ישנם שישה קלפים.<br><br>
+              עליך לבחור את <b>3 הקלפים החזקים ביותר שבידך</b> ולהניח אותם כקלפים גלויים על השולחן (מעל הקלפים ההפוכים).<br><br>
+              💡 <b>טיפ:</b> קלפים חזקים הם קלפים בעלי ערך גבוה (A, K, Q) או קלפי כוח מיוחדים (2, 3, 10).<br><br>
+              לחץ על קלף מהיד שלך ולאחר מכן על מיקום גלוי פנוי בשולחן כדי להניח אותו שם. בסיום לחץ על הכפתור הירוק: <b>'סיימתי לבחור, בוא נתחיל!'</b>.`;
+            stepText = 'שלב 1 מתוך 6';
+            highlights = ['#human-hand .hand-inner', '#human-table', '#start-btn'];
+
+            const placedCount = myInfo.ts.filter(s => s.faceup !== null).length;
+            if (placedCount === 0) {
+              const sortedHand = [...myInfo.hand].sort((a, b) => getCardStrength(b) - getCardStrength(a));
+              const top3 = sortedHand.slice(0, 3);
+              const cardsHtml = top3.map(c => cFace(c, false, false)).join('');
+              coachTip = `<span>💡 <b>עוזר המאסטר:</b> כדאי לך לבחור את 3 הקלפים הכי חזקים שלך ולהעלות אותם לשולחן:</span>
+                          <div class="coach-cards-row">${cardsHtml}</div>`;
+            } else if (placedCount < 3) {
+              coachTip = `💡 <b>עוזר המאסטר:</b> המשך להעביר קלפים חזקים מהיד לשולחן (נשאר להניח עוד ${3 - placedCount} קלפים).`;
+            } else {
+              coachTip = `💡 <b>עוזר המאסטר:</b> הקלפים מוכנים! לחץ על כפתור <b>'סיימתי לבחור, בוא נתחיל!'</b> הירוק כדי לפתוח את המשחק.`;
+            }
+          } else {
+            step = 2;
+            title = '⏳ ממתינים ליריב';
+            text = `נעלת את בחירת הקלפים שלך בהצלחה! 🔒<br><br>
+              כעת אנו ממתינים שהמחשב יסיים לבחור את קלפיו. המשחק יתחיל מיד לאחר מכן.`;
+            stepText = 'שלב 1 מתוך 6';
+            coachTip = `💡 <b>עוזר המאסטר:</b> המחשב כעת בוחר את הקלפים שלו לשולחן... מיד נתחיל בקרב!`;
+          }
+        } else if (G.phase === 'play') {
+          const activeSrc = getActivePlayerSource(myInfo);
+          if (myTurn) {
+            if (activeSrc === 'hand') {
+              const playable = myInfo.hand.filter(c => isCardPlayable(c));
+              if (playable.length === 0) {
+                step = 4;
+                title = '📥 שלב 3: לקיחת הערימה';
+                text = `אופס! אין לך קלף ביד שהוא שווה או גבוה יותר מ-<b>${RD[G.discardTop.rank]}${SS[G.discardTop.suit]}</b> שבראש הערימה.<br><br>
+                  מכיוון שאין לך מהלך חוקי, עליך <b>לקחת את כל הערימה</b> שבמרכז השולחן לתוך היד שלך.<br><br>
+                  לחץ על כפתור <b>'קח ערימה'</b> הכתום כדי להמשיך.`;
+                stepText = 'שלב 3 מתוך 6';
+                highlights = ['#pick-btn', '#disc-pile'];
+                coachTip = `💡 <b>עוזר המאסטר:</b> אין לך אף קלף חוקי ביד! לחץ על כפתור <b>'קח ערימה'</b> הכתום כדי לאסוף את הערימה.`;
+              } else {
+                step = 3;
+                title = '⚔️ שלב 2: מהלכים חוקיים וקלפים מיוחדים';
+                text = `התור שלך! לחץ על קלף מהיד שלך (למטה) כדי להניח אותו במרכז השולחן.<br><br>
+                  עליך לשחק קלף שהוא <b>שווה או גבוה יותר</b> מהקלף שבראש הערימה.<br><br>
+                  🌟 <b>קלפים מיוחדים שבידך:</b><br>
+                  • <b>2 (אתחול)</b>: מאתחל את הערימה (ניתן לשחק על כל קלף).<br>
+                  • <b>3 (שקוף)</b>: קלף שקוף שמחקה את הקלף שמתחתיו.<br>
+                  • <b>7 (מתחת)</b>: מאלץ את השחקן הבא לשחק 7 ומטה.<br>
+                  • <b>8 (דילוג)</b>: מדלג על תור השחקן הבא.<br>
+                  • <b>10 (שריפה)</b>: שורף ומעלים את הערימה ומקבל תור נוסף!`;
+                stepText = 'שלב 2 מתוך 6';
+                highlights = ['#human-hand .hand-inner', '#disc-pile'];
+
+                // Recommend move
+                const normalPlayable = playable.filter(c => c.rank !== 2 && c.rank !== 3 && c.rank !== 10);
+                let best = null;
+                if (normalPlayable.length > 0) {
+                  normalPlayable.sort((a, b) => a.rank - b.rank);
+                  best = normalPlayable[0];
+                } else {
+                  playable.sort((a, b) => getCardStrength(a) - getCardStrength(b));
+                  best = playable[0];
+                }
+
+                if (best) {
+                  const bestIdx = myInfo.hand.findIndex(c => c.rank === best.rank && c.suit === best.suit);
+                  if (bestIdx !== -1) {
+                    highlights.push('#human-hand div[data-hand="' + bestIdx + '"]');
+                  }
+                  const cardHtml = cFace(best, false, false);
+                  coachTip = `<span>💡 <b>עוזר המאסטר:</b> יש לך קלפים חוקיים! מומלץ לשחק את הקלף הנמוך והחוקי ביותר שלך:</span>
+                              <div class="coach-cards-row">${cardHtml}</div>`;
+
+                  // Check duplicate ranks
+                  const duplicates = myInfo.hand.filter(c => c.rank === best.rank);
+                  if (duplicates.length > 1) {
+                    coachTip += `<br>✨ <b>טיפ כפול:</b> יש לך ${duplicates.length} קלפים בעלי ערך <b>${RD[best.rank]}</b>. המשחק יניח את כולם יחד אוטומטית אם תלחץ על אחד מהם!`;
+                  }
+                }
+              }
+            } else if (activeSrc === 'faceup') {
+              step = 5;
+              title = '🃏 שלב 4: קלפי השולחן הגלויים';
+              text = `היד והקופה שלך התרוקנו לחלוטין! 🥳<br><br>
+                כעת עליך להתחיל לשחק עם <b>הקלפים הגלויים שעל השולחן</b>.<br><br>
+                בחר אחד מהם ושחק אותו לפי אותם החוקים (שווה או גבוה מראש הערימה).`;
+              stepText = 'שלב 4 מתוך 6';
+              highlights = ['#human-table'];
+
+              const playableSlots = myInfo.ts
+                .map((s, idx) => ({ card: s.faceup, idx }))
+                .filter(x => x.card !== null && isCardPlayable(x.card));
+
+              if (playableSlots.length === 0) {
+                coachTip = `💡 <b>עוזר המאסטר:</b> אין לך קלף שולחן גלוי חוקי לשחק! לחץ על כפתור <b>'קח ערימה'</b>.`;
+                highlights.push('#pick-btn');
+              } else {
+                playableSlots.sort((a, b) => a.card.rank - b.card.rank);
+                const bestSlot = playableSlots[0];
+                highlights.push('#human-table div[data-table-slot="' + bestSlot.idx + '"]');
+                const cardHtml = cFace(bestSlot.card, false, false);
+                coachTip = `<span>💡 <b>עוזר המאסטר:</b> מומלץ לשחק את הקלף הבא מהשולחן:</span>
+                            <div class="coach-cards-row">${cardHtml}</div>`;
+              }
+            } else if (activeSrc === 'facedown') {
+              step = 6;
+              title = '👁️‍🗨️ שלב 5: המשחק העיוור';
+              text = `נשארו לך רק הקלפים המוסתרים שעל השולחן! 🔥<br><br>
+                עליך לבחור קלף אחד מוסתר ולשחק אותו באופן עיוור מבלי לדעת מה הוא.<br><br>
+                אם יצא קלף חוקי - מצוין! אם לא חוקי - תאלץ לקחת את כל ערימת הקלפים ליד שלך.`;
+              stepText = 'שלב 5 מתוך 6';
+              highlights = ['#human-table'];
+              coachTip = `💡 <b>עוזר המאסטר:</b> שלב המשחק העיוור! לחץ על אחד משלושת הקלפים המוסתרים שעל השולחן וקווה שהוא חוקי.`;
+            }
+          } else {
+            step = 7;
+            title = '🤖 תור המחשב';
+            text = `המחשב חושב כעת על המהלך שלו... 🧠<br><br>
+              המתן עד שהמחשב ישחק את קלפיו והתור יחזור אליך.`;
+            stepText = 'שלב 2 מתוך 6';
+            coachTip = `💡 <b>עוזר המאסטר:</b> המתן למהלך של המחשב. מיד כשהתור יחזור אליך, אנתח שוב את הקלפים שלך.`;
+          }
+        } else if (G.phase === 'over') {
+          step = 8;
+          title = '🏆 שלב 6: סיום המשחק';
+          text = `המשחק הסתיים! 🎉<br><br>
+            הראשון שנפטר מכל קלפיו (כולל אלו שעל השולחן) מנצח במקום הראשון. האחרון שנשאר עם קלפים הוא ה**שיטהד** ומפסיד במשחק.<br><br>
+            תוכל ללחוץ על 'משחק נוסף' או לחזור ללובי.`;
+          stepText = 'שלב 6 מתוך 6';
+          coachTip = `💡 <b>עוזר המאסטר:</b> המשחק הסתיים! מקווה שהמדריך והעזרה שלי סייעו לך להבין את החוקים והאסטרטגיה של שיטהד. בהצלחה במשחקים הבאים!`;
+        }
+
+        // Show/hide based on step change
+        if (step !== currentTutorialStep) {
+          currentTutorialStep = step;
+          guideEl.classList.remove('hidden');
+          toggleEl.classList.add('hidden');
+        }
+
+        guideEl.querySelector('h3').textContent = title;
+        el('tutorial-content').innerHTML = text;
+        el('tutorial-step-indicator').textContent = stepText;
+
+        const coachTipEl = el('tutorial-coach-tip');
+        if (coachTip) {
+          coachTipEl.innerHTML = coachTip;
+          coachTipEl.classList.remove('hidden');
+        } else {
+          coachTipEl.classList.add('hidden');
+        }
+
+        // Apply highlights
+        highlights.forEach(selString => {
+          const targets = document.querySelectorAll(selString);
+          targets.forEach(target => {
+            target.classList.add('tutorial-highlight');
+          });
+        });
+      }
+
+      function clearTutorialHighlights() {
+        document.querySelectorAll('.tutorial-highlight').forEach(e => {
+          e.classList.remove('tutorial-highlight');
         });
       }
 
