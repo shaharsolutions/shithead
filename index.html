@@ -746,18 +746,18 @@
 <body class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white overflow-x-hidden">
 
   <!-- Sound Toggle & Install App Button -->
-  <div class="fixed top-4 left-4 z-50 flex items-center gap-2">
-    <button id="mute-btn" class="w-10 h-10 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white flex items-center justify-center backdrop-blur-xl shadow-lg transition-all duration-200 hover:scale-105 active:scale-95" title="השתק / הפעל צלילים">
-      <svg id="sound-icon-on" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <div class="fixed top-3 left-3 sm:top-4 sm:left-4 z-50 flex items-center gap-2">
+    <button id="mute-btn" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white flex items-center justify-center backdrop-blur-xl shadow-lg transition-all duration-200 hover:scale-105 active:scale-95" title="השתק / הפעל צלילים">
+      <svg id="sound-icon-on" xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
       </svg>
-      <svg id="sound-icon-off" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg id="sound-icon-off" xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5 sm:h-5 sm:w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
       </svg>
     </button>
-    <button id="install-app-btn" class="h-10 px-3.5 rounded-xl bg-slate-900/80 border border-emerald-500/40 text-emerald-300 hover:text-white hover:bg-emerald-600/30 flex items-center gap-2 backdrop-blur-xl shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer font-bold text-xs" title="התקן את המשחק במכשיר">
-      <span class="text-base">📲</span>
+    <button id="install-app-btn" class="h-9 px-2.5 sm:h-10 sm:px-3.5 rounded-xl bg-slate-900/80 border border-emerald-500/40 text-emerald-300 hover:text-white hover:bg-emerald-600/30 flex items-center gap-1.5 backdrop-blur-xl shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer font-bold text-xs" title="התקן את המשחק במכשיר">
+      <span class="text-sm sm:text-base">📲</span>
       <span class="hidden sm:inline">התקן משחק</span>
     </button>
   </div>
@@ -994,7 +994,7 @@
   <div class="max-w-6xl mx-auto px-4 py-2 sm:py-3 flex flex-col min-h-screen gap-2 sm:gap-3">
     
     <!-- Title / Logo Header -->
-    <header class="text-center pt-1 sm:pt-2 pb-0 sm:pb-1">
+    <header class="text-center pt-12 sm:pt-2 pb-0 sm:pb-1">
       <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center justify-center gap-2">
         <img src="/favicon.png" alt="שיטהד לוגו" class="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-[0_0_8px_rgba(212,175,55,0.25)] select-none">
         <span>שיטהד אונליין</span>
