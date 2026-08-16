@@ -407,6 +407,7 @@ function getSanitizedState(room, socketId) {
   return {
     roomId: room.id,
     phase: room.phase,
+    mode: room.mode,
     seven: room.seven,
     discardCount: room.discardPile.length,
     deckCount: room.deck.length,
@@ -468,7 +469,7 @@ function startRoomGame(room) {
 
   // Stats tracking
   stats.totalGamesCount++;
-  const modeText = room.mode === 'computer' ? 'נגד המחשב' : 'של חברים';
+  const modeText = room.mode === 'computer' ? 'נגד המחשב' : (room.mode === 'tutorial' ? 'משחק הדרכה' : 'של חברים');
   addLog('game_start', `המשחק בחדר ${room.id} (${modeText}) התחיל!`);
 }
 
@@ -659,7 +660,7 @@ io.on('connection', (socket) => {
     const room = {
       id: roomId,
       maxPlayers,
-      mode: mode === 'computer' ? 'computer' : 'online',
+      mode: mode === 'computer' ? 'computer' : (mode === 'tutorial' ? 'tutorial' : 'online'),
       players: [createPlayer(socket.id, name.trim())],
       deck: [],
       discardPile: [],
@@ -678,15 +679,17 @@ io.on('connection', (socket) => {
 
     // Stats tracking
     stats.uniqueUsers.add(name.trim());
-    if (room.mode === 'computer') {
+    if (room.mode === 'computer' || room.mode === 'tutorial') {
       stats.computerGamesCount++;
-      addLog('room_created_bot', `השחקן ${name.trim()} יצר משחק נגד המחשב בחדר ${roomId} (${maxPlayers} שחקנים)`);
+      const logType = room.mode === 'tutorial' ? 'room_created_tutorial' : 'room_created_bot';
+      const logDesc = room.mode === 'tutorial' ? 'משחק הדרכה' : 'משחק נגד המחשב';
+      addLog(logType, `השחקן ${name.trim()} יצר ${logDesc} בחדר ${roomId} (${maxPlayers} שחקנים)`);
     } else {
       stats.friendGamesCount++;
       addLog('room_created_friend', `השחקן ${name.trim()} פתח חדר משחק של חברים: ${roomId} (${maxPlayers} שחקנים)`);
     }
 
-    if (room.mode === 'computer') {
+    if (room.mode === 'computer' || room.mode === 'tutorial') {
       addBots(room, maxPlayers);
       startRoomGame(room);
     } else {

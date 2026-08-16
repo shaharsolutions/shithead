@@ -13,21 +13,21 @@
   
   <!-- Open Graph / Facebook / WhatsApp Rich Previews -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://shithead-3g5n.onrender.com/">
+  <meta property="og:url" content="https://shithead-d1aad.web.app/">
   <meta property="og:title" content="שיטהד אונליין – משחק קלפים בזמן אמת">
   <meta property="og:description" content="משחק קלפים אסטרטגי וטקטי בזמן אמת מול חברים או מול המחשב. פותח ע״י שחר פתרונות דיגיטליים.">
-  <meta property="og:image" content="https://shithead-3g5n.onrender.com/og-image.png">
+  <meta property="og:image" content="https://shithead-d1aad.web.app/og-image-fb.png">
   <meta property="og:image:type" content="image/png">
-  <meta property="og:image:width" content="1024">
-  <meta property="og:image:height" content="1024">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <meta property="og:locale" content="he_IL">
 
   <!-- Twitter Cards -->
   <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content="https://shithead-3g5n.onrender.com/">
+  <meta property="twitter:url" content="https://shithead-d1aad.web.app/">
   <meta property="twitter:title" content="שיטהד אונליין – משחק קלפים בזמן אמת">
   <meta property="twitter:description" content="משחק קלפים אסטרטגי וטקטי בזמן אמת מול חברים או מול המחשב. פותח ע״י שחר פתרונות דיגיטליים.">
-  <meta property="twitter:image" content="https://shithead-3g5n.onrender.com/og-image.png">
+  <meta property="twitter:image" content="https://shithead-d1aad.web.app/og-image-fb.png">
   <script>
     if (window.location.protocol === 'file:') {
       window.location.replace('http://localhost:3000/');
@@ -756,8 +756,15 @@
     </button>
   </div>
 
+  <!-- Floating Rules Button (Room / In-Game) -->
+  <button id="in-game-rules-btn" class="hidden fixed top-4 right-4 w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-700/80 text-slate-200 hover:text-white flex items-center justify-center backdrop-blur-xl shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 z-40 hover:bg-slate-800 hover:border-indigo-500/50 cursor-pointer group" title="חוקי המשחק">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5.5 w-5.5 text-indigo-400 group-hover:text-indigo-300 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  </button>
+
   <!-- Toasts container -->
-  <div id="toasts" class="fixed top-4 right-4 z-50 flex flex-col gap-2 items-end"></div>
+  <div id="toasts" class="fixed top-16 right-4 z-50 flex flex-col gap-2 items-end"></div>
 
   <!-- Tutorial Guide Box -->
   <div id="tutorial-guide" class="hidden fixed bottom-4 right-4 left-4 sm:left-auto sm:w-[380px] z-50 bg-slate-900/95 border-2 border-indigo-500 rounded-2xl p-5 shadow-2xl backdrop-blur-xl transition-all duration-300 text-right" dir="rtl">
@@ -1583,6 +1590,7 @@
           el('game-view').classList.add('hidden');
           el('waiting-code-display').textContent = roomId;
           el('waiting-player-name').textContent = name;
+          updateRulesBtnVisibility();
         });
 
         socket.on('game-start', ({ roomId }) => {
@@ -1596,6 +1604,7 @@
           winSoundPlayed = false;
           interjectionPending = false;
           hideWinModal();
+          updateRulesBtnVisibility();
           Snd.play('deal'); // DEAL SOUND AT GAME START
         });
 
@@ -1649,6 +1658,19 @@
         });
       }
 
+      function updateRulesBtnVisibility() {
+        const waitingView = el('waiting-view');
+        const gameView = el('game-view');
+        const rulesBtn = el('in-game-rules-btn');
+        if (!rulesBtn) return;
+        const inRoom = (waitingView && !waitingView.classList.contains('hidden')) || (gameView && !gameView.classList.contains('hidden'));
+        if (inRoom) {
+          rulesBtn.classList.remove('hidden');
+        } else {
+          rulesBtn.classList.add('hidden');
+        }
+      }
+
       // Reset application back to lobby screen
       function resetToLobby() {
         G = null;
@@ -1664,6 +1686,7 @@
         el('game-view').classList.add('hidden');
         el('tutorial-guide').classList.add('hidden');
         el('tutorial-toggle-btn').classList.add('hidden');
+        updateRulesBtnVisibility();
         if (socket) {
           socket.disconnect();
           socket = null;
@@ -1863,6 +1886,26 @@
             return;
           }
 
+          // Count how many cards of the same rank exist in the player's active source
+          let sameRankCount = 0;
+          if (resolvedSrc === 'hand') {
+            sameRankCount = myInfo.hand.filter(c => c && c.rank === card.rank).length;
+          } else if (resolvedSrc === 'faceup') {
+            sameRankCount = myInfo.ts.filter(s => s && s.faceup && s.faceup.rank === card.rank).length;
+          }
+
+          // If the player does not have multiple cards of this rank (only 1 unique card of this rank),
+          // clicking the card immediately plays/discards it to the pile.
+          if (sameRankCount <= 1) {
+            sel = [];
+            selSrc = null;
+            socket.emit('play-cards', { indices: [idx] });
+            Snd.play('click');
+            render();
+            return;
+          }
+
+          // Player has multiple cards of the same rank: multi-selection is enabled for this rank
           if (selSrc !== resolvedSrc) {
             selSrc = resolvedSrc;
             sel = [idx];
@@ -2245,6 +2288,7 @@
       //  RENDER INTERFACE STATE
       // ═══════════════════════════════════════════
       function render() {
+        updateRulesBtnVisibility();
         if (!G) return;
 
         const myIdx = G.players.findIndex(p => p.isSelf);
@@ -2522,6 +2566,13 @@
           el('rules-modal').classList.remove('hidden');
           Snd.play('click');
         });
+        const inGameRulesBtn = el('in-game-rules-btn');
+        if (inGameRulesBtn) {
+          inGameRulesBtn.addEventListener('click', function () {
+            el('rules-modal').classList.remove('hidden');
+            Snd.play('click');
+          });
+        }
         el('close-rules-btn').addEventListener('click', function () {
           el('rules-modal').classList.add('hidden');
           Snd.play('click');
@@ -2529,6 +2580,12 @@
         el('rules-understand-btn').addEventListener('click', function () {
           el('rules-modal').classList.add('hidden');
           Snd.play('click');
+        });
+        el('rules-modal').addEventListener('click', function (e) {
+          if (e.target === this) {
+            this.classList.add('hidden');
+            Snd.play('click');
+          }
         });
 
         // Tutorial Event Listeners
@@ -2684,7 +2741,7 @@
                   // Check duplicate ranks
                   const duplicates = myInfo.hand.filter(c => c.rank === best.rank);
                   if (duplicates.length > 1) {
-                    coachTip += `<br>✨ <b>טיפ כפול:</b> יש לך ${duplicates.length} קלפים בעלי ערך <b>${RD[best.rank]}</b>. המשחק יניח את כולם יחד אוטומטית אם תלחץ על אחד מהם!`;
+                    coachTip += `<br>✨ <b>טיפ כפול:</b> יש לך ${duplicates.length} קלפים בעלי ערך <b>${RD[best.rank]}</b>. תוכל ללחוץ על כולם כדי לבחור ולשחק אותם יחד!`;
                   }
                 }
               }
