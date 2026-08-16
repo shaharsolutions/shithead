@@ -1,0 +1,23 @@
+{
+  "name": "שיטהד אונליין",
+  "short_name": "שיטהד",
+  "description": "משחק קלפים אסטרטגי וטקטי בזמן אמת",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

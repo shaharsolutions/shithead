@@ -7,6 +7,8 @@
   <title>שיטהד אונליין</title>
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#020617">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="שיטהד אונליין">
@@ -743,8 +745,8 @@
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white overflow-x-hidden">
 
-  <!-- Sound Toggle -->
-  <div class="fixed top-4 left-4 z-50">
+  <!-- Sound Toggle & Install App Button -->
+  <div class="fixed top-4 left-4 z-50 flex items-center gap-2">
     <button id="mute-btn" class="w-10 h-10 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white flex items-center justify-center backdrop-blur-xl shadow-lg transition-all duration-200 hover:scale-105 active:scale-95" title="השתק / הפעל צלילים">
       <svg id="sound-icon-on" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
@@ -753,6 +755,10 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
       </svg>
+    </button>
+    <button id="install-app-btn" class="h-10 px-3.5 rounded-xl bg-slate-900/80 border border-emerald-500/40 text-emerald-300 hover:text-white hover:bg-emerald-600/30 flex items-center gap-2 backdrop-blur-xl shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer font-bold text-xs" title="התקן את המשחק במכשיר">
+      <span class="text-base">📲</span>
+      <span class="hidden sm:inline">התקן משחק</span>
     </button>
   </div>
 
@@ -938,6 +944,53 @@
     </div>
   </div>
 
+  <!-- Install Instructions Modal -->
+  <div id="install-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 transition-all duration-300">
+    <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl relative flex flex-col gap-4 text-right" dir="rtl">
+      
+      <!-- Close Button -->
+      <button id="close-install-btn" class="absolute top-4 left-4 w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-200">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      <div class="text-center pt-2">
+        <div class="w-14 h-14 mx-auto mb-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-3xl shadow-lg">📲</div>
+        <h2 class="text-xl font-black text-white tracking-tight">התקנת שיטהד אונליין</h2>
+        <p class="text-xs text-slate-400 mt-1">הוסף את המשחק למסך הבית לגישה מהירה כמו אפליקציה רגילה!</p>
+      </div>
+
+      <!-- iOS Steps -->
+      <div id="install-ios-steps" class="space-y-3 bg-slate-950/60 p-4 rounded-xl border border-slate-800 text-xs">
+        <h3 class="font-bold text-emerald-400 text-xs flex items-center gap-1.5">
+          <span>📱 הוראות התקנה ב-iPhone / iPad:</span>
+        </h3>
+        <ol class="space-y-2 text-slate-300 list-decimal list-inside leading-relaxed font-medium">
+          <li>לחץ על כפתור <strong class="text-white">השיתוף ⎋ (Share)</strong> בתחתית הדפדפן.</li>
+          <li>גלול מעט מטה ובחר ב-<strong class="text-emerald-300">"הוסף למסך הבית" ➕ (Add to Home Screen)</strong>.</li>
+          <li>לחץ על <strong class="text-white">"הוסף" (Add)</strong> בפינה העליונה!</li>
+        </ol>
+      </div>
+
+      <!-- General Steps -->
+      <div id="install-general-steps" class="space-y-3 bg-slate-950/60 p-4 rounded-xl border border-slate-800 text-xs">
+        <h3 class="font-bold text-cyan-400 text-xs flex items-center gap-1.5">
+          <span>💻 / 🤖 הוראות התקנה ב-Android / מחשב:</span>
+        </h3>
+        <ol class="space-y-2 text-slate-300 list-decimal list-inside leading-relaxed font-medium">
+          <li>לחץ על <strong class="text-white">תפריט הדפדפן ⁝ (3 נקודות)</strong> בפינת המסך.</li>
+          <li>בחר באפשרות <strong class="text-cyan-300">"התקן אפליקציה" (Install app)</strong> או <strong class="text-cyan-300">"הוסף למסך הבית"</strong>.</li>
+          <li>אשר את ההתקנה בחלון שייפתח.</li>
+        </ol>
+      </div>
+
+      <div class="pt-2 text-center border-t border-slate-800/80">
+        <button id="install-modal-close-btn" class="w-full py-2.5 rounded-xl font-bold text-sm bg-indigo-600 hover:bg-indigo-500 text-white shadow-md transition duration-200">הבנתי, תודה! 👍</button>
+      </div>
+    </div>
+  </div>
+
   <div class="max-w-6xl mx-auto px-4 py-2 sm:py-3 flex flex-col min-h-screen gap-2 sm:gap-3">
     
     <!-- Title / Logo Header -->
@@ -1059,6 +1112,12 @@
                 <button id="join-btn" class="py-3.5 rounded-2xl font-bold text-sm bg-white/10 hover:bg-white/15 text-white border border-white/10 shadow-md transition duration-200 hover:scale-[1.01] active:scale-95">הצטרף לחדר 👥</button>
               </div>
               <p class="text-[11px] text-slate-500 text-center">קוד חדר בן 4 אותיות מאפשר להצטרף ישירות לשולחן של חברים</p>
+
+              <!-- Install Game App Button -->
+              <button id="lobby-install-btn" class="w-full py-3.5 rounded-2xl font-bold text-xs sm:text-sm bg-gradient-to-r from-emerald-600/90 via-teal-600/90 to-cyan-600/90 hover:from-emerald-500 hover:via-teal-500 hover:to-cyan-500 text-white border border-emerald-400/30 shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2 transition duration-200 hover:scale-[1.01] active:scale-95 cursor-pointer">
+                <span class="text-base">📲</span>
+                <span id="lobby-install-text">התקן את המשחק במכשיר (App)</span>
+              </button>
             </div>
 
             <!-- Open Rooms Section -->
@@ -2491,9 +2550,94 @@
       }
 
       // ═══════════════════════════════════════════
+      //  PWA & GAME INSTALLATION LOGIC
+      // ═══════════════════════════════════════════
+      let deferredInstallPrompt = null;
+
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        updateInstallUI();
+      });
+
+      window.addEventListener('appinstalled', () => {
+        deferredInstallPrompt = null;
+        updateInstallUI();
+        if (typeof showToast === 'function') {
+          showToast('🎉 המשחק הותקן בהצלחה במסך הבית!');
+        }
+      });
+
+      function updateInstallUI() {
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        const installBtn = el('install-app-btn');
+        const lobbyInstallBtn = el('lobby-install-btn');
+        const lobbyInstallText = el('lobby-install-text');
+
+        if (isStandalone) {
+          if (installBtn) installBtn.classList.add('hidden');
+          if (lobbyInstallText) lobbyInstallText.textContent = '✓ המשחק מותקן במכשיר';
+          if (lobbyInstallBtn) {
+            lobbyInstallBtn.classList.remove('from-emerald-600/90', 'via-teal-600/90', 'to-cyan-600/90');
+            lobbyInstallBtn.classList.add('bg-slate-800/80', 'text-slate-300', 'border-slate-700/60');
+          }
+        }
+      }
+
+      async function triggerInstallApp() {
+        if (deferredInstallPrompt) {
+          deferredInstallPrompt.prompt();
+          const { outcome } = await deferredInstallPrompt.userChoice;
+          if (outcome === 'accepted') {
+            deferredInstallPrompt = null;
+            updateInstallUI();
+          }
+        } else {
+          el('install-modal').classList.remove('hidden');
+          Snd.play('click');
+        }
+      }
+
+      // ═══════════════════════════════════════════
       //  UI INTERACTION INITIALIZATION
       // ═══════════════════════════════════════════
       function setup() {
+        // Install Game triggers
+        const installBtn = el('install-app-btn');
+        if (installBtn) installBtn.addEventListener('click', triggerInstallApp);
+        const lobbyInstallBtn = el('lobby-install-btn');
+        if (lobbyInstallBtn) lobbyInstallBtn.addEventListener('click', triggerInstallApp);
+
+        const closeInstallBtn = el('close-install-btn');
+        if (closeInstallBtn) {
+          closeInstallBtn.addEventListener('click', function () {
+            el('install-modal').classList.add('hidden');
+            Snd.play('click');
+          });
+        }
+        const installModalCloseBtn = el('install-modal-close-btn');
+        if (installModalCloseBtn) {
+          installModalCloseBtn.addEventListener('click', function () {
+            el('install-modal').classList.add('hidden');
+            Snd.play('click');
+          });
+        }
+        const installModal = el('install-modal');
+        if (installModal) {
+          installModal.addEventListener('click', function (e) {
+            if (e.target === this) {
+              this.classList.add('hidden');
+              Snd.play('click');
+            }
+          });
+        }
+
         // Mute button trigger
         el('mute-btn').addEventListener('click', function () {
           Snd.muted = !Snd.muted;
@@ -2837,6 +2981,7 @@
       // Initialize sound mute from local storage
       Snd.muted = localStorage.getItem('shithead_sound_muted') === '1';
       updateMuteUI();
+      updateInstallUI();
 
       // Connect socket on load to receive open rooms list
       connectSocket();
