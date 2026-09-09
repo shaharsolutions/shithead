@@ -2107,7 +2107,7 @@
         return '<div class="' + cls + '">' + overlayHtml + '<div class="card-back-pat"></div></div>';
       }
 
-      function cFace(c, isSelected, playable, isOnPile = false) {
+      function cFace(c, isSelected, playable, isOnPile = false, isActionCard = true) {
         const red = c.suit === 'hearts' || c.suit === 'diamonds';
         let cls = 'card card-face ' + (red ? 'card-red' : 'card-black');
         if (c.rank === 3 && isOnPile) cls += ' card-3';
@@ -2115,7 +2115,11 @@
         if (playable) cls += ' card-play';
         let badgeHtml = '';
         if (isSelected && G && G.phase === 'play') {
-          badgeHtml = '<div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-cyan-400 text-slate-950 font-black text-[9px] sm:text-[10px] px-2.5 py-0.5 rounded-full shadow-lg whitespace-nowrap z-40 pointer-events-none animate-pulse">הקש להורדה ⚡</div>';
+          if (isActionCard) {
+            badgeHtml = '<div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-cyan-400 text-slate-950 font-black text-[9px] sm:text-[10px] px-2.5 py-0.5 rounded-full shadow-lg whitespace-nowrap z-40 pointer-events-none animate-pulse">הקש להורדה ⚡</div>';
+          } else {
+            badgeHtml = '<div class="absolute -top-3 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-cyan-400 text-slate-950 font-black text-[11px] flex items-center justify-center shadow-lg border border-cyan-300 z-40 pointer-events-none">✓</div>';
+          }
         }
         return '<div class="' + cls + '">' + badgeHtml +
           '<span class="c-tl">' + RD[c.rank] + '<br>' + SS[c.suit] + '</span>' +
@@ -2180,9 +2184,10 @@
             // Top layer: playable face-up card
             const playable = isSelf && myTurn && src === 'faceup';
             const isSelected = isSelf && (selSrc === 'faceup' && sel.includes(i));
+            const isActionCard = (sel.length <= 1) || (sel[sel.length - 1] === i);
             const topClickAttr = isSelf ? ' data-table-slot="' + i + '"' : '';
 
-            html += '<div class="absolute top-0 left-0 z-10 transform -translate-y-4 sm:-translate-y-6"' + topClickAttr + '>' + cFace(faceup, isSelected, playable) + '</div>';
+            html += '<div class="absolute top-0 left-0 z-10 transform -translate-y-4 sm:-translate-y-6"' + topClickAttr + '>' + cFace(faceup, isSelected, playable, false, isActionCard) + '</div>';
           } else if (hasFacedown) {
             // Only facedown card left: active & playable blindly
             const playable = isSelf && myTurn && src === 'facedown';
@@ -2536,7 +2541,8 @@
             ? isHandPlayable 
             : (myTurn ? (isHandPlayable && isCardPlayable(c)) : (isHandPlayable && c.rank === 4));
           const wrapperClass = isSelected ? 'relative z-30' : 'relative';
-          myHandHtml += '<div data-hand="' + i + '" class="' + wrapperClass + '">' + cFace(c, isSelected, isPlayable) + '</div>';
+          const isActionCard = (sel.length <= 1) || (sel[sel.length - 1] === i);
+          myHandHtml += '<div data-hand="' + i + '" class="' + wrapperClass + '">' + cFace(c, isSelected, isPlayable, false, isActionCard) + '</div>';
         }
         el('human-hand').innerHTML = '<div class="hand-inner">' + myHandHtml + '</div>';
 
