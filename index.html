@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="description" content="משחק שיטהד אונליין בזמן אמת עם חברים או מול המחשב.">
   <title>שיטהד אונליין</title>
   <link rel="icon" type="image/png" href="/favicon.png">
@@ -51,8 +51,17 @@
   <style>
     *, ::before, ::after {
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
-    body { font-family: 'Inter', system-ui, sans-serif; }
+    html, body {
+      font-family: 'Inter', system-ui, sans-serif;
+      touch-action: manipulation;
+      -webkit-text-size-adjust: 100%;
+    }
+    .card, [data-hand], [data-table-slot], button {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
 
     .lobby-shell {
       min-height: clamp(640px, calc(100vh - 112px), 860px);
@@ -1282,8 +1291,10 @@
       let name = '';
       let G = null; // Sanitized game state from server
       let sel = []; // Selected card indices
-      let selSrc = null; // 'hand' | 'faceUp'
+      let selSrc = null; // 'hand' | 'faceup'
       let swapSel = null; // { src, idx }
+      let lastCardTap = { src: null, idx: null, time: 0 };
+      let playPending = false;
       let winSoundPlayed = false;
       let interjectionPending = false;
       let currentTutorialStep = -1;
@@ -1675,6 +1686,8 @@
           
           G = state;
           interjectionPending = false;
+          playPending = false;
+          lastCardTap = { src: null, idx: null, time: 0 };
           render();
 
           // Trigger Turn warning if turn changed to self
@@ -1707,6 +1720,8 @@
 
         socket.on('error-msg', (msg) => {
           interjectionPending = false;
+          playPending = false;
+          lastCardTap = { src: null, idx: null, time: 0 };
           sel = [];
           selSrc = null;
           toast(msg, 'warning');
@@ -1741,6 +1756,8 @@
         sel = [];
         selSrc = null;
         swapSel = null;
+        lastCardTap = { src: null, idx: null, time: 0 };
+        playPending = false;
         winSoundPlayed = false;
         interjectionPending = false;
         currentTutorialStep = -1;
@@ -1899,6 +1916,7 @@
 
         // MAIN PLAY PHASE
         if (G.phase !== 'play') return;
+        if (playPending) return;
         
         // Turn check & interjection check
         const myIdx = G.players.findIndex(p => p.isSelf);
@@ -1917,7 +1935,7 @@
             if (resolvedSrc === 'hand') {
               card = myInfo.hand[idx];
             } else if (resolvedSrc === 'faceup') {
-              card = myInfo.ts[idx].faceup;
+              card = myInfo.ts[idx]?.faceup;
             }
             if (card && card.rank === 4 && currentSrc === resolvedSrc) {
               canInteract = true;
@@ -1942,8 +1960,11 @@
           if (G.turnIdx !== myIdx && G.discardCount === 0 && card.rank === 4) {
             if (interjectionPending) return;
             interjectionPending = true;
+            playPending = true;
+            setTimeout(() => { playPending = false; }, 2000);
             sel = [];
             selSrc = null;
+            lastCardTap = { src: null, idx: null, time: 0 };
             socket.emit('play-cards', { indices: [idx] });
             Snd.play('click');
             render();
@@ -1958,11 +1979,20 @@
             sameRankCount = myInfo.ts.filter(s => s && s.faceup && s.faceup.rank === card.rank).length;
           }
 
+          const now = Date.now();
+          const isRepeatTap = (selSrc === resolvedSrc && sel.includes(idx)) ||
+                             (lastCardTap.src === resolvedSrc && lastCardTap.idx === idx && (now - lastCardTap.time) < 1200);
+
+          lastCardTap = { src: resolvedSrc, idx, time: now };
+
           // If the player does not have multiple cards of this rank (only 1 unique card of this rank),
           // clicking the card immediately plays/discards it to the pile.
           if (sameRankCount <= 1) {
             sel = [];
             selSrc = null;
+            lastCardTap = { src: null, idx: null, time: 0 };
+            playPending = true;
+            setTimeout(() => { playPending = false; }, 2000);
             socket.emit('play-cards', { indices: [idx] });
             Snd.play('click');
             render();
@@ -1970,8 +2000,14 @@
           }
 
           // Player has multiple cards of the same rank:
-          // If this card is ALREADY SELECTED, tapping it again confirms and IMMEDIATELY plays the selection!
-          if (selSrc === resolvedSrc && sel.includes(idx)) {
+          // If this card is ALREADY SELECTED or tapped repeatedly (double-tap), confirm and IMMEDIATELY play the selection!
+          if (isRepeatTap) {
+            if (selSrc !== resolvedSrc) {
+              selSrc = resolvedSrc;
+              sel = [idx];
+            } else if (!sel.includes(idx)) {
+              sel.push(idx);
+            }
             handlePlaySelected();
             return;
           }
@@ -1985,7 +2021,9 @@
               : myInfo.ts[sel[0]]?.faceup;
 
             if (firstSelectedCard && firstSelectedCard.rank === card.rank) {
-              sel.push(idx);
+              if (!sel.includes(idx)) {
+                sel.push(idx);
+              }
             } else {
               sel = [idx];
             }
@@ -1994,18 +2032,26 @@
         } else if (resolvedSrc === 'facedown') {
           const slot = myInfo.ts[idx];
           if (!slot || !slot.hasFacedown) return;
-          socket.emit('play-cards', { indices: [idx] });
+          playPending = true;
+          setTimeout(() => { playPending = false; }, 2000);
           sel = [];
           selSrc = null;
+          lastCardTap = { src: null, idx: null, time: 0 };
+          socket.emit('play-cards', { indices: [idx] });
+          Snd.play('click');
         }
         render();
       }
 
       function handlePlaySelected() {
-        if (!socket || !sel.length) return;
-        const currentSel = [...sel];
+        if (!socket || playPending) return;
+        const currentSel = sel.length ? [...sel] : (lastCardTap.idx !== null ? [lastCardTap.idx] : []);
+        if (!currentSel.length) return;
         sel = [];
         selSrc = null;
+        lastCardTap = { src: null, idx: null, time: 0 };
+        playPending = true;
+        setTimeout(() => { playPending = false; }, 2000);
         Snd.play('click');
         render();
         socket.emit('play-cards', { indices: currentSel });
@@ -2696,6 +2742,7 @@
 
         // In-game board click events
         el('human-hand').addEventListener('click', function (e) {
+          e.stopPropagation();
           const w = e.target.closest('[data-hand]');
           if (!w) return;
           const idx = parseInt(w.dataset.hand);
@@ -2703,6 +2750,7 @@
         });
 
         el('human-table').addEventListener('click', function (e) {
+          e.stopPropagation();
           const slot = e.target.closest('[data-table-slot]');
           if (slot) {
             const idx = parseInt(slot.dataset.tableSlot);
@@ -2722,17 +2770,6 @@
         el('pick-btn').addEventListener('click', handlePickUp);
         el('start-btn').addEventListener('click', handleLockReady);
         el('lobby-btn').addEventListener('click', resetToLobby);
-
-        // Deselect cards when clicking empty space in the game view
-        el('game-view').addEventListener('click', function (e) {
-          if (!e.target.closest('[data-hand]') && !e.target.closest('[data-table-slot]') && !e.target.closest('#play-btn') && !e.target.closest('#pick-btn') && !e.target.closest('button')) {
-            if (sel.length) {
-              sel = [];
-              selSrc = null;
-              render();
-            }
-          }
-        });
         
         // Modal rematch listeners
         el('rematch-btn').addEventListener('click', handleRematch);
