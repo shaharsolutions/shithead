@@ -261,9 +261,9 @@
       z-index: 20;
     }
     .card-sel {
-      transform: translateY(-20px) scale(1.04) !important;
+      transform: translateY(-16px) scale(1.03) !important;
       border-color: #22d3ee !important;
-      box-shadow: 0 0 22px rgba(34, 211, 238, 0.75), 0 12px 30px rgba(0, 0, 0, 0.45) !important;
+      box-shadow: 0 0 22px rgba(34, 211, 238, 0.75), 0 10px 24px rgba(0, 0, 0, 0.45) !important;
       z-index: 30 !important;
     }
 
@@ -476,6 +476,8 @@
       max-width: 100%;
       overflow-x: auto !important;
       overflow-y: hidden !important;
+      min-height: 148px;
+      height: 148px;
       scrollbar-width: thin;
       scrollbar-color: rgba(212, 175, 55, 0.2) transparent;
     }
@@ -484,10 +486,10 @@
       min-width: 100%;
       justify-content: center;
       align-items: flex-end;
-      min-height: 126px;
-      height: 126px;
-      padding-top: 24px;
-      padding-bottom: 6px;
+      min-height: 148px;
+      height: 148px;
+      padding-top: 40px;
+      padding-bottom: 8px;
       padding-left: 24px;
       padding-right: 24px;
       gap: 8px;
@@ -525,13 +527,13 @@
       .pile-stack { width: 54px; height: 76px; }
       .hand-fan > * { margin-inline-end: -22px; }
        #human-hand {
-         min-height: 106px;
-         height: 106px;
+         min-height: 124px;
+         height: 124px;
        }
        .hand-inner {
-         min-height: 106px;
-         height: 106px;
-         padding-top: 22px;
+         min-height: 124px;
+         height: 124px;
+         padding-top: 40px;
          padding-bottom: 6px;
          padding-left: 20px;
          padding-right: 20px;
@@ -1971,12 +1973,11 @@
             return;
           }
 
-          // Count how many cards of the same rank exist in the player's active source
-          let sameRankCount = 0;
-          if (resolvedSrc === 'hand') {
-            sameRankCount = myInfo.hand.filter(c => c && c.rank === card.rank).length;
-          } else if (resolvedSrc === 'faceup') {
-            sameRankCount = myInfo.ts.filter(s => s && s.faceup && s.faceup.rank === card.rank).length;
+          // Validate card playability on active turn
+          if (!isCardPlayable(card)) {
+            toast('אי אפשר לשחק את הקלף הזה על הערימה', 'warning');
+            Snd.play('error');
+            return;
           }
 
           const now = Date.now();
@@ -1985,22 +1986,7 @@
 
           lastCardTap = { src: resolvedSrc, idx, time: now };
 
-          // If the player does not have multiple cards of this rank (only 1 unique card of this rank),
-          // clicking the card immediately plays/discards it to the pile.
-          if (sameRankCount <= 1) {
-            sel = [];
-            selSrc = null;
-            lastCardTap = { src: null, idx: null, time: 0 };
-            playPending = true;
-            setTimeout(() => { playPending = false; }, 2000);
-            socket.emit('play-cards', { indices: [idx] });
-            Snd.play('click');
-            render();
-            return;
-          }
-
-          // Player has multiple cards of the same rank:
-          // If this card is ALREADY SELECTED or tapped repeatedly (double-tap), confirm and IMMEDIATELY play the selection!
+          // Confirm and immediately play only on repeat tap / double tap
           if (isRepeatTap) {
             if (selSrc !== resolvedSrc) {
               selSrc = resolvedSrc;
@@ -2012,6 +1998,7 @@
             return;
           }
 
+          // First tap: Select card (do not play on single click)
           if (selSrc !== resolvedSrc) {
             selSrc = resolvedSrc;
             sel = [idx];
@@ -2128,7 +2115,7 @@
         if (playable) cls += ' card-play';
         let badgeHtml = '';
         if (isSelected && G && G.phase === 'play') {
-          badgeHtml = '<div class="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-cyan-400 text-slate-950 font-black text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full shadow-lg whitespace-nowrap z-40 pointer-events-none animate-pulse">הקש להורדה ⚡</div>';
+          badgeHtml = '<div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-cyan-400 text-slate-950 font-black text-[9px] sm:text-[10px] px-2.5 py-0.5 rounded-full shadow-lg whitespace-nowrap z-40 pointer-events-none animate-pulse">הקש להורדה ⚡</div>';
         }
         return '<div class="' + cls + '">' + badgeHtml +
           '<span class="c-tl">' + RD[c.rank] + '<br>' + SS[c.suit] + '</span>' +
