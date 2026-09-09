@@ -398,6 +398,8 @@
     /* ===== BUTTON GLOW ===== */
     .btn-glow { animation: bPulse 1.4s ease-in-out infinite; }
     @keyframes bPulse { 0%,100% { box-shadow: 0 0 8px rgba(245,158,11,0.3); } 50% { box-shadow: 0 0 22px rgba(245,158,11,0.65); } }
+    .btn-cyan-glow { animation: cyanPulse 1.4s ease-in-out infinite; }
+    @keyframes cyanPulse { 0%,100% { box-shadow: 0 0 8px rgba(34,211,238,0.3); } 50% { box-shadow: 0 0 24px rgba(34,211,238,0.75); } }
 
     /* ===== TURN BADGE ===== */
     .badge-dot { width: 8px; height: 8px; border-radius: 50%; animation: dotP 1.2s ease-in-out infinite; }
@@ -1233,7 +1235,7 @@
     <footer class="text-center py-4 mt-auto border-t border-slate-800/40 relative z-10">
       <p class="text-xs text-slate-500">
         המשחק פותח ע"י 
-        <a href="https://shaharsolutions.github.io/digital/" target="_blank" rel="noopener noreferrer" class="text-indigo-400 hover:text-indigo-300 font-semibold hover:underline transition duration-200">שחר פתרונות דיגיטליים</a>
+        <a href="https://www.shaharsolutions.com" target="_blank" rel="noopener noreferrer" class="text-indigo-400 hover:text-indigo-300 font-semibold hover:underline transition duration-200">שחר פתרונות דיגיטליים</a>
       </p>
     </footer>
 
@@ -1705,8 +1707,11 @@
 
         socket.on('error-msg', (msg) => {
           interjectionPending = false;
+          sel = [];
+          selSrc = null;
           toast(msg, 'warning');
           Snd.play('error');
+          render();
         });
 
         socket.on('opponent-disconnected', ({ msg }) => {
@@ -1964,13 +1969,16 @@
             return;
           }
 
-          // Player has multiple cards of the same rank: multi-selection is enabled for this rank
+          // Player has multiple cards of the same rank:
+          // If this card is ALREADY SELECTED, tapping it again confirms and IMMEDIATELY plays the selection!
+          if (selSrc === resolvedSrc && sel.includes(idx)) {
+            handlePlaySelected();
+            return;
+          }
+
           if (selSrc !== resolvedSrc) {
             selSrc = resolvedSrc;
             sel = [idx];
-          } else if (sel.includes(idx)) {
-            sel = sel.filter(selectedIdx => selectedIdx !== idx);
-            if (!sel.length) selSrc = null;
           } else {
             const firstSelectedCard = resolvedSrc === 'hand'
               ? myInfo.hand[sel[0]]
@@ -1995,9 +2003,12 @@
 
       function handlePlaySelected() {
         if (!socket || !sel.length) return;
-        socket.emit('play-cards', { indices: sel });
+        const currentSel = [...sel];
         sel = [];
         selSrc = null;
+        Snd.play('click');
+        render();
+        socket.emit('play-cards', { indices: currentSel });
       }
 
       // Determine active player's source on the client side
@@ -2011,9 +2022,11 @@
 
       function handlePickUp() {
         if (!socket) return;
-        socket.emit('pick-up');
         sel = [];
         selSrc = null;
+        Snd.play('click');
+        render();
+        socket.emit('pick-up');
       }
 
       function handleLockReady() {
@@ -2067,7 +2080,11 @@
         if (c.rank === 3 && isOnPile) cls += ' card-3';
         if (isSelected) cls += ' card-sel';
         if (playable) cls += ' card-play';
-        return '<div class="' + cls + '">' +
+        let badgeHtml = '';
+        if (isSelected && G && G.phase === 'play') {
+          badgeHtml = '<div class="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-cyan-400 text-slate-950 font-black text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full shadow-lg whitespace-nowrap z-40 pointer-events-none animate-pulse">הקש להורדה ⚡</div>';
+        }
+        return '<div class="' + cls + '">' + badgeHtml +
           '<span class="c-tl">' + RD[c.rank] + '<br>' + SS[c.suit] + '</span>' +
           '<span class="c-mid">' + SS[c.suit] + '</span>' +
           '<span class="c-br">' + RD[c.rank] + '<br>' + SS[c.suit] + '</span></div>';
@@ -2436,7 +2453,11 @@
           }
         } else if (myTurn) {
           const activeSrc = getActivePlayerSource(myInfo);
-          if (activeSrc === 'faceup') {
+          if (sel.length > 0) {
+            message = sel.length === 1
+              ? 'קלף נבחר! לחץ עליו שוב או על כפתור ההורדה כדי לשחק ⚡'
+              : `נבחרו ${sel.length} קלפים! לחץ עליהם שוב או על כפתור ההורדה כדי לשחק ⚡`;
+          } else if (activeSrc === 'faceup') {
             message = 'בחר קלף אחד או יותר מאותו מספר ולחץ על כפתור ההורדה 🃏';
           } else if (activeSrc === 'facedown') {
             message = 'התור שלך! לחץ על קלף מוסתר מהשולחן באופן עיוור 💥 (נסה את מזלך!)';
@@ -2498,19 +2519,20 @@
         playBtn.textContent = sel.length === 0
           ? 'בחר קלפים'
           : sel.length === 1
-            ? 'הורד קלף'
-            : `הורד ${sel.length} קלפים`;
+            ? 'הורד קלף ⚡'
+            : `הורד ${sel.length} קלפים ⚡`;
+        playBtn.classList.toggle('btn-cyan-glow', sel.length > 0);
 
         el('pick-btn').classList.toggle('hidden', G.phase !== 'play');
         const hasLegalPlay = myActiveSrc === 'hand' 
           ? myInfo.hand.some(c => isCardPlayable(c))
-          : myInfo.ts.some(s => s.card && isCardPlayable(s.card));
+          : myInfo.ts.some(s => s.faceup && isCardPlayable(s.faceup));
         const canPick = myTurn && !hasLegalPlay && G.discardCount > 0;
         
         el('pick-btn').disabled = !myTurn || !G.discardCount;
         el('pick-btn').classList.toggle('btn-glow', canPick);
 
-        const placedCount = myInfo.ts.filter(s => s.card !== null).length;
+        const placedCount = myInfo.ts.filter(s => s.faceup !== null).length;
         const btn = el('start-btn');
         const isHidden = G.phase !== 'swap';
         btn.classList.toggle('hidden', isHidden);
@@ -2700,6 +2722,17 @@
         el('pick-btn').addEventListener('click', handlePickUp);
         el('start-btn').addEventListener('click', handleLockReady);
         el('lobby-btn').addEventListener('click', resetToLobby);
+
+        // Deselect cards when clicking empty space in the game view
+        el('game-view').addEventListener('click', function (e) {
+          if (!e.target.closest('[data-hand]') && !e.target.closest('[data-table-slot]') && !e.target.closest('#play-btn') && !e.target.closest('#pick-btn') && !e.target.closest('button')) {
+            if (sel.length) {
+              sel = [];
+              selSrc = null;
+              render();
+            }
+          }
+        });
         
         // Modal rematch listeners
         el('rematch-btn').addEventListener('click', handleRematch);
