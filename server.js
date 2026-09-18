@@ -62,7 +62,8 @@ function sortH(h) {
 const rooms = new Map(); // roomId -> roomState
 
 // ═══════════════════════════════════════════
-//  ADMIN PANEL STATISTICS
+// ═══════════════════════════════════════════
+//  ADMIN PANEL STATISTICS & GEOLOCATION
 // ═══════════════════════════════════════════
 const stats = {
   totalConnections: 0,
@@ -70,8 +71,359 @@ const stats = {
   totalGamesCount: 0,
   computerGamesCount: 0,
   friendGamesCount: 0,
-  historyLog: []
+  historyLog: [],
+  recentLocations: []
 };
+
+const activeSockets = new Map(); // socket.id -> socketMetadata
+const geoCache = new Map(); // ip -> locationData
+
+const COUNTRY_NAMES_HE = {
+  'IL': 'ישראל',
+  'US': 'ארצות הברית',
+  'GB': 'בריטניה',
+  'FR': 'צרפת',
+  'DE': 'גרמניה',
+  'CA': 'קנדה',
+  'AU': 'אוסטרליה',
+  'RU': 'רוסיה',
+  'UA': 'אוקראינה',
+  'IT': 'איטליה',
+  'ES': 'ספרד',
+  'NL': 'הולנד',
+  'BE': 'בלגיה',
+  'CH': 'שווייץ',
+  'AT': 'אוסטריה',
+  'SE': 'שוודיה',
+  'NO': 'נורווגיה',
+  'DK': 'דנמרק',
+  'PL': 'פולין',
+  'RO': 'רומניה',
+  'GR': 'יוון',
+  'CY': 'קפריסין',
+  'TR': 'טורקיה',
+  'AE': 'איחוד האמירויות',
+  'SA': 'ערב הסעודית',
+  'EG': 'מצרים',
+  'JO': 'ירדן',
+  'TH': 'תאילנד',
+  'IN': 'הודו',
+  'CN': 'סין',
+  'JP': 'יפן',
+  'KR': 'דרום קוריאה',
+  'SG': 'סינגפור',
+  'BR': 'ברזיל',
+  'AR': 'ארגנטינה',
+  'MX': 'מקסיקו',
+  'ZA': 'דרום אפריקה',
+  'LOCAL': 'רשת מקומית'
+};
+
+const CITY_NAMES_HE = {
+  'Tel Aviv': 'תל אביב',
+  'Tel Aviv-Yafo': 'תל אביב - יפו',
+  'Jerusalem': 'ירושלים',
+  'Haifa': 'חיפה',
+  'Rishon LeZion': 'ראשון לציון',
+  'Petah Tikva': 'פתח תקווה',
+  'Ashdod': 'אשדוד',
+  'Netanya': 'נתניה',
+  'Beersheba': 'באר שבע',
+  'Beer Sheva': 'באר שבע',
+  'Holon': 'חולון',
+  'Bnei Brak': 'בני ברק',
+  'Ramat Gan': 'רמת גן',
+  'Rehovot': 'רחובות',
+  'Bat Yam': 'בת ים',
+  'Ashkelon': 'אשקלון',
+  'Herzliya': 'הרצליה',
+  'Kfar Saba': 'כפר סבא',
+  'Hadera': 'חדרה',
+  'Modiin': 'מודיעין',
+  'Ra\'anana': 'רעננה',
+  'Raanana': 'רעננה',
+  'Givatayim': 'גבעתיים',
+  'Lod': 'לוד',
+  'Ramla': 'רמלה',
+  'Nazareth': 'נצרת',
+  'Acre': 'עכו',
+  'Eilat': 'אילת',
+  'Tiberias': 'טבריה'
+};
+
+const TIMEZONE_TO_COUNTRY = {
+  'Asia/Jerusalem': 'IL',
+  'Asia/Tel_Aviv': 'IL',
+  'America/New_York': 'US',
+  'America/Chicago': 'US',
+  'America/Denver': 'US',
+  'America/Los_Angeles': 'US',
+  'Europe/London': 'GB',
+  'Europe/Paris': 'FR',
+  'Europe/Berlin': 'DE',
+  'Europe/Rome': 'IT',
+  'Europe/Madrid': 'ES',
+  'Europe/Amsterdam': 'NL',
+  'Europe/Moscow': 'RU',
+  'Europe/Kiev': 'UA',
+  'Europe/Kyiv': 'UA',
+  'America/Toronto': 'CA',
+  'America/Vancouver': 'CA',
+  'Asia/Dubai': 'AE',
+  'Asia/Bangkok': 'TH'
+};
+
+function getFlagEmoji(countryCode) {
+  if (!countryCode || countryCode.length !== 2) return '🌐';
+  const code = countryCode.toUpperCase();
+  try {
+    return String.fromCodePoint(
+      127397 + code.charCodeAt(0),
+      127397 + code.charCodeAt(1)
+    );
+  } catch {
+    return '🌐';
+  }
+}
+
+function maskIp(ip) {
+  if (!ip) return 'מקומי';
+  if (ip === '127.0.0.1' || ip === '::1') return '127.0.0.1 (מקומי)';
+  if (ip.includes('.')) {
+    const parts = ip.split('.');
+    if (parts.length === 4) {
+      return `${parts[0]}.***.***.${parts[3]}`;
+    }
+  }
+  if (ip.includes(':')) {
+    const parts = ip.split(':');
+    return `${parts.slice(0, 2).join(':')}:****`;
+  }
+  return ip;
+}
+
+function isPrivateIp(ip) {
+  if (!ip) return true;
+  if (ip === '127.0.0.1' || ip === '::1' || ip === 'localhost') return true;
+  if (ip.startsWith('10.') || ip.startsWith('192.168.')) return true;
+  if (ip.startsWith('172.')) {
+    const parts = ip.split('.');
+    const second = parseInt(parts[1], 10);
+    if (second >= 16 && second <= 31) return true;
+  }
+  if (ip.startsWith('fc00:') || ip.startsWith('fe80:')) return true;
+  return false;
+}
+
+function getClientIp(socket) {
+  let ip = socket.handshake.headers['x-forwarded-for'] ||
+           socket.handshake.headers['x-real-ip'] ||
+           socket.handshake.headers['cf-connecting-ip'] ||
+           socket.handshake.address ||
+           (socket.conn && socket.conn.remoteAddress) || '';
+  if (ip && ip.includes(',')) {
+    ip = ip.split(',')[0].trim();
+  }
+  if (ip && ip.startsWith('::ffff:')) {
+    ip = ip.substring(7);
+  }
+  return ip.trim();
+}
+
+function getInitialFastLocation(ip, clientHints = {}) {
+  if (ip && geoCache.has(ip)) {
+    return { ...geoCache.get(ip) };
+  }
+
+  const tz = clientHints.timezone || '';
+  const lang = (clientHints.language || '').toLowerCase();
+
+  if (!ip || isPrivateIp(ip)) {
+    const tzCountry = tz ? TIMEZONE_TO_COUNTRY[tz] : null;
+    const countryCode = tzCountry || (lang.includes('he') ? 'IL' : 'LOCAL');
+    const countryName = COUNTRY_NAMES_HE[countryCode] || (countryCode === 'LOCAL' ? 'רשת מקומית' : countryCode);
+    const flag = countryCode === 'LOCAL' ? '🏠' : getFlagEmoji(countryCode);
+    const loc = {
+      ip: ip || '127.0.0.1',
+      maskedIp: maskIp(ip || '127.0.0.1'),
+      country: countryName,
+      countryCode: countryCode,
+      flag: flag,
+      city: countryCode === 'IL' ? 'ישראל (מקומי)' : 'פיתוח מקומי',
+      region: 'Local Network',
+      isp: 'Localhost',
+      timezone: tz || 'Asia/Jerusalem',
+      isLocal: true
+    };
+    if (ip) geoCache.set(ip, loc);
+    return loc;
+  }
+
+  // Fast estimate based on timezone/language
+  const tzCountry = tz ? TIMEZONE_TO_COUNTRY[tz] : null;
+  const countryCode = tzCountry || (lang.includes('he') ? 'IL' : 'UNKNOWN');
+  const countryName = COUNTRY_NAMES_HE[countryCode] || (countryCode === 'UNKNOWN' ? 'ממתין לזיהוי...' : countryCode);
+  const flag = countryCode === 'UNKNOWN' ? '🌐' : getFlagEmoji(countryCode);
+
+  return {
+    ip,
+    maskedIp: maskIp(ip),
+    country: countryName,
+    countryCode,
+    flag,
+    city: countryCode === 'IL' ? 'ישראל' : '',
+    region: '',
+    isp: 'מזהה ספק...',
+    timezone: tz,
+    isLocal: false
+  };
+}
+
+async function resolveIpLocation(ip, clientHints = {}) {
+  if (!ip) return getInitialFastLocation(ip, clientHints);
+  if (geoCache.has(ip)) return { ...geoCache.get(ip) };
+  if (isPrivateIp(ip)) return getInitialFastLocation(ip, clientHints);
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2500);
+
+    const res = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}`, {
+      signal: controller.signal,
+      headers: { 'User-Agent': 'Shithead-Game-Server/1.0' }
+    });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.success) {
+        const countryCode = (data.country_code || 'IL').toUpperCase();
+        const rawCity = data.city || '';
+        const city = CITY_NAMES_HE[rawCity] || rawCity || 'לא ידוע';
+        const countryName = COUNTRY_NAMES_HE[countryCode] || data.country || countryCode;
+        const flag = data.flag?.emoji || getFlagEmoji(countryCode);
+        const isp = data.connection?.isp || data.connection?.org || 'ספק רשת';
+
+        const loc = {
+          ip,
+          maskedIp: maskIp(ip),
+          country: countryName,
+          countryCode,
+          flag,
+          city,
+          region: data.region || '',
+          isp,
+          timezone: data.timezone?.id || clientHints.timezone || '',
+          isLocal: false
+        };
+        geoCache.set(ip, loc);
+        return loc;
+      }
+    }
+  } catch (e) {
+    // Network or timeout failure - fallback
+  }
+
+  const fallback = getInitialFastLocation(ip, clientHints);
+  if (fallback.countryCode === 'UNKNOWN') {
+    fallback.country = 'לא ידוע';
+    fallback.isp = 'לא ידוע';
+  }
+  geoCache.set(ip, fallback);
+  return fallback;
+}
+
+function addLocationRecord(record) {
+  stats.recentLocations.push({
+    id: record.id,
+    name: record.name || 'אורח',
+    ip: record.maskedIp,
+    fullIp: record.ip,
+    country: record.country,
+    countryCode: record.countryCode,
+    flag: record.flag,
+    city: record.city,
+    region: record.region || '',
+    isp: record.isp || '',
+    deviceType: record.deviceType,
+    connectedAt: record.connectedAt,
+    disconnectedAt: record.disconnectedAt || null,
+    isOnline: record.isOnline !== false,
+    roomId: record.roomId || null
+  });
+
+  if (stats.recentLocations.length > 500) {
+    stats.recentLocations.shift();
+  }
+}
+
+function computeLocationStats(locationsList = [], activeMap = new Map()) {
+  const countryCounts = {};
+  const cityCounts = {};
+  const ispCounts = {};
+  let totalTracked = locationsList.length;
+
+  locationsList.forEach(loc => {
+    const cKey = loc.countryCode || 'UNKNOWN';
+    if (!countryCounts[cKey]) {
+      countryCounts[cKey] = {
+        code: cKey,
+        name: loc.country || 'לא ידוע',
+        flag: loc.flag || '🌐',
+        count: 0
+      };
+    }
+    countryCounts[cKey].count++;
+
+    if (loc.city && loc.city !== 'לא ידוע' && loc.city !== 'פיתוח מקומי') {
+      const cityKey = `${loc.city}__${cKey}`;
+      if (!cityCounts[cityKey]) {
+        cityCounts[cityKey] = {
+          city: loc.city,
+          country: loc.country,
+          flag: loc.flag || '🌐',
+          count: 0
+        };
+      }
+      cityCounts[cityKey].count++;
+    }
+
+    if (loc.isp && loc.isp !== 'Localhost' && loc.isp !== 'לא ידוע' && loc.isp !== 'מזהה ספק...') {
+      ispCounts[loc.isp] = (ispCounts[loc.isp] || 0) + 1;
+    }
+  });
+
+  const topCountries = Object.values(countryCounts)
+    .sort((a, b) => b.count - a.count)
+    .map(c => ({
+      ...c,
+      percentage: totalTracked > 0 ? Math.round((c.count / totalTracked) * 100) : 0
+    }));
+
+  const topCities = Object.values(cityCounts)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 12);
+
+  const topIsps = Object.entries(ispCounts)
+    .map(([isp, count]) => ({ isp, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6);
+
+  // Active online connections summary
+  const activeByCountry = {};
+  for (const s of activeMap.values()) {
+    const cKey = s.countryCode || 'UNKNOWN';
+    activeByCountry[cKey] = (activeByCountry[cKey] || 0) + 1;
+  }
+
+  return {
+    totalTracked,
+    topCountries,
+    topCities,
+    topIsps,
+    activeByCountry
+  };
+}
 
 const STATS_FILE = path.join(__dirname, 'stats.json');
 
@@ -119,6 +471,7 @@ async function saveStats() {
         totalGamesCount: stats.totalGamesCount,
         computerGamesCount: stats.computerGamesCount,
         friendGamesCount: stats.friendGamesCount,
+        recentLocations: stats.recentLocations.slice(-200),
         lastUpdated: new Date().toISOString()
       }, { merge: true });
     } catch (err) {
@@ -132,7 +485,8 @@ async function saveStats() {
         totalGamesCount: stats.totalGamesCount,
         computerGamesCount: stats.computerGamesCount,
         friendGamesCount: stats.friendGamesCount,
-        historyLog: stats.historyLog
+        historyLog: stats.historyLog,
+        recentLocations: stats.recentLocations.slice(-500)
       };
       fs.writeFileSync(STATS_FILE, JSON.stringify(dataToSave, null, 2), 'utf8');
     } catch (err) {
@@ -152,6 +506,7 @@ async function loadStats() {
         stats.totalGamesCount = data.totalGamesCount || 0;
         stats.computerGamesCount = data.computerGamesCount || 0;
         stats.friendGamesCount = data.friendGamesCount || 0;
+        stats.recentLocations = (data.recentLocations || []).map(r => ({ ...r, isOnline: false }));
         console.log('Successfully loaded stats from Firestore metadata document.');
       } else {
         console.log('Firestore stats document not found. Creating it.');
@@ -185,6 +540,7 @@ async function loadStats() {
         stats.computerGamesCount = loaded.computerGamesCount || 0;
         stats.friendGamesCount = loaded.friendGamesCount || 0;
         stats.historyLog = loaded.historyLog || [];
+        stats.recentLocations = (loaded.recentLocations || []).map(r => ({ ...r, isOnline: false }));
         console.log('Successfully loaded stats from file. Total logs:', stats.historyLog.length);
       } else {
         saveStats();
@@ -199,11 +555,12 @@ async function loadStats() {
 // Load persisted statistics on startup
 loadStats();
 
-async function addLog(type, message) {
+async function addLog(type, message, meta = null) {
   const logEntry = {
     timestamp: new Date().toISOString(),
     type,
-    message
+    message,
+    ...(meta ? { meta } : {})
   };
 
   stats.historyLog.push(logEntry);
@@ -237,12 +594,20 @@ function getAdminStats() {
       phase: room.phase,
       maxPlayers: room.maxPlayers,
       playerCount: room.players.length,
-      players: room.players.map(p => ({
-        name: p.name,
-        isBot: p.isBot,
-        ready: p.ready,
-        finished: p.finished
-      }))
+      players: room.players.map(p => {
+        const sInfo = activeSockets.get(p.id);
+        return {
+          name: p.name,
+          isBot: p.isBot,
+          ready: p.ready,
+          finished: p.finished,
+          location: sInfo ? {
+            city: sInfo.city,
+            country: sInfo.country,
+            flag: sInfo.flag
+          } : null
+        };
+      })
     });
   }
 
@@ -250,14 +615,22 @@ function getAdminStats() {
   for (const room of rooms.values()) {
     for (const p of room.players) {
       if (!p.isBot) {
+        const sInfo = activeSockets.get(p.id);
         activeOnlinePlayers.push({
           name: p.name,
           roomId: room.id,
-          id: p.id
+          id: p.id,
+          location: sInfo ? {
+            city: sInfo.city,
+            country: sInfo.country,
+            flag: sInfo.flag
+          } : null
         });
       }
     }
   }
+
+  const locationStats = computeLocationStats(stats.recentLocations, activeSockets);
 
   return {
     totalConnections: stats.totalConnections,
@@ -268,7 +641,9 @@ function getAdminStats() {
     activeConnections: io.engine.clientsCount,
     activeOnlinePlayers,
     activeRooms,
-    historyLog: stats.historyLog
+    historyLog: stats.historyLog,
+    locationStats,
+    recentLocations: stats.recentLocations.slice(-200)
   };
 }
 
@@ -635,7 +1010,84 @@ io.on('connection', (socket) => {
   stats.totalConnections++;
   const userAgent = socket.handshake.headers['user-agent'] || '';
   const deviceType = getDeviceType(userAgent);
-  addLog('connection', `מכשיר חדש התחבר מסוג ${deviceType} (מזהה: ${socket.id})`);
+  const clientIp = getClientIp(socket);
+  const clientHints = socket.handshake.auth?.clientHints || {};
+
+  const fastLoc = getInitialFastLocation(clientIp, clientHints);
+  const socketRecord = {
+    id: socket.id,
+    ip: clientIp,
+    maskedIp: maskIp(clientIp),
+    country: fastLoc.country,
+    countryCode: fastLoc.countryCode,
+    flag: fastLoc.flag,
+    city: fastLoc.city,
+    region: fastLoc.region || '',
+    isp: fastLoc.isp || '',
+    deviceType,
+    name: 'אורח',
+    connectedAt: new Date().toISOString(),
+    disconnectedAt: null,
+    isOnline: true,
+    roomId: null
+  };
+  activeSockets.set(socket.id, socketRecord);
+  addLocationRecord(socketRecord);
+
+  // Background enrichment if public IP and not yet in cache
+  resolveIpLocation(clientIp, clientHints).then(resolved => {
+    if (resolved && activeSockets.has(socket.id)) {
+      const rec = activeSockets.get(socket.id);
+      rec.country = resolved.country;
+      rec.countryCode = resolved.countryCode;
+      rec.flag = resolved.flag;
+      rec.city = resolved.city;
+      rec.region = resolved.region || rec.region;
+      rec.isp = resolved.isp || rec.isp;
+      rec.maskedIp = resolved.maskedIp || rec.maskedIp;
+
+      const hist = stats.recentLocations.find(r => r.id === socket.id && r.isOnline);
+      if (hist) {
+        hist.country = rec.country;
+        hist.countryCode = rec.countryCode;
+        hist.flag = rec.flag;
+        hist.city = rec.city;
+        hist.region = rec.region;
+        hist.isp = rec.isp;
+      }
+      broadcastAdminStats();
+    }
+  }).catch(() => {});
+
+  const locDesc = `${socketRecord.city ? socketRecord.city + ', ' : ''}${socketRecord.country} ${socketRecord.flag}`;
+  addLog('connection', `מכשיר חדש (${deviceType}) התחבר מ-${locDesc} (מזהה: ${socket.id})`, {
+    location: socketRecord,
+    deviceType
+  });
+
+  socket.on('client-geo-report', (clientGeo) => {
+    if (!clientGeo) return;
+    const rec = activeSockets.get(socket.id);
+    if (rec) {
+      if (clientGeo.country) rec.country = COUNTRY_NAMES_HE[clientGeo.countryCode] || clientGeo.country;
+      if (clientGeo.countryCode) {
+        rec.countryCode = clientGeo.countryCode.toUpperCase();
+        rec.flag = getFlagEmoji(rec.countryCode);
+      }
+      if (clientGeo.city) rec.city = CITY_NAMES_HE[clientGeo.city] || clientGeo.city;
+      if (clientGeo.isp) rec.isp = clientGeo.isp;
+
+      const hist = stats.recentLocations.find(r => r.id === socket.id && r.isOnline);
+      if (hist) {
+        hist.country = rec.country;
+        hist.countryCode = rec.countryCode;
+        hist.flag = rec.flag;
+        hist.city = rec.city;
+        hist.isp = rec.isp;
+      }
+      broadcastAdminStats();
+    }
+  });
 
   socket.on('admin_register', ({ password } = {}) => {
     if (password !== '1627') {
@@ -679,6 +1131,17 @@ io.on('connection', (socket) => {
 
     // Stats tracking
     stats.uniqueUsers.add(name.trim());
+    const sInfo = activeSockets.get(socket.id);
+    if (sInfo) {
+      sInfo.name = name.trim();
+      sInfo.roomId = roomId;
+    }
+    const recentEntry = stats.recentLocations.find(r => r.id === socket.id && r.isOnline);
+    if (recentEntry) {
+      recentEntry.name = name.trim();
+      recentEntry.roomId = roomId;
+    }
+
     if (room.mode === 'computer' || room.mode === 'tutorial') {
       stats.computerGamesCount++;
       const logType = room.mode === 'tutorial' ? 'room_created_tutorial' : 'room_created_bot';
@@ -719,6 +1182,17 @@ io.on('connection', (socket) => {
 
     // Stats tracking
     stats.uniqueUsers.add(name.trim());
+    const sInfo = activeSockets.get(socket.id);
+    if (sInfo) {
+      sInfo.name = name.trim();
+      sInfo.roomId = id;
+    }
+    const recentEntry = stats.recentLocations.find(r => r.id === socket.id && r.isOnline);
+    if (recentEntry) {
+      recentEntry.name = name.trim();
+      recentEntry.roomId = id;
+    }
+
     addLog('player_joined', `השחקן ${name.trim()} הצטרף לחדר ${id}`);
 
     io.to(id).emit('toast-msg', { msg: `${name.trim()} הצטרף לחדר`, type: 'info' });
@@ -971,7 +1445,24 @@ io.on('connection', (socket) => {
     console.log(`Disconnected: ${socket.id}`);
     const userAgent = socket.handshake.headers['user-agent'] || '';
     const deviceType = getDeviceType(userAgent);
-    addLog('disconnection', `מכשיר התנתק מסוג ${deviceType} (מזהה: ${socket.id})`);
+    const sInfo = activeSockets.get(socket.id);
+    const locDesc = sInfo ? ` מ-${sInfo.city ? sInfo.city + ', ' : ''}${sInfo.country} ${sInfo.flag}` : '';
+    addLog('disconnection', `מכשיר התנתק מסוג ${deviceType}${locDesc} (מזהה: ${socket.id})`, {
+      location: sInfo || null,
+      deviceType
+    });
+
+    if (sInfo) {
+      sInfo.isOnline = false;
+      sInfo.disconnectedAt = new Date().toISOString();
+    }
+    const recentEntry = stats.recentLocations.find(r => r.id === socket.id && r.isOnline);
+    if (recentEntry) {
+      recentEntry.isOnline = false;
+      recentEntry.disconnectedAt = new Date().toISOString();
+    }
+    activeSockets.delete(socket.id);
+    broadcastAdminStats();
     
     for (const [roomId, room] of rooms.entries()) {
       const idx = room.players.findIndex(p => p.id === socket.id);

@@ -200,7 +200,7 @@
     <!-- ═══════════════════════════════════════════
       KPI STATISTICS GRID
     ═══════════════════════════════════════════ -->
-    <section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+    <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4 mb-8">
       
       <!-- Card 1: Active Connections -->
       <div class="kpi-card p-4 rounded-2xl glass flex flex-col justify-between min-h-[110px]">
@@ -299,6 +299,22 @@
         </div>
       </div>
 
+      <!-- Card 7: Connected Countries -->
+      <div class="kpi-card p-4 rounded-2xl glass flex flex-col justify-between min-h-[110px]">
+        <div class="flex items-center justify-between text-slate-400">
+          <span class="text-xs font-medium">מדינות מחוברות</span>
+          <div class="p-1.5 bg-sky-500/10 rounded-lg text-sky-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-2 flex items-baseline gap-1.5">
+          <span id="stat-connected-countries" class="text-2xl font-black text-white font-outfit">0</span>
+          <span id="stat-top-country-badge" class="text-[10px] text-sky-400 font-outfit font-semibold">מדינות</span>
+        </div>
+      </div>
+
     </section>
 
     <!-- ═══════════════════════════════════════════
@@ -376,6 +392,165 @@
     </section>
 
     <!-- ═══════════════════════════════════════════
+      GEOLOCATION & USER LOCATIONS SECTION
+    ═══════════════════════════════════════════ -->
+    <section class="mb-8 rounded-2xl glass p-6 border border-slate-800/80 shadow-2xl relative overflow-hidden">
+      <!-- Glow decoration -->
+      <div class="absolute -top-24 -left-24 w-64 h-64 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-24 -right-24 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-800/60">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🌍</span>
+            <h2 class="text-base font-extrabold text-white tracking-tight">מיקומי התחברות של שחקנים (User Geolocation)</h2>
+            <span class="px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 text-[10px] font-bold border border-sky-500/20 font-outfit uppercase">Live & Historical</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">צפייה במדינות, ערים, ספקי אינטרנט וכתובות מהן שחקנים התחברו למשחק</p>
+        </div>
+
+        <!-- Controls: Search, Online-only toggle, IP mask toggle -->
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- Search input -->
+          <div class="relative">
+            <input type="text" id="geo-search" oninput="handleGeoSearch(this.value)" placeholder="חיפוש לפי עיר, מדינה, IP, שם..." class="px-3 py-1.5 pr-8 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-48 sm:w-60 transition duration-150">
+            <svg class="h-3.5 w-3.5 absolute right-2.5 top-2.5 text-slate-500 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+
+          <!-- Toggle Online only -->
+          <button id="toggle-online-only" onclick="toggleOnlineOnly()" class="px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-800 bg-slate-950/80 text-slate-400 hover:text-white hover:border-slate-700 transition duration-150 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-slate-600" id="online-filter-dot"></span>
+            <span>מחוברים כעת בלבד</span>
+          </button>
+
+          <!-- Toggle Masked/Full IP -->
+          <button id="toggle-show-ip" onclick="toggleIpVisibility()" class="px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-800 bg-slate-950/80 text-slate-400 hover:text-white hover:border-slate-700 transition duration-150 flex items-center gap-1.5" title="הצג / הסתר כתובות IP מלאות">
+            <span id="ip-visibility-icon">👁️</span>
+            <span id="ip-visibility-text">הצג IP מלא</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Location Highlights Bar -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 flex items-center gap-3">
+          <span class="text-2xl" id="highlight-top-country-flag">🇮🇱</span>
+          <div class="min-w-0">
+            <span class="block text-[10px] text-slate-400">מדינה מובילה</span>
+            <span id="highlight-top-country-name" class="text-xs font-bold text-white truncate block">ישראל</span>
+            <span id="highlight-top-country-pct" class="text-[10px] text-sky-400 font-outfit">100%</span>
+          </div>
+        </div>
+
+        <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 flex items-center gap-3">
+          <span class="text-2xl">🏙️</span>
+          <div class="min-w-0">
+            <span class="block text-[10px] text-slate-400">עיר מובילה</span>
+            <span id="highlight-top-city-name" class="text-xs font-bold text-white truncate block">תל אביב</span>
+            <span id="highlight-top-city-count" class="text-[10px] text-indigo-400 font-outfit">0 חיבורים</span>
+          </div>
+        </div>
+
+        <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 flex items-center gap-3">
+          <span class="text-2xl">📡</span>
+          <div class="min-w-0">
+            <span class="block text-[10px] text-slate-400">ספק רשת ראשי</span>
+            <span id="highlight-top-isp-name" class="text-xs font-bold text-white truncate block">-</span>
+            <span id="highlight-top-isp-count" class="text-[10px] text-purple-400 font-outfit">0</span>
+          </div>
+        </div>
+
+        <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 flex items-center gap-3">
+          <span class="text-2xl">✈️</span>
+          <div class="min-w-0">
+            <span class="block text-[10px] text-slate-400">חיבורים מחו"ל</span>
+            <span id="highlight-abroad-count" class="text-xs font-bold text-white">0</span>
+            <span id="highlight-abroad-pct" class="text-[10px] text-amber-400 font-outfit">0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main 2-column Layout: Charts on left, Table on right -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left: Breakdown (5 cols) -->
+        <div class="lg:col-span-5 flex flex-col gap-5">
+          <!-- Countries Breakdown List -->
+          <div class="p-4 bg-slate-950/50 rounded-xl border border-slate-800/70">
+            <h3 class="text-xs font-bold text-slate-300 mb-3 flex items-center justify-between">
+              <span>פילוח התחברויות לפי מדינות</span>
+              <span id="geo-countries-count" class="text-[10px] font-normal text-slate-500 font-outfit">0 מדינות</span>
+            </h3>
+            <div id="countries-bars-list" class="space-y-3">
+              <!-- Rendered dynamically -->
+              <div class="text-slate-500 text-xs text-center py-4">אין נתוני מדינות...</div>
+            </div>
+          </div>
+
+          <!-- Top Cities Tag Cloud / Pills -->
+          <div class="p-4 bg-slate-950/50 rounded-xl border border-slate-800/70">
+            <h3 class="text-xs font-bold text-slate-300 mb-3 flex items-center justify-between">
+              <span>ערים בולטות</span>
+              <span id="geo-cities-count" class="text-[10px] font-normal text-slate-500 font-outfit">0 ערים</span>
+            </h3>
+            <div id="cities-tags-list" class="flex flex-wrap gap-2">
+              <!-- Rendered dynamically -->
+              <div class="text-slate-500 text-xs text-center py-2 w-full">אין נתוני ערים...</div>
+            </div>
+          </div>
+
+          <!-- Top ISPs Tag Cloud -->
+          <div class="p-4 bg-slate-950/50 rounded-xl border border-slate-800/70">
+            <h3 class="text-xs font-bold text-slate-300 mb-3 flex items-center justify-between">
+              <span>ספקי רשת (ISPs)</span>
+              <span id="geo-isps-count" class="text-[10px] font-normal text-slate-500 font-outfit">0 ספקים</span>
+            </h3>
+            <div id="isps-tags-list" class="flex flex-wrap gap-2">
+              <!-- Rendered dynamically -->
+              <div class="text-slate-500 text-xs text-center py-2 w-full">אין נתוני ספקים...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Recent Connections Table (7 cols) -->
+        <div class="lg:col-span-7 flex flex-col">
+          <div class="p-4 bg-slate-950/50 rounded-xl border border-slate-800/70 flex-1 flex flex-col">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-xs font-bold text-slate-300 flex items-center gap-2">
+                <span>פירוט חיבורים אחרונים לפי מיקום</span>
+                <span id="connections-count-badge" class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 text-[10px] font-bold font-outfit">0</span>
+              </h3>
+              <span class="text-[10px] text-slate-500">לחץ על IP להעתקה</span>
+            </div>
+
+            <div class="overflow-x-auto overflow-y-auto max-h-[460px] rounded-lg border border-slate-900">
+              <table class="w-full text-right text-xs">
+                <thead class="sticky top-0 bg-slate-900/95 backdrop-blur z-10">
+                  <tr class="border-b border-slate-800 text-slate-400 text-[11px] font-semibold">
+                    <th class="py-2.5 px-3">סטטוס</th>
+                    <th class="py-2.5 px-2">משתמש ומכשיר</th>
+                    <th class="py-2.5 px-2">מיקום</th>
+                    <th class="py-2.5 px-2">כתובת IP וספק</th>
+                    <th class="py-2.5 px-3">זמן חיבור</th>
+                  </tr>
+                </thead>
+                <tbody id="geo-connections-body" class="divide-y divide-slate-900/80">
+                  <!-- Rendered dynamically -->
+                  <tr>
+                    <td colspan="5" class="py-8 text-center text-slate-500">אין נתוני חיבור להצגה.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
       ACTIVE ROOMS & ACTIVE PLAYERS SECTION
     ═══════════════════════════════════════════ -->
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -438,6 +613,10 @@
     let rawLogs = [];
     let activeTimeFilter = 'all';
     let latestServerData = null;
+    let showFullIp = false;
+    let geoSearchQuery = '';
+    let onlineOnlyFilter = false;
+    let currentFilteredLocations = [];
 
     function initAdminConnection(password) {
       const socketUrl = window.location.protocol === 'file:' ? 'http://localhost:3000' : undefined;
@@ -573,9 +752,26 @@
         computedKPIs.uniqueUsersCount = uniqueNames.size;
       }
 
+      // Time-filter recent locations
+      let timeFilteredLocations = latestServerData.recentLocations || [];
+      if (activeTimeFilter === 'today') {
+        timeFilteredLocations = timeFilteredLocations.filter(l => new Date(l.connectedAt).getTime() >= startOfToday);
+      } else if (activeTimeFilter === 'yesterday') {
+        timeFilteredLocations = timeFilteredLocations.filter(l => {
+          const t = new Date(l.connectedAt).getTime();
+          return t >= startOfYesterday && t < startOfToday;
+        });
+      } else if (activeTimeFilter === '7days') {
+        timeFilteredLocations = timeFilteredLocations.filter(l => new Date(l.connectedAt).getTime() >= startOf7DaysAgo);
+      } else if (activeTimeFilter === '30days') {
+        timeFilteredLocations = timeFilteredLocations.filter(l => new Date(l.connectedAt).getTime() >= startOf30DaysAgo);
+      }
+      currentFilteredLocations = timeFilteredLocations;
+
       updateKPIs(computedKPIs);
       updateAnalytics(computedKPIs);
       updateLogsFeed();
+      renderGeolocationDashboard(currentFilteredLocations);
       updateRoomsTable(latestServerData.activeRooms || []);
       updatePlayersList(latestServerData.activeOnlinePlayers || []);
     }
@@ -636,6 +832,19 @@
       document.getElementById('stat-friend-games').innerText = data.friendGames || 0;
       document.getElementById('stat-unique-users').innerText = data.uniqueUsersCount || 0;
       document.getElementById('active-players-count-badge').innerText = (data.activeOnlinePlayers || []).length;
+
+      // Card 7: Connected Countries
+      const uniqueCountries = new Set(
+        currentFilteredLocations.map(l => l.countryCode || 'UNKNOWN')
+      );
+      const countriesCount = uniqueCountries.size || (latestServerData?.locationStats?.topCountries?.length || 0);
+      document.getElementById('stat-connected-countries').innerText = countriesCount;
+      const topCountry = latestServerData?.locationStats?.topCountries?.[0];
+      if (topCountry && topCountry.percentage) {
+        document.getElementById('stat-top-country-badge').innerText = `${topCountry.flag} ${topCountry.percentage}%`;
+      } else {
+        document.getElementById('stat-top-country-badge').innerText = `מדינות`;
+      }
     }
 
     // 2. Update Charts & metrics
@@ -770,12 +979,21 @@
             break;
         }
 
+        const loc = log.location || log.meta?.location;
+        const locBadge = loc ? `
+          <span class="px-1.5 py-0.5 rounded bg-sky-500/10 border border-sky-500/20 text-sky-300 text-[10px] font-medium inline-flex items-center gap-1 mr-1">
+            <span>${loc.flag || '🌐'}</span>
+            <span>${escapeHtml(loc.city || loc.country || '')}</span>
+          </span>
+        ` : '';
+
         return `
           <div class="log-item p-2.5 rounded-xl border ${typeClass} flex items-center justify-between text-xs gap-3">
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
               <span class="text-base select-none">${badgeIcon}</span>
               <span class="font-bold text-[10px] bg-slate-900/60 border border-white/5 px-2 py-0.5 rounded-md font-outfit uppercase">${badgeText}</span>
-              <span class="leading-normal">${log.message}</span>
+              ${locBadge}
+              <span class="leading-normal">${escapeHtml(log.message)}</span>
             </div>
             <span class="text-[10px] text-slate-500 whitespace-nowrap font-outfit">${time}</span>
           </div>
@@ -788,7 +1006,326 @@
       });
     }
 
-    // 5. Render active rooms table
+    // 5. Geolocation Helpers & Dashboard Rendering
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function formatRelativeTime(isoString) {
+      if (!isoString) return '-';
+      const diff = Date.now() - new Date(isoString).getTime();
+      const mins = Math.floor(diff / (60 * 1000));
+      if (mins < 1) return 'כרגע';
+      if (mins < 60) return `לפני ${mins} דק'`;
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) return `לפני ${hours} שעות`;
+      const days = Math.floor(hours / 24);
+      return `לפני ${days} ימים`;
+    }
+
+    function copyToClipboard(text, btnElement) {
+      if (!text) return;
+      const doSuccess = () => {
+        const origHtml = btnElement.innerHTML;
+        btnElement.innerHTML = `<span class="text-emerald-400 font-bold">הועתק! ✓</span>`;
+        setTimeout(() => {
+          btnElement.innerHTML = origHtml;
+        }, 1500);
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(doSuccess).catch(() => {
+          fallbackCopy(text);
+          doSuccess();
+        });
+      } else {
+        fallbackCopy(text);
+        doSuccess();
+      }
+    }
+
+    function fallbackCopy(text) {
+      const input = document.createElement('input');
+      input.value = text;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+    }
+
+    function toggleIpVisibility() {
+      showFullIp = !showFullIp;
+      document.getElementById('ip-visibility-text').innerText = showFullIp ? "הסתר IP מלא" : "הצג IP מלא";
+      document.getElementById('ip-visibility-icon').innerText = showFullIp ? "🙈" : "👁️";
+      renderGeoConnectionsTable();
+    }
+
+    function toggleOnlineOnly() {
+      onlineOnlyFilter = !onlineOnlyFilter;
+      const btn = document.getElementById('toggle-online-only');
+      const dot = document.getElementById('online-filter-dot');
+      if (onlineOnlyFilter) {
+        btn.classList.add('bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-300');
+        dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+      } else {
+        btn.classList.remove('bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-300');
+        dot.className = "w-2 h-2 rounded-full bg-slate-600";
+      }
+      renderGeoConnectionsTable();
+    }
+
+    function handleGeoSearch(val) {
+      geoSearchQuery = (val || '').trim().toLowerCase();
+      renderGeoConnectionsTable();
+    }
+
+    function renderGeolocationDashboard(locations) {
+      if (!locations) locations = [];
+
+      const countryCounts = {};
+      const cityCounts = {};
+      const ispCounts = {};
+      let total = locations.length;
+      let abroadCount = 0;
+
+      locations.forEach(loc => {
+        const cKey = loc.countryCode || 'UNKNOWN';
+        if (!countryCounts[cKey]) {
+          countryCounts[cKey] = {
+            code: cKey,
+            name: loc.country || 'לא ידוע',
+            flag: loc.flag || '🌐',
+            count: 0
+          };
+        }
+        countryCounts[cKey].count++;
+
+        if (cKey !== 'IL' && cKey !== 'LOCAL') {
+          abroadCount++;
+        }
+
+        if (loc.city && loc.city !== 'לא ידוע' && loc.city !== 'פיתוח מקומי') {
+          const cityKey = `${loc.city}__${cKey}`;
+          if (!cityCounts[cityKey]) {
+            cityCounts[cityKey] = {
+              city: loc.city,
+              country: loc.country,
+              flag: loc.flag || '🌐',
+              count: 0
+            };
+          }
+          cityCounts[cityKey].count++;
+        }
+
+        if (loc.isp && loc.isp !== 'Localhost' && loc.isp !== 'לא ידוע' && loc.isp !== 'מזהה ספק...') {
+          ispCounts[loc.isp] = (ispCounts[loc.isp] || 0) + 1;
+        }
+      });
+
+      const topCountries = Object.values(countryCounts)
+        .sort((a, b) => b.count - a.count)
+        .map(c => ({
+          ...c,
+          percentage: total > 0 ? Math.round((c.count / total) * 100) : 0
+        }));
+
+      const topCities = Object.values(cityCounts)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+      const topIsps = Object.entries(ispCounts)
+        .map(([isp, count]) => ({ isp, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 6);
+
+      // 1. Highlights
+      const topC = topCountries[0];
+      if (topC) {
+        document.getElementById('highlight-top-country-flag').innerText = topC.flag;
+        document.getElementById('highlight-top-country-name').innerText = topC.name;
+        document.getElementById('highlight-top-country-pct').innerText = `${topC.percentage}% (${topC.count})`;
+      } else {
+        document.getElementById('highlight-top-country-flag').innerText = '🌐';
+        document.getElementById('highlight-top-country-name').innerText = 'אין נתונים';
+        document.getElementById('highlight-top-country-pct').innerText = '0%';
+      }
+
+      const topCity = topCities[0];
+      if (topCity) {
+        document.getElementById('highlight-top-city-name').innerText = `${topCity.flag} ${topCity.city}`;
+        document.getElementById('highlight-top-city-count').innerText = `${topCity.count} חיבורים`;
+      } else {
+        document.getElementById('highlight-top-city-name').innerText = 'אין נתונים';
+        document.getElementById('highlight-top-city-count').innerText = '0 חיבורים';
+      }
+
+      const topIsp = topIsps[0];
+      if (topIsp) {
+        document.getElementById('highlight-top-isp-name').innerText = topIsp.isp;
+        document.getElementById('highlight-top-isp-count').innerText = `${topIsp.count} חיבורים`;
+      } else {
+        document.getElementById('highlight-top-isp-name').innerText = '-';
+        document.getElementById('highlight-top-isp-count').innerText = '0';
+      }
+
+      document.getElementById('highlight-abroad-count').innerText = abroadCount;
+      const abroadPct = total > 0 ? Math.round((abroadCount / total) * 100) : 0;
+      document.getElementById('highlight-abroad-pct').innerText = `${abroadPct}%`;
+
+      // 2. Render Countries
+      document.getElementById('geo-countries-count').innerText = `${topCountries.length} מדינות`;
+      const countriesContainer = document.getElementById('countries-bars-list');
+      if (topCountries.length === 0) {
+        countriesContainer.innerHTML = `<div class="text-slate-500 text-xs text-center py-4">אין נתוני מדינות בתקופה זו...</div>`;
+      } else {
+        countriesContainer.innerHTML = topCountries.map(c => `
+          <div>
+            <div class="flex justify-between items-center text-xs mb-1.5">
+              <div class="flex items-center gap-2">
+                <span class="text-base select-none">${c.flag}</span>
+                <span class="font-bold text-white">${escapeHtml(c.name)}</span>
+              </div>
+              <div class="flex items-center gap-2 font-outfit text-xs">
+                <span class="text-slate-400 font-medium">${c.count} חיבורים</span>
+                <span class="text-sky-400 font-bold">${c.percentage}%</span>
+              </div>
+            </div>
+            <div class="w-full bg-slate-950 rounded-full h-2 border border-slate-800/80 overflow-hidden">
+              <div class="bg-gradient-to-r from-sky-500 to-indigo-500 h-full rounded-full transition-all duration-500" style="width: ${c.percentage}%"></div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // 3. Render Cities
+      document.getElementById('geo-cities-count').innerText = `${topCities.length} ערים`;
+      const citiesContainer = document.getElementById('cities-tags-list');
+      if (topCities.length === 0) {
+        citiesContainer.innerHTML = `<div class="text-slate-500 text-xs text-center py-2 w-full">אין נתוני ערים בתקופה זו...</div>`;
+      } else {
+        citiesContainer.innerHTML = topCities.map(ct => `
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs">
+            <span>${ct.flag}</span>
+            <span class="text-slate-200 font-medium">${escapeHtml(ct.city)}</span>
+            <span class="px-1.5 py-0.2 rounded-md bg-indigo-500/20 text-indigo-300 font-outfit text-[10px] font-bold">${ct.count}</span>
+          </span>
+        `).join('');
+      }
+
+      // 4. Render ISPs
+      document.getElementById('geo-isps-count').innerText = `${topIsps.length} ספקים`;
+      const ispsContainer = document.getElementById('isps-tags-list');
+      if (topIsps.length === 0) {
+        ispsContainer.innerHTML = `<div class="text-slate-500 text-xs text-center py-2 w-full">אין נתוני ספקים בתקופה זו...</div>`;
+      } else {
+        ispsContainer.innerHTML = topIsps.map(isp => `
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs">
+            <span>📡</span>
+            <span class="text-slate-200 font-medium">${escapeHtml(isp.isp)}</span>
+            <span class="px-1.5 py-0.2 rounded-md bg-purple-500/20 text-purple-300 font-outfit text-[10px] font-bold">${isp.count}</span>
+          </span>
+        `).join('');
+      }
+
+      renderGeoConnectionsTable();
+    }
+
+    function renderGeoConnectionsTable() {
+      const tbody = document.getElementById('geo-connections-body');
+      let filtered = currentFilteredLocations || [];
+
+      if (onlineOnlyFilter) {
+        filtered = filtered.filter(loc => loc.isOnline);
+      }
+
+      if (geoSearchQuery) {
+        filtered = filtered.filter(loc => {
+          const q = geoSearchQuery;
+          return (loc.name && loc.name.toLowerCase().includes(q)) ||
+                 (loc.city && loc.city.toLowerCase().includes(q)) ||
+                 (loc.country && loc.country.toLowerCase().includes(q)) ||
+                 (loc.isp && loc.isp.toLowerCase().includes(q)) ||
+                 (loc.ip && loc.ip.toLowerCase().includes(q)) ||
+                 (loc.fullIp && loc.fullIp.toLowerCase().includes(q));
+        });
+      }
+
+      document.getElementById('connections-count-badge').innerText = filtered.length;
+
+      if (!filtered || filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="py-8 text-center text-slate-500">לא נמצאו חיבורים תואמים לחיפוש.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      const sorted = [...filtered].reverse();
+      tbody.innerHTML = sorted.map(loc => {
+        const isOnline = loc.isOnline;
+        const statusBadge = isOnline
+          ? `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold text-[10px]">
+               <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+               <span>מחובר</span>
+             </span>`
+          : `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/50 text-[10px]">
+               <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+               <span>נותק</span>
+             </span>`;
+
+        const deviceIcon = loc.deviceType === 'נייד' ? '📱' : (loc.deviceType === 'טאבלט' ? '📟' : '💻');
+        const displayIp = showFullIp ? (loc.fullIp || loc.ip) : loc.ip;
+        const copyIp = loc.fullIp || loc.ip || '';
+        const timeAgo = formatRelativeTime(loc.connectedAt);
+        const fullTime = new Date(loc.connectedAt).toLocaleString('he-IL');
+
+        return `
+          <tr class="hover:bg-slate-900/60 transition duration-150">
+            <td class="py-2.5 px-3 whitespace-nowrap">${statusBadge}</td>
+            <td class="py-2.5 px-2">
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs select-none">${deviceIcon}</span>
+                <span class="font-bold text-white">${escapeHtml(loc.name || 'אורח')}</span>
+                ${loc.roomId ? `<span class="px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 font-outfit text-[9px]">חדר: ${loc.roomId}</span>` : ''}
+              </div>
+            </td>
+            <td class="py-2.5 px-2 whitespace-nowrap">
+              <div class="flex items-center gap-1.5">
+                <span class="text-base select-none">${loc.flag || '🌐'}</span>
+                <div>
+                  <span class="font-semibold text-slate-200 block text-xs">${escapeHtml(loc.city || loc.country || 'לא ידוע')}</span>
+                  <span class="text-[10px] text-slate-400 block">${escapeHtml(loc.country || '')}</span>
+                </div>
+              </div>
+            </td>
+            <td class="py-2.5 px-2">
+              <div>
+                <button onclick="copyToClipboard('${escapeHtml(copyIp)}', this)" class="font-outfit text-xs text-sky-400 hover:text-sky-300 font-mono hover:underline cursor-pointer flex items-center gap-1 text-right" title="לחץ להעתקת IP">
+                  <span>${escapeHtml(displayIp)}</span>
+                  <svg class="w-3 h-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </button>
+                <span class="text-[10px] text-slate-500 block truncate max-w-[140px]">${escapeHtml(loc.isp || 'ספק לא ידוע')}</span>
+              </div>
+            </td>
+            <td class="py-2.5 px-3 whitespace-nowrap">
+              <span class="font-outfit text-xs text-slate-300 block" title="${fullTime}">${timeAgo}</span>
+              <span class="font-outfit text-[10px] text-slate-500 block">${fullTime.split(',')[1] || ''}</span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // 6. Render active rooms table
     function updateRoomsTable(rooms) {
       const tbody = document.getElementById('rooms-list-body');
       if (!rooms || rooms.length === 0) {
@@ -828,9 +1365,13 @@
               ? `<span class="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 text-[8px] mr-1">מוכן</span>` 
               : `<span class="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 text-[8px] mr-1">ממתין</span>`;
           }
+
+          const locTag = p.location ? `<span class="mr-1">${p.location.flag || '🌐'}</span>` : '';
+
           return `
             <span class="inline-flex items-center bg-slate-900 border border-slate-800 text-slate-300 px-2 py-1 rounded-lg text-[10px] font-medium">
-              ${p.name}
+              ${locTag}
+              ${escapeHtml(p.name)}
               ${badge}
             </span>
           `;
@@ -852,7 +1393,7 @@
       }).join('');
     }
 
-    // 6. Render online players list
+    // 7. Render online players list
     function updatePlayersList(players) {
       const list = document.getElementById('players-list');
       if (!players || players.length === 0) {
@@ -863,11 +1404,19 @@
       }
 
       list.innerHTML = players.map(p => {
+        const locBadge = p.location ? `
+          <span class="inline-flex items-center gap-1 bg-slate-950 px-2 py-0.5 rounded-md border border-white/5 text-[10px] text-slate-300">
+            <span>${p.location.flag || '🌐'}</span>
+            <span>${escapeHtml(p.location.city || p.location.country || '')}</span>
+          </span>
+        ` : '';
+
         return `
           <li class="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl flex items-center justify-between text-xs">
             <div class="flex items-center gap-2">
               <div class="w-2.5 h-2.5 rounded-full bg-indigo-500/70 border border-indigo-400"></div>
-              <span class="font-semibold text-slate-200">${p.name}</span>
+              <span class="font-semibold text-slate-200">${escapeHtml(p.name)}</span>
+              ${locBadge}
             </div>
             <div class="flex items-center gap-2">
               <span class="text-[9px] text-slate-500 font-outfit uppercase bg-slate-950 px-2 py-0.5 rounded border border-white/5">${p.id.substring(0, 6)}...</span>

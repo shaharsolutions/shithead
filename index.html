@@ -1648,9 +1648,35 @@
         const socketUrl = (window.location.hostname.endsWith('firebaseapp.com') || window.location.hostname.endsWith('web.app'))
           ? 'https://shithead-server-999225193371.us-central1.run.app'
           : (window.location.protocol === 'file:' ? 'http://localhost:3000' : undefined);
+        
+        const clientHints = {
+          timezone: (typeof Intl !== 'undefined' && Intl.DateTimeFormat) ? Intl.DateTimeFormat().resolvedOptions().timeZone : '',
+          language: navigator.language || navigator.userLanguage || ''
+        };
+
         socket = io(socketUrl, {
-          transports: ['polling', 'websocket']
+          transports: ['polling', 'websocket'],
+          auth: {
+            clientHints
+          }
         });
+
+        // Optional background client-side geo lookup
+        try {
+          fetch('https://ipwho.is/')
+            .then(r => r.json())
+            .then(data => {
+              if (data && data.success && socket && socket.connected) {
+                socket.emit('client-geo-report', {
+                  country: data.country,
+                  countryCode: data.country_code,
+                  city: data.city,
+                  isp: data.connection?.isp
+                });
+              }
+            })
+            .catch(() => {});
+        } catch (_) {}
 
         // ═══════════════════════════════════════════
         //  SOCKET SOCKET LISTENERS
