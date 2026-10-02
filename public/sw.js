@@ -1,10 +1,12 @@
-const CACHE_NAME = 'shithead-cache-v1';
+const CACHE_NAME = 'shithead-cache-v5';
 const URLS_TO_CACHE = [
   '/',
   '/index.html',
   '/favicon.png',
   '/apple-touch-icon.png',
   '/lobby_hero.png',
+  '/lobby_guatemala.jpg',
+  '/lobby_guatemala_gen.jpg',
   '/manifest.json'
 ];
 

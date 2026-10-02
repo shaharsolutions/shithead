@@ -15,7 +15,8 @@ const PORT = process.env.PORT || 3000;
 const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 4;
 
-// Serve static files from public directory
+// Serve static files from root directory first, then public directory
+app.use(express.static(__dirname));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Route to serve the admin dashboard
@@ -25,7 +26,9 @@ app.get('/admin', (req, res) => {
 
 // Fallback to index.html for all other routes
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  const rootIndex = path.join(__dirname, 'index.html');
+  const publicIndex = path.join(__dirname, 'public', 'index.html');
+  res.sendFile(fs.existsSync(rootIndex) ? rootIndex : publicIndex);
 });
 
 // ═══════════════════════════════════════════
@@ -594,6 +597,7 @@ function getAdminStats() {
       phase: room.phase,
       maxPlayers: room.maxPlayers,
       playerCount: room.players.length,
+      hasPassword: !!room.password,
       players: room.players.map(p => {
         const sInfo = activeSockets.get(p.id);
         return {
@@ -792,6 +796,7 @@ function getSanitizedState(room, socketId) {
     players: room.players.map(p => {
       const isSelf = p.id === socketId;
       return {
+        id: p.id,
         name: p.name,
         ready: p.ready,
         finished: !!p.finished,
@@ -979,7 +984,8 @@ function getOpenRooms() {
         roomId: room.id,
         hostName: room.players[0] ? room.players[0].name : 'אנונימי',
         playerCount: room.players.length,
-        maxPlayers: room.maxPlayers
+        maxPlayers: room.maxPlayers,
+        hasPassword: !!room.password
       });
     }
   }
@@ -1103,16 +1109,21 @@ io.on('connection', (socket) => {
   socket.emit('open-rooms-list', getOpenRooms());
 
   // 1. Create Room
-  socket.on('create-room', ({ name, mode, playerCount }) => {
+  socket.on('create-room', ({ name, mode, playerCount, password } = {}) => {
     if (!name || name.trim() === '') {
       return socket.emit('error-msg', 'נא להזין שם תקין.');
     }
     const roomId = generateRoomId();
     const maxPlayers = clampPlayerCount(playerCount);
+    const resolvedMode = mode === 'computer' ? 'computer' : (mode === 'tutorial' ? 'tutorial' : 'online');
+    const cleanPassword = (resolvedMode === 'online' && typeof password === 'string' && password.trim() !== '')
+      ? password.trim().slice(0, 20)
+      : null;
     const room = {
       id: roomId,
       maxPlayers,
-      mode: mode === 'computer' ? 'computer' : (mode === 'tutorial' ? 'tutorial' : 'online'),
+      mode: resolvedMode,
+      password: cleanPassword,
       players: [createPlayer(socket.id, name.trim())],
       deck: [],
       discardPile: [],
@@ -1121,13 +1132,20 @@ io.on('connection', (socket) => {
       turnIdx: 0,
       phase: 'lobby',
       winners: [],
+      voiceUsers: new Map(),
       lastActiveAt: Date.now()
     };
     rooms.set(roomId, room);
     socket.leave('lobby');
     socket.join(roomId);
-    socket.emit('room-created', { roomId, player: room.players[0], maxPlayers, playerCount: room.players.length });
-    console.log(`Room created: ${roomId} by ${name}`);
+    socket.emit('room-created', {
+      roomId,
+      player: room.players[0],
+      maxPlayers,
+      playerCount: room.players.length,
+      hasPassword: !!room.password
+    });
+    console.log(`Room created: ${roomId} by ${name}${room.password ? ' (password protected)' : ''}`);
 
     // Stats tracking
     stats.uniqueUsers.add(name.trim());
@@ -1149,7 +1167,8 @@ io.on('connection', (socket) => {
       addLog(logType, `השחקן ${name.trim()} יצר ${logDesc} בחדר ${roomId} (${maxPlayers} שחקנים)`);
     } else {
       stats.friendGamesCount++;
-      addLog('room_created_friend', `השחקן ${name.trim()} פתח חדר משחק של חברים: ${roomId} (${maxPlayers} שחקנים)`);
+      const passTag = room.password ? ' 🔒 (מוגן בסיסמה)' : '';
+      addLog('room_created_friend', `השחקן ${name.trim()} פתח חדר משחק של חברים: ${roomId} (${maxPlayers} שחקנים)${passTag}`);
     }
 
     if (room.mode === 'computer' || room.mode === 'tutorial') {
@@ -1161,9 +1180,12 @@ io.on('connection', (socket) => {
   });
 
   // 2. Join Room
-  socket.on('join-room', ({ name, roomId }) => {
+  socket.on('join-room', ({ name, roomId, password } = {}) => {
     if (!name || name.trim() === '') {
       return socket.emit('error-msg', 'נא להזין שם תקין.');
+    }
+    if (!roomId || typeof roomId !== 'string') {
+      return socket.emit('error-msg', 'נא להזין קוד חדר תקין.');
     }
     const id = roomId.trim().toUpperCase();
     if (!rooms.has(id)) {
@@ -1173,11 +1195,32 @@ io.on('connection', (socket) => {
     if (room.phase !== 'lobby' || room.players.length >= room.maxPlayers) {
       return socket.emit('error-msg', 'החדר מלא או שהמשחק כבר התחיל.');
     }
+    if (room.password) {
+      const submittedPassword = typeof password === 'string' ? password.trim() : '';
+      if (!submittedPassword) {
+        return socket.emit('password-required', {
+          roomId: id,
+          hostName: room.players[0] ? room.players[0].name : 'אנונימי'
+        });
+      }
+      if (submittedPassword !== room.password) {
+        return socket.emit('password-error', {
+          roomId: id,
+          msg: 'סיסמת החדר שגויה, נסה שוב.'
+        });
+      }
+    }
 
     room.players.push(createPlayer(socket.id, name.trim()));
     room.lastActiveAt = Date.now();
     socket.leave('lobby');
     socket.join(id);
+    socket.emit('room-joined', {
+      roomId: id,
+      maxPlayers: room.maxPlayers,
+      playerCount: room.players.length,
+      hasPassword: !!room.password
+    });
     console.log(`${name} joined room ${id}`);
 
     // Stats tracking
@@ -1440,6 +1483,78 @@ io.on('connection', (socket) => {
     scheduleBotTurn(activeRoom);
   });
 
+  // ═══════════════════════════════════════════
+  //  VOIP / VOICE CHAT SIGNALING
+  // ═══════════════════════════════════════════
+  socket.on('voice-join', ({ roomId } = {}) => {
+    if (!roomId || typeof roomId !== 'string') return;
+    const id = roomId.trim().toUpperCase();
+    const room = rooms.get(id);
+    if (!room) return;
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player) return;
+
+    if (!room.voiceUsers) {
+      room.voiceUsers = new Map();
+    }
+
+    const currentUsers = Array.from(room.voiceUsers.values()).map(u => ({
+      id: u.id,
+      name: u.name,
+      isMuted: !!u.isMuted
+    }));
+
+    room.voiceUsers.set(socket.id, {
+      id: socket.id,
+      name: player.name,
+      isMuted: false
+    });
+
+    socket.emit('voice-users-list', { users: currentUsers });
+    socket.to(id).emit('voice-user-joined', {
+      id: socket.id,
+      name: player.name,
+      isMuted: false
+    });
+    console.log(`Voice: ${player.name} (${socket.id}) joined voice in room ${id}`);
+  });
+
+  socket.on('voice-signal', ({ to, signal }) => {
+    if (!to || !signal) return;
+    io.to(to).emit('voice-signal', {
+      from: socket.id,
+      signal
+    });
+  });
+
+  socket.on('voice-mute-toggle', ({ isMuted }) => {
+    const { room } = getRoomForSocket(socket.id);
+    if (!room || !room.voiceUsers || !room.voiceUsers.has(socket.id)) return;
+    const user = room.voiceUsers.get(socket.id);
+    user.isMuted = !!isMuted;
+    socket.to(room.id).emit('voice-user-muted', {
+      id: socket.id,
+      isMuted: !!isMuted
+    });
+  });
+
+  socket.on('voice-speaking', ({ isSpeaking }) => {
+    const { room } = getRoomForSocket(socket.id);
+    if (!room || !room.voiceUsers || !room.voiceUsers.has(socket.id)) return;
+    socket.to(room.id).emit('voice-user-speaking', {
+      id: socket.id,
+      isSpeaking: !!isSpeaking
+    });
+  });
+
+  socket.on('voice-leave', () => {
+    const { room } = getRoomForSocket(socket.id);
+    if (!room || !room.voiceUsers || !room.voiceUsers.has(socket.id)) return;
+    room.voiceUsers.delete(socket.id);
+    socket.to(room.id).emit('voice-user-left', { id: socket.id });
+    console.log(`Voice: ${socket.id} left voice in room ${room.id}`);
+  });
+
   // 9. Disconnect handling
   socket.on('disconnect', () => {
     console.log(`Disconnected: ${socket.id}`);
@@ -1465,6 +1580,11 @@ io.on('connection', (socket) => {
     broadcastAdminStats();
     
     for (const [roomId, room] of rooms.entries()) {
+      if (room.voiceUsers && room.voiceUsers.has(socket.id)) {
+        room.voiceUsers.delete(socket.id);
+        io.to(roomId).emit('voice-user-left', { id: socket.id });
+      }
+
       const idx = room.players.findIndex(p => p.id === socket.id);
       if (idx !== -1) {
         // Player disconnected from a room!
@@ -1651,7 +1771,20 @@ setInterval(() => {
   }
 }, 10000); // Check every 10 seconds
 
-// Start Server
-server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+// Start Server (with automatic port fallback if default port is already in use)
+let currentPort = Number(PORT) || 3000;
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE' && !process.env.PORT) {
+    console.warn(`Port ${currentPort} is in use, trying port ${currentPort + 1}...`);
+    currentPort += 1;
+    setTimeout(() => {
+      server.listen(currentPort);
+    }, 100);
+  } else {
+    throw err;
+  }
+});
+
+server.listen(currentPort, () => {
+  console.log(`Server is running on http://localhost:${currentPort}`);
 });

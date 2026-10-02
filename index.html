@@ -48,6 +48,29 @@
       }
     }
   </script>
+  <script>
+    (function () {
+      var path = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
+      var hash = window.location.hash.replace(/^#+/, '').toLowerCase();
+      var params = new URLSearchParams(window.location.search);
+      var bgParam = (params.get('bg') || params.get('v') || '').toLowerCase();
+      if (
+        path === 'gt' || path === 'guatemala' || path === 'atitlan' || path === 'trip' || path === 'hostel' || path === '2' || path === 'v2' || path === 'bg2' ||
+        hash === 'gt' || hash === 'guatemala' || hash === '2' || hash === 'v2' ||
+        bgParam === '2' || bgParam === 'v2' || bgParam === 'gt' || bgParam === 'guatemala' || bgParam === 'atitlan' || bgParam === 'trip' ||
+        params.has('gt') || params.has('guatemala') || params.has('trip') || params.has('atitlan')
+      ) {
+        document.documentElement.classList.add('lobby-theme-gt');
+      } else if (
+        path === 'gt2' || path === 'guatemala2' || path === '3' || path === 'v3' || path === 'bg3' ||
+        hash === 'gt2' || hash === '3' || hash === 'v3' ||
+        bgParam === '3' || bgParam === 'v3' || bgParam === 'gt2' ||
+        params.has('gt2')
+      ) {
+        document.documentElement.classList.add('lobby-theme-gt-gen');
+      }
+    })();
+  </script>
   <style>
     *, ::before, ::after {
       box-sizing: border-box;
@@ -72,6 +95,20 @@
         url('/lobby_hero.png') center / cover no-repeat,
         #050914;
       box-shadow: 0 28px 90px rgba(0, 0, 0, 0.55);
+    }
+
+    html.lobby-theme-gt .lobby-shell,
+    html.lobby-theme-gt-gen .lobby-shell {
+      --lobby-bg-image: url('/lobby_guatemala.jpg');
+      background:
+        linear-gradient(180deg, rgba(3, 7, 18, 0.12) 0%, rgba(3, 7, 18, 0.28) 52%, rgba(3, 7, 18, 0.84) 100%),
+        linear-gradient(90deg, rgba(3, 7, 18, 0.45) 0%, rgba(9, 14, 28, 0.18) 55%, rgba(9, 14, 28, 0.35) 100%),
+        var(--lobby-bg-image) center / cover no-repeat,
+        #050914;
+    }
+
+    html.lobby-theme-gt-gen .lobby-shell {
+      --lobby-bg-image: url('/lobby_guatemala_gen.jpg');
     }
 
     .lobby-panel {
@@ -121,6 +158,14 @@
         background:
           linear-gradient(180deg, rgba(3, 7, 18, 0.48) 0%, rgba(3, 7, 18, 0.9) 34%, rgba(3, 7, 18, 0.98) 100%),
           url('/lobby_hero.png') center top / min(92vw, 480px) auto no-repeat,
+          #050914;
+      }
+
+      html.lobby-theme-gt .lobby-shell,
+      html.lobby-theme-gt-gen .lobby-shell {
+        background:
+          linear-gradient(180deg, rgba(3, 7, 18, 0.18) 0%, rgba(3, 7, 18, 0.52) 45%, rgba(3, 7, 18, 0.88) 100%),
+          var(--lobby-bg-image) center / cover no-repeat,
           #050914;
       }
     }
@@ -303,6 +348,28 @@
     .zone-glow-rose {
       border-color: rgba(251, 113, 133, 0.4);
       box-shadow: 0 0 35px rgba(251, 113, 133, 0.12);
+    }
+    .voice-speaking-glow {
+      border-color: rgba(52, 211, 153, 0.85) !important;
+      box-shadow: 0 0 25px rgba(52, 211, 153, 0.4), inset 0 0 12px rgba(52, 211, 153, 0.15) !important;
+    }
+    @keyframes voiceWave {
+      0%, 100% { height: 3px; }
+      50% { height: 11px; }
+    }
+    .voice-bar-anim {
+      display: inline-block;
+      width: 2.5px;
+      height: 9px;
+      background: #34d399;
+      border-radius: 9999px;
+      animation: voiceWave 0.75s ease-in-out infinite;
+    }
+    .voice-bar-anim:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+    .voice-bar-anim:nth-child(3) {
+      animation-delay: 0.3s;
     }
 
     /* ===== ROUND TABLE ===== */
@@ -1004,6 +1071,37 @@
     </div>
   </div>
 
+  <!-- Room Password Prompt Modal -->
+  <div id="password-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 transition-opacity duration-200">
+    <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl relative flex flex-col gap-4 text-right" dir="rtl">
+      <button id="close-password-modal-btn" type="button" class="absolute top-4 left-4 w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:text-white flex items-center justify-center hover:scale-105 active:scale-[0.96] transition-transform duration-200">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      <div class="text-center pt-1">
+        <div class="w-12 h-12 mx-auto mb-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center text-2xl shadow-lg">🔒</div>
+        <h2 class="text-lg font-black text-white tracking-tight">חדר מוגן בסיסמה</h2>
+        <p id="password-modal-subtitle" class="text-xs text-slate-400 mt-1">הזן את סיסמת החדר כדי להצטרף למשחק</p>
+      </div>
+
+      <form id="password-modal-form" class="flex flex-col gap-3">
+        <div class="flex flex-col gap-1.5">
+          <label for="join-room-password" class="text-xs font-semibold text-slate-300">סיסמת החדר</label>
+          <input type="password" id="join-room-password" placeholder="הזן סיסמה..." maxlength="20" autocomplete="off" class="lobby-field w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 focus:outline-none text-sm font-semibold">
+        </div>
+        <div id="password-modal-error" class="hidden text-xs text-rose-400 font-bold text-center bg-rose-500/10 border border-rose-500/20 rounded-xl py-2 px-3">
+          סיסמת החדר שגויה, נסה שוב.
+        </div>
+        <div class="flex gap-2 pt-1">
+          <button type="submit" id="submit-password-btn" class="flex-1 py-2.5 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white shadow-lg transition-transform duration-200 active:scale-[0.96]">הצטרף לחדר 🔑</button>
+          <button type="button" id="cancel-password-btn" class="px-4 py-2.5 rounded-xl font-bold text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-transform duration-200 active:scale-[0.96]">ביטול</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div class="max-w-6xl mx-auto px-4 py-2 sm:py-3 flex flex-col min-h-screen gap-2 sm:gap-3">
     
     <!-- Title / Logo Header -->
@@ -1114,6 +1212,21 @@
               </div>
             </div>
 
+            <!-- Optional Room Password (only for online friends mode) -->
+            <div id="room-password-wrap" class="hidden flex flex-col gap-2 relative z-10">
+              <div class="flex items-center justify-between">
+                <label for="room-password" class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>🔒 סיסמה לחדר</span>
+                  <span class="text-[10px] font-medium text-slate-400 normal-case">(לא חובה)</span>
+                </label>
+                <span id="room-password-status" class="text-[10px] font-semibold text-slate-400">פתוח לכולם 🌐</span>
+              </div>
+              <div class="relative flex items-center">
+                <input type="password" id="room-password" placeholder="השאר ריק לחדר פתוח ללא סיסמה..." maxlength="20" autocomplete="off" class="lobby-field w-full pl-11 pr-4 py-2.5 rounded-2xl text-sm text-white placeholder-slate-500 focus:outline-none transition duration-200">
+                <button type="button" id="toggle-room-password-btn" class="absolute left-2 w-8 h-8 rounded-xl bg-slate-900/90 border border-white/10 text-slate-400 hover:text-white flex items-center justify-center active:scale-[0.96] transition-transform duration-200 z-20" title="הצג / הסתר סיסמה">👁️</button>
+              </div>
+            </div>
+
             <!-- Action Grid -->
             <div class="grid grid-cols-1 gap-3">
               <!-- Create Room -->
@@ -1164,8 +1277,34 @@
           ----
         </div>
 
+        <div id="waiting-password-badge" class="hidden inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-bold">
+          <span>🔒</span>
+          <span>חדר מוגן בסיסמה</span>
+        </div>
+
         <div class="text-xs text-slate-500">
           שחקן: <span id="waiting-player-name" class="font-bold text-slate-400">---</span>
+        </div>
+
+        <!-- Voice Chat Widget in Waiting Room -->
+        <div id="waiting-voice-container" class="w-full flex flex-col items-center gap-2 pt-2 border-t border-slate-800/60">
+          <button type="button" id="waiting-voice-join-btn" class="px-4 py-2 rounded-xl font-bold text-xs sm:text-sm bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-950/50 flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95 cursor-pointer">
+            <span class="text-base">🎙️</span>
+            <span>הצטרף לצ'אט קולי</span>
+          </button>
+          
+          <div id="waiting-voice-active-panel" class="hidden flex items-center justify-center gap-2 bg-slate-950/90 border border-indigo-500/30 px-3 py-1.5 rounded-xl text-xs flex-wrap">
+            <span class="inline-flex items-center gap-1.5 text-emerald-400 font-bold">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              בשיחה קולית
+            </span>
+            <button type="button" id="waiting-voice-mic-btn" class="voice-mic-toggle-btn px-2.5 py-1 rounded-lg font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1 hover:bg-emerald-500/30 transition cursor-pointer">
+              <span class="voice-mic-icon">🎤</span>
+              <span class="voice-mic-label">פועל</span>
+            </button>
+            <span id="waiting-voice-count" class="text-slate-400 font-semibold px-1">👥 1</span>
+            <button type="button" id="waiting-voice-leave-btn" class="px-2 py-1 rounded-lg font-bold text-rose-400 hover:bg-rose-500/20 transition cursor-pointer" title="עזוב שיחה">❌ נתק</button>
+          </div>
         </div>
         
         <button id="waiting-back-btn" class="mt-2 text-xs font-semibold text-slate-500 hover:text-slate-300 transition duration-200">ביטול וחזרה</button>
@@ -1179,8 +1318,28 @@
       
       <!-- Room Code / Status Header -->
       <div class="flex items-center justify-between px-3 py-1.5 bg-slate-900/40 rounded-xl border border-slate-800/60 text-xs">
-        <span class="text-slate-400">חדר: <span id="game-room-id" class="font-black text-cyan-400 tracking-wider">----</span></span>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 sm:gap-3">
+          <span class="text-slate-400">חדר: <span id="game-room-id" class="font-black text-cyan-400 tracking-wider">----</span></span>
+
+          <!-- Voice Controls Bar in Game View -->
+          <div id="game-voice-container" class="flex items-center">
+            <button type="button" id="game-voice-join-btn" class="px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-bold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-sm flex items-center gap-1.5 transition duration-200 hover:scale-[1.03] active:scale-95 cursor-pointer">
+              <span>🎙️</span>
+              <span class="hidden sm:inline">צ'אט קולי</span>
+            </button>
+            
+            <div id="game-voice-active-panel" class="hidden flex items-center gap-1.5 bg-slate-950/80 border border-indigo-500/30 px-2 py-0.5 rounded-lg text-xs">
+              <button type="button" id="game-voice-mic-btn" class="voice-mic-toggle-btn px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1 hover:bg-emerald-500/30 transition cursor-pointer">
+                <span class="voice-mic-icon">🎤</span>
+                <span class="voice-mic-label hidden sm:inline">פועל</span>
+              </button>
+              <span id="game-voice-count" class="text-[10px] text-slate-400 font-semibold px-0.5">👥 1</span>
+              <button type="button" id="game-voice-leave-btn" class="px-1.5 py-0.5 rounded-md text-[10px] font-bold text-rose-400 hover:bg-rose-500/20 transition cursor-pointer" title="עזוב שיחה">❌</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 sm:gap-3">
           <div id="swap-notification" class="hidden text-indigo-400 font-bold animate-pulse">שלב החלפה</div>
           <div id="play-notification" class="hidden text-emerald-400 font-bold">שלב משחק</div>
           <button id="lobby-btn" class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition duration-200">צא מהחדר 🚪</button>
@@ -1213,7 +1372,10 @@
         <!-- Human Player Zone -->
         <div id="human-zone" class="game-zone table-seat seat-self flex flex-col">
           <div class="flex items-center justify-between mb-2">
-            <span id="player-name-display" class="text-sm font-semibold text-slate-300">אתה</span>
+            <div class="flex items-center gap-1.5">
+              <span id="player-name-display" class="text-sm font-semibold text-slate-300">אתה</span>
+              <span id="my-voice-badge" class="hidden inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 border border-slate-700 text-slate-300"></span>
+            </div>
             <div class="flex gap-2">
               <span id="player-ready-badge" class="hidden inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-indigo-500/20 text-indigo-400 border border-indigo-500/10">
                 מוכן
@@ -1291,6 +1453,7 @@
       // ═══════════════════════════════════════════
       let socket = null;
       let name = '';
+      let currentRoomId = null;
       let G = null; // Sanitized game state from server
       let sel = []; // Selected card indices
       let selSrc = null; // 'hand' | 'faceup'
@@ -1300,6 +1463,7 @@
       let winSoundPlayed = false;
       let interjectionPending = false;
       let currentTutorialStep = -1;
+      let pendingJoinRoomId = null;
 
       // ═══════════════════════════════════════════
       //  SOUND ENGINE (Web Audio API Synthesizer)
@@ -1641,6 +1805,453 @@
         }
       };
 
+      // ═══════════════════════════════════════════
+      //  VOIP / WEBRTC VOICE CHAT ENGINE
+      // ═══════════════════════════════════════════
+      const VoiceChat = {
+        active: false,
+        isMuted: false,
+        isSpeaking: false,
+        localStream: null,
+        peers: new Map(), // peerId -> { pc, candidatesQueue }
+        audioElements: new Map(), // peerId -> HTMLAudioElement
+        voiceUsers: new Map(), // peerId -> { id, name, isMuted, isSpeaking }
+        audioCtx: null,
+        analyser: null,
+        speakingCheckTimer: null,
+
+        async join() {
+          if (!currentRoomId) {
+            toast('אין חדר פעיל להצטרפות לצ\'אט', 'warning');
+            return;
+          }
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            toast('הדפדפן אינו תומך בצ\'אט קולי או שאינך בחיבור HTTPS מאובטח', 'warning');
+            return;
+          }
+
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+              audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true
+              },
+              video: false
+            });
+
+            this.localStream = stream;
+            this.active = true;
+            this.isMuted = false;
+            this.isSpeaking = false;
+
+            this.setupAudioAnalysis(stream);
+
+            if (socket) {
+              socket.emit('voice-join', { roomId: currentRoomId });
+            }
+
+            toast('התחברת לצ\'אט הקולי! 🎙️', 'info');
+            Snd.play('click');
+            this.updateUI();
+            if (G) renderBoard();
+          } catch (err) {
+            console.error('Microphone access error:', err);
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+              toast('לא ניתנה הרשאה למיקרופון בדפדפן', 'warning');
+            } else if (err.name === 'NotFoundError') {
+              toast('לא נמצא מיקרופון מחובר במכשיר', 'warning');
+            } else {
+              toast('שגיאה בהפעלת מיקרופון: ' + (err.message || 'נסה שוב'), 'warning');
+            }
+          }
+        },
+
+        setupAudioAnalysis(stream) {
+          try {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextClass) return;
+            this.audioCtx = new AudioContextClass();
+            if (this.audioCtx.state === 'suspended') {
+              this.audioCtx.resume();
+            }
+            this.analyser = this.audioCtx.createAnalyser();
+            this.analyser.fftSize = 256;
+            const source = this.audioCtx.createMediaStreamSource(stream);
+            source.connect(this.analyser);
+
+            let silenceCount = 0;
+            const pcmData = new Uint8Array(this.analyser.fftSize);
+
+            this.speakingCheckTimer = setInterval(() => {
+              if (!this.active || this.isMuted || !this.analyser) {
+                if (this.isSpeaking) {
+                  this.isSpeaking = false;
+                  if (socket) socket.emit('voice-speaking', { isSpeaking: false });
+                  this.updateUI();
+                  if (G) renderBoard();
+                }
+                return;
+              }
+
+              this.analyser.getByteTimeDomainData(pcmData);
+              let sumSquares = 0.0;
+              for (let i = 0; i < pcmData.length; i++) {
+                const norm = (pcmData[i] - 128) / 128;
+                sumSquares += norm * norm;
+              }
+              const rms = Math.sqrt(sumSquares / pcmData.length);
+
+              if (rms > 0.035) {
+                silenceCount = 0;
+                if (!this.isSpeaking) {
+                  this.isSpeaking = true;
+                  if (socket) socket.emit('voice-speaking', { isSpeaking: true });
+                  this.updateUI();
+                  if (G) renderBoard();
+                }
+              } else {
+                silenceCount++;
+                if (silenceCount >= 3 && this.isSpeaking) {
+                  this.isSpeaking = false;
+                  if (socket) socket.emit('voice-speaking', { isSpeaking: false });
+                  this.updateUI();
+                  if (G) renderBoard();
+                }
+              }
+            }, 100);
+          } catch (e) {
+            console.warn('Audio analysis setup error:', e);
+          }
+        },
+
+        toggleMute() {
+          if (!this.localStream) return;
+          this.isMuted = !this.isMuted;
+          this.localStream.getAudioTracks().forEach(track => {
+            track.enabled = !this.isMuted;
+          });
+          if (this.isMuted && this.isSpeaking) {
+            this.isSpeaking = false;
+            if (socket) socket.emit('voice-speaking', { isSpeaking: false });
+          }
+          if (socket) socket.emit('voice-mute-toggle', { isMuted: this.isMuted });
+          toast(this.isMuted ? 'מיקרופון הושתק 🔇' : 'מיקרופון פעיל 🎤', 'info');
+          Snd.play('click');
+          this.updateUI();
+          if (G) renderBoard();
+        },
+
+        createPeer(peerId, isInitiator) {
+          if (this.peers.has(peerId)) {
+            const existing = this.peers.get(peerId);
+            try { existing.pc.close(); } catch (e) {}
+            this.peers.delete(peerId);
+          }
+
+          const pc = new RTCPeerConnection({
+            iceServers: [
+              { urls: 'stun:stun.l.google.com:19302' },
+              { urls: 'stun:stun1.l.google.com:19302' },
+              { urls: 'stun:stun2.l.google.com:19302' }
+            ]
+          });
+
+          const peerObj = {
+            pc,
+            candidatesQueue: []
+          };
+          this.peers.set(peerId, peerObj);
+
+          if (this.localStream) {
+            this.localStream.getTracks().forEach(track => {
+              pc.addTrack(track, this.localStream);
+            });
+          }
+
+          pc.onicecandidate = (event) => {
+            if (event.candidate && socket) {
+              socket.emit('voice-signal', {
+                to: peerId,
+                signal: { type: 'candidate', candidate: event.candidate }
+              });
+            }
+          };
+
+          pc.ontrack = (event) => {
+            let audioEl = this.audioElements.get(peerId);
+            if (!audioEl) {
+              audioEl = document.createElement('audio');
+              audioEl.autoplay = true;
+              audioEl.setAttribute('playsinline', 'true');
+              audioEl.style.display = 'none';
+              document.body.appendChild(audioEl);
+              this.audioElements.set(peerId, audioEl);
+            }
+            audioEl.srcObject = event.streams[0];
+            audioEl.play().catch(e => console.warn('Audio play error:', e));
+          };
+
+          pc.oniceconnectionstatechange = () => {
+            if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'closed') {
+              this.cleanupPeer(peerId);
+            }
+          };
+
+          if (isInitiator) {
+            pc.createOffer()
+              .then(offer => pc.setLocalDescription(offer))
+              .then(() => {
+                if (socket) {
+                  socket.emit('voice-signal', {
+                    to: peerId,
+                    signal: { type: 'offer', sdp: pc.localDescription }
+                  });
+                }
+              })
+              .catch(err => console.error('Error creating offer:', err));
+          }
+
+          return peerObj;
+        },
+
+        async handleSignal(from, signal) {
+          if (!this.active || !this.localStream || !signal) return;
+
+          let peerObj = this.peers.get(from);
+
+          if (signal.type === 'offer') {
+            peerObj = this.createPeer(from, false);
+            try {
+              await peerObj.pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+              if (peerObj.candidatesQueue.length > 0) {
+                for (const cand of peerObj.candidatesQueue) {
+                  await peerObj.pc.addIceCandidate(new RTCIceCandidate(cand)).catch(e => console.warn(e));
+                }
+                peerObj.candidatesQueue = [];
+              }
+              const answer = await peerObj.pc.createAnswer();
+              await peerObj.pc.setLocalDescription(answer);
+              if (socket) {
+                socket.emit('voice-signal', {
+                  to: from,
+                  signal: { type: 'answer', sdp: peerObj.pc.localDescription }
+                });
+              }
+            } catch (e) {
+              console.error('Error handling offer signal:', e);
+            }
+          } else if (signal.type === 'answer') {
+            if (peerObj) {
+              try {
+                await peerObj.pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+                if (peerObj.candidatesQueue.length > 0) {
+                  for (const cand of peerObj.candidatesQueue) {
+                    await peerObj.pc.addIceCandidate(new RTCIceCandidate(cand)).catch(e => console.warn(e));
+                  }
+                  peerObj.candidatesQueue = [];
+                }
+              } catch (e) {
+                console.error('Error handling answer signal:', e);
+              }
+            }
+          } else if (signal.type === 'candidate') {
+            if (peerObj && peerObj.pc) {
+              if (peerObj.pc.remoteDescription && peerObj.pc.remoteDescription.type) {
+                peerObj.pc.addIceCandidate(new RTCIceCandidate(signal.candidate)).catch(e => console.warn(e));
+              } else {
+                peerObj.candidatesQueue.push(signal.candidate);
+              }
+            }
+          }
+        },
+
+        handleUsersList(users) {
+          if (!Array.isArray(users)) return;
+          users.forEach(u => {
+            this.voiceUsers.set(u.id, {
+              id: u.id,
+              name: u.name,
+              isMuted: !!u.isMuted,
+              isSpeaking: false
+            });
+            this.createPeer(u.id, true);
+          });
+          this.updateUI();
+          if (G) renderBoard();
+        },
+
+        handleUserJoined(user) {
+          if (!user || !user.id) return;
+          this.voiceUsers.set(user.id, {
+            id: user.id,
+            name: user.name,
+            isMuted: !!user.isMuted,
+            isSpeaking: false
+          });
+          toast(`${user.name} הצטרף/ה לצ'אט הקולי 🎙️`, 'info');
+          this.updateUI();
+          if (G) renderBoard();
+        },
+
+        handleUserLeft(userId) {
+          const user = this.voiceUsers.get(userId);
+          if (user) {
+            toast(`${user.name} עזב/ה את הצ'אט הקולי`, 'info');
+          }
+          this.cleanupPeer(userId);
+          this.voiceUsers.delete(userId);
+          this.updateUI();
+          if (G) renderBoard();
+        },
+
+        handleUserMuted(userId, isMuted) {
+          const user = this.voiceUsers.get(userId);
+          if (user) {
+            user.isMuted = !!isMuted;
+            if (isMuted) user.isSpeaking = false;
+            this.updateUI();
+            if (G) renderBoard();
+          }
+        },
+
+        handleUserSpeaking(userId, isSpeaking) {
+          const user = this.voiceUsers.get(userId);
+          if (user) {
+            user.isSpeaking = !!isSpeaking;
+            this.updateUI();
+            if (G) renderBoard();
+          }
+        },
+
+        cleanupPeer(userId) {
+          if (this.peers.has(userId)) {
+            try { this.peers.get(userId).pc.close(); } catch (e) {}
+            this.peers.delete(userId);
+          }
+          if (this.audioElements.has(userId)) {
+            try {
+              const el = this.audioElements.get(userId);
+              el.pause();
+              el.srcObject = null;
+              el.remove();
+            } catch (e) {}
+            this.audioElements.delete(userId);
+          }
+        },
+
+        leave() {
+          if (!this.active && !this.localStream) return;
+          this.active = false;
+          this.isMuted = false;
+          this.isSpeaking = false;
+
+          if (this.speakingCheckTimer) {
+            clearInterval(this.speakingCheckTimer);
+            this.speakingCheckTimer = null;
+          }
+
+          if (this.localStream) {
+            this.localStream.getTracks().forEach(track => {
+              try { track.stop(); } catch (e) {}
+            });
+            this.localStream = null;
+          }
+
+          if (this.audioCtx) {
+            try { this.audioCtx.close(); } catch (e) {}
+            this.audioCtx = null;
+            this.analyser = null;
+          }
+
+          for (const [peerId, peerObj] of this.peers.entries()) {
+            try { peerObj.pc.close(); } catch (e) {}
+          }
+          this.peers.clear();
+
+          for (const [peerId, audioEl] of this.audioElements.entries()) {
+            try {
+              audioEl.pause();
+              audioEl.srcObject = null;
+              audioEl.remove();
+            } catch (e) {}
+          }
+          this.audioElements.clear();
+
+          this.voiceUsers.clear();
+
+          if (socket) {
+            socket.emit('voice-leave');
+          }
+
+          this.updateUI();
+          if (G) renderBoard();
+        },
+
+        updateUI() {
+          const isJoined = this.active;
+          const count = (this.active ? 1 : 0) + this.voiceUsers.size;
+          const countText = `👥 ${count}`;
+
+          const gameJoinBtn = el('game-voice-join-btn');
+          const gameActivePanel = el('game-voice-active-panel');
+          const gameCount = el('game-voice-count');
+          if (gameJoinBtn && gameActivePanel) {
+            gameJoinBtn.classList.toggle('hidden', isJoined);
+            gameActivePanel.classList.toggle('hidden', !isJoined);
+            if (gameCount) gameCount.textContent = countText;
+          }
+
+          const waitJoinBtn = el('waiting-voice-join-btn');
+          const waitActivePanel = el('waiting-voice-active-panel');
+          const waitCount = el('waiting-voice-count');
+          if (waitJoinBtn && waitActivePanel) {
+            waitJoinBtn.classList.toggle('hidden', isJoined);
+            waitActivePanel.classList.toggle('hidden', !isJoined);
+            if (waitCount) waitCount.textContent = countText;
+          }
+
+          const micBtns = document.querySelectorAll('.voice-mic-toggle-btn');
+          micBtns.forEach(btn => {
+            const iconEl = btn.querySelector('.voice-mic-icon');
+            const labelEl = btn.querySelector('.voice-mic-label');
+            if (this.isMuted) {
+              if (iconEl) iconEl.textContent = '🔇';
+              if (labelEl) labelEl.textContent = 'מושתק';
+              btn.className = 'voice-mic-toggle-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1 hover:bg-rose-500/30 transition cursor-pointer';
+            } else {
+              if (iconEl) iconEl.textContent = '🎤';
+              if (labelEl) labelEl.textContent = 'פועל';
+              btn.className = 'voice-mic-toggle-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1 hover:bg-emerald-500/30 transition cursor-pointer';
+            }
+          });
+
+          const myBadge = el('my-voice-badge');
+          const humanZone = el('human-zone');
+          if (myBadge) {
+            if (isJoined) {
+              myBadge.classList.remove('hidden');
+              if (this.isSpeaking && !this.isMuted) {
+                myBadge.innerHTML = '<span class="inline-flex items-center gap-0.5 text-emerald-400"><span class="voice-bar-anim"></span><span class="voice-bar-anim"></span><span class="voice-bar-anim"></span></span><span class="text-emerald-400 font-semibold text-[10px]">מדבר</span>';
+                myBadge.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 border border-emerald-500/30 text-emerald-300';
+              } else if (this.isMuted) {
+                myBadge.innerHTML = '<span>🔇</span><span class="text-[10px]">מושתק</span>';
+                myBadge.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 border border-rose-500/20 text-rose-400';
+              } else {
+                myBadge.innerHTML = '<span>🎤</span><span class="text-[10px]">בשיחה</span>';
+                myBadge.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 border border-indigo-500/30 text-indigo-300';
+              }
+            } else {
+              myBadge.classList.add('hidden');
+            }
+          }
+
+          if (humanZone) {
+            humanZone.classList.toggle('voice-speaking-glow', isJoined && !this.isMuted && this.isSpeaking);
+          }
+        }
+      };
+
       // Connect to websocket server
       function connectSocket() {
         if (socket) return;
@@ -1684,16 +2295,56 @@
         socket.on('open-rooms-list', (openRooms) => {
           renderOpenRooms(openRooms);
         });
-        socket.on('room-created', ({ roomId }) => {
+        socket.on('room-created', ({ roomId, hasPassword }) => {
+          hidePasswordModal();
+          currentRoomId = roomId;
           el('lobby-view').classList.add('hidden');
           el('waiting-view').classList.remove('hidden');
           el('game-view').classList.add('hidden');
           el('waiting-code-display').textContent = roomId;
           el('waiting-player-name').textContent = name;
+          const passBadge = el('waiting-password-badge');
+          if (passBadge) passBadge.classList.toggle('hidden', !hasPassword);
           updateRulesBtnVisibility();
+          VoiceChat.updateUI();
+        });
+
+        socket.on('room-joined', ({ roomId, hasPassword }) => {
+          hidePasswordModal();
+          currentRoomId = roomId;
+          el('lobby-view').classList.add('hidden');
+          el('waiting-view').classList.remove('hidden');
+          el('game-view').classList.add('hidden');
+          el('waiting-code-display').textContent = roomId;
+          el('waiting-player-name').textContent = name;
+          const passBadge = el('waiting-password-badge');
+          if (passBadge) passBadge.classList.toggle('hidden', !hasPassword);
+          updateRulesBtnVisibility();
+          VoiceChat.updateUI();
+        });
+
+        socket.on('password-required', ({ roomId, hostName }) => {
+          openPasswordModal(roomId, hostName);
+          Snd.play('click');
+        });
+
+        socket.on('password-error', ({ msg }) => {
+          const errEl = el('password-modal-error');
+          if (errEl) {
+            errEl.textContent = msg || 'סיסמת החדר שגויה, נסה שוב.';
+            errEl.classList.remove('hidden');
+          }
+          const passInput = el('join-room-password');
+          if (passInput) {
+            passInput.focus();
+            passInput.select();
+          }
+          Snd.play('error');
         });
 
         socket.on('game-start', ({ roomId }) => {
+          hidePasswordModal();
+          currentRoomId = roomId;
           el('lobby-view').classList.add('hidden');
           el('waiting-view').classList.add('hidden');
           el('game-view').classList.remove('hidden');
@@ -1705,6 +2356,7 @@
           interjectionPending = false;
           hideWinModal();
           updateRulesBtnVisibility();
+          VoiceChat.updateUI();
           Snd.play('deal'); // DEAL SOUND AT GAME START
         });
 
@@ -1763,6 +2415,31 @@
             resetToLobby();
           }, 2000);
         });
+
+        // Voice Chat Socket Listeners
+        socket.on('voice-users-list', ({ users }) => {
+          VoiceChat.handleUsersList(users);
+        });
+
+        socket.on('voice-user-joined', (user) => {
+          VoiceChat.handleUserJoined(user);
+        });
+
+        socket.on('voice-signal', ({ from, signal }) => {
+          VoiceChat.handleSignal(from, signal);
+        });
+
+        socket.on('voice-user-muted', ({ id, isMuted }) => {
+          VoiceChat.handleUserMuted(id, isMuted);
+        });
+
+        socket.on('voice-user-speaking', ({ id, isSpeaking }) => {
+          VoiceChat.handleUserSpeaking(id, isSpeaking);
+        });
+
+        socket.on('voice-user-left', ({ id }) => {
+          VoiceChat.handleUserLeft(id);
+        });
       }
 
       function updateRulesBtnVisibility() {
@@ -1780,6 +2457,8 @@
 
       // Reset application back to lobby screen
       function resetToLobby() {
+        currentRoomId = null;
+        VoiceChat.leave();
         G = null;
         sel = [];
         selSrc = null;
@@ -1790,6 +2469,7 @@
         interjectionPending = false;
         currentTutorialStep = -1;
         hideWinModal();
+        hidePasswordModal();
         el('lobby-view').classList.remove('hidden');
         el('waiting-view').classList.add('hidden');
         el('game-view').classList.add('hidden');
@@ -1806,6 +2486,35 @@
       // ═══════════════════════════════════════════
       //  LOBBY USER ACTIONS
       // ═══════════════════════════════════════════
+      function openPasswordModal(roomId, hostName) {
+        pendingJoinRoomId = roomId;
+        const modal = el('password-modal');
+        const sub = el('password-modal-subtitle');
+        const err = el('password-modal-error');
+        const passInput = el('join-room-password');
+        if (sub) {
+          sub.textContent = hostName
+            ? `הזן את הסיסמה כדי להצטרף לחדר ${roomId} של ${hostName}`
+            : `הזן את הסיסמה כדי להצטרף לחדר ${roomId}`;
+        }
+        if (err) err.classList.add('hidden');
+        if (passInput) passInput.value = '';
+        if (modal) modal.classList.remove('hidden');
+        setTimeout(() => {
+          if (passInput) passInput.focus();
+        }, 50);
+      }
+
+      function hidePasswordModal() {
+        pendingJoinRoomId = null;
+        const modal = el('password-modal');
+        const err = el('password-modal-error');
+        const passInput = el('join-room-password');
+        if (modal) modal.classList.add('hidden');
+        if (err) err.classList.add('hidden');
+        if (passInput) passInput.value = '';
+      }
+
       function handleCreate() {
         const input = el('player-name').value.trim();
         if (!input) {
@@ -1814,11 +2523,19 @@
         }
         localStorage.setItem('shithead_player_name', input);
         name = input;
+        const roomPasswordInput = el('room-password');
+        const password = roomPasswordInput ? roomPasswordInput.value.trim() : '';
+        let mode = el('game-mode').value;
+        if (password && mode !== 'online') {
+          mode = 'online';
+          el('game-mode').value = 'online';
+        }
         connectSocket();
         socket.emit('create-room', {
           name,
-          mode: el('game-mode').value,
-          playerCount: el('player-count').value
+          mode,
+          playerCount: el('player-count').value,
+          password
         });
       }
 
@@ -1839,7 +2556,7 @@
         socket.emit('join-room', { name, roomId: code });
       }
 
-      function handleJoinRoom(roomId) {
+      function handleJoinRoom(roomId, hasPassword, hostName) {
         const input = el('player-name').value.trim();
         if (!input) {
           toast('נא להזין שם לפני שמצטרפים', 'warning');
@@ -1849,6 +2566,11 @@
         localStorage.setItem('shithead_player_name', input);
         name = input;
         connectSocket();
+        if (hasPassword) {
+          openPasswordModal(roomId, hostName);
+          Snd.play('click');
+          return;
+        }
         socket.emit('join-room', { name, roomId });
       }
       window.handleJoinRoom = handleJoinRoom;
@@ -1868,15 +2590,21 @@
 
         let html = '';
         openRooms.forEach(room => {
+          const safeHost = String(room.hostName || 'אנונימי').replace(/'/g, "\\'");
+          const lockBadge = room.hasPassword
+            ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-bold" title="חדר מוגן בסיסמה">🔒 סיסמה</span>`
+            : '';
+          const btnLabel = room.hasPassword ? '🔒 הצטרף' : 'הצטרף ⚡';
           html += `
             <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/50 border border-slate-800/80 hover:border-slate-700/50 hover:bg-slate-950/80 transition duration-200">
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 flex-wrap">
                 <span class="inline-flex items-center justify-center px-2 min-w-[36px] h-5 rounded-lg bg-indigo-500/10 text-indigo-400 font-bold border border-indigo-500/20 text-[10px] select-all cursor-pointer" title="העתק קוד" onclick="navigator.clipboard.writeText('${room.roomId}').then(() => toast('הקוד הועתק','info'))">${room.roomId}</span>
                 <span class="text-slate-300 font-bold">החדר של ${room.hostName}</span>
+                ${lockBadge}
               </div>
               <div class="flex items-center gap-3">
-                <span class="text-slate-400 font-medium font-sans">👥 ${room.playerCount}/${room.maxPlayers}</span>
-                <button onclick="handleJoinRoom('${room.roomId}')" class="px-3 py-1 rounded-lg font-bold text-[10px] bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white shadow-md hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer">הצטרף ⚡</button>
+                <span class="text-slate-400 font-medium font-sans tabular-nums">👥 ${room.playerCount}/${room.maxPlayers}</span>
+                <button onclick="handleJoinRoom('${room.roomId}', ${!!room.hasPassword}, '${safeHost}')" class="px-3 py-1 rounded-lg font-bold text-[10px] bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white shadow-md hover:scale-105 active:scale-[0.96] transition-transform duration-200 cursor-pointer">${btnLabel}</button>
               </div>
             </div>
           `;
@@ -2407,12 +3135,35 @@
         const turnBadge = G.phase === 'play' && isTurn
           ? '<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-rose-500/20 text-rose-400 border border-rose-500/10"><span class="badge-dot bg-rose-400"></span>בתור</span>'
           : '';
+
+        // Voice status badge for opponent
+        let voiceBadge = '';
+        let isOpponentSpeaking = false;
+        const vUser = (player.id && VoiceChat.voiceUsers.get(player.id)) ||
+          Array.from(VoiceChat.voiceUsers.values()).find(u => u.name === player.name);
+
+        if (vUser) {
+          if (vUser.isSpeaking && !vUser.isMuted) {
+            isOpponentSpeaking = true;
+            voiceBadge = '<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px]" title="מדבר/ת">' +
+              '<span class="voice-bar-anim"></span><span class="voice-bar-anim"></span><span class="voice-bar-anim"></span>' +
+              '</span>';
+          } else if (vUser.isMuted) {
+            voiceBadge = '<span class="inline-flex items-center px-1.5 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400 text-[10px]" title="מושתק/ת">🔇</span>';
+          } else {
+            voiceBadge = '<span class="inline-flex items-center px-1.5 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-[10px]" title="בצ\'אט קולי">🎙️</span>';
+          }
+        }
+
         const botMark = player.isBot ? 'מחשב' : 'שחקן';
-        const zoneClass = 'game-zone table-seat ' + seatClass + (G.phase === 'play' && isTurn ? ' zone-glow-rose' : '');
+        let zoneClass = 'game-zone table-seat ' + seatClass + (G.phase === 'play' && isTurn ? ' zone-glow-rose' : '');
+        if (isOpponentSpeaking) {
+          zoneClass += ' voice-speaking-glow';
+        }
 
         return '<div class="' + zoneClass + '">' +
           '<div class="flex items-center justify-between mb-2">' +
-            '<span class="text-sm font-semibold text-slate-300">' + player.name + ' · ' + botMark + '</span>' +
+            '<span class="text-sm font-semibold text-slate-300 flex items-center gap-1.5">' + player.name + ' · ' + botMark + ' ' + voiceBadge + '</span>' +
             '<div class="flex gap-1.5 items-center">' + readyBadge + finishedBadge + turnBadge + '</div>' +
           '</div>' +
           '<div class="flex justify-center hand-fan mb-3 min-h-[50px]">' + handHtml + '</div>' +
@@ -2622,6 +3373,7 @@
 
         // Update tutorial guide
         updateTutorialGuide();
+        VoiceChat.updateUI();
       }
 
       function updateMuteUI() {
@@ -2794,6 +3546,33 @@
         el('rematch-btn').addEventListener('click', handleRematch);
         el('win-lobby-btn').addEventListener('click', resetToLobby);
 
+        // Voice Chat event listeners
+        const joinVoiceHandler = () => VoiceChat.join();
+        const micToggleHandler = () => VoiceChat.toggleMute();
+        const leaveVoiceHandler = () => VoiceChat.leave();
+
+        const waitVoiceJoinBtn = el('waiting-voice-join-btn');
+        if (waitVoiceJoinBtn) waitVoiceJoinBtn.addEventListener('click', joinVoiceHandler);
+
+        const gameVoiceJoinBtn = el('game-voice-join-btn');
+        if (gameVoiceJoinBtn) gameVoiceJoinBtn.addEventListener('click', joinVoiceHandler);
+
+        const waitVoiceMicBtn = el('waiting-voice-mic-btn');
+        if (waitVoiceMicBtn) waitVoiceMicBtn.addEventListener('click', micToggleHandler);
+
+        const gameVoiceMicBtn = el('game-voice-mic-btn');
+        if (gameVoiceMicBtn) gameVoiceMicBtn.addEventListener('click', micToggleHandler);
+
+        const waitVoiceLeaveBtn = el('waiting-voice-leave-btn');
+        if (waitVoiceLeaveBtn) waitVoiceLeaveBtn.addEventListener('click', leaveVoiceHandler);
+
+        const gameVoiceLeaveBtn = el('game-voice-leave-btn');
+        if (gameVoiceLeaveBtn) gameVoiceLeaveBtn.addEventListener('click', leaveVoiceHandler);
+
+        window.addEventListener('beforeunload', () => {
+          VoiceChat.leave();
+        });
+
         // Rules Modal triggers
         el('rules-btn').addEventListener('click', function () {
           el('rules-modal').classList.remove('hidden');
@@ -2821,10 +3600,28 @@
           }
         });
 
-        // Tutorial Event Listeners
-        el('game-mode').addEventListener('change', function () {
+        // Tutorial & Mode Event Listeners
+        const roomPassWrap = el('room-password-wrap');
+        const roomPassInput = el('room-password');
+        const roomPassStatus = el('room-password-status');
+        const toggleRoomPassBtn = el('toggle-room-password-btn');
+
+        function updatePasswordStatusUI() {
+          if (!roomPassInput || !roomPassStatus) return;
+          const hasPass = roomPassInput.value.trim().length > 0;
+          if (hasPass) {
+            roomPassStatus.textContent = 'מוגן בסיסמה 🔒';
+            roomPassStatus.className = 'text-[10px] font-bold text-amber-400';
+          } else {
+            roomPassStatus.textContent = 'פתוח לכולם 🌐';
+            roomPassStatus.className = 'text-[10px] font-semibold text-slate-400';
+          }
+        }
+
+        function syncModeUI() {
+          const modeVal = el('game-mode').value;
           const pc = el('player-count');
-          if (this.value === 'tutorial') {
+          if (modeVal === 'tutorial') {
             pc.value = '2';
             pc.disabled = true;
             pc.classList.add('opacity-50', 'cursor-not-allowed');
@@ -2832,7 +3629,104 @@
             pc.disabled = false;
             pc.classList.remove('opacity-50', 'cursor-not-allowed');
           }
-        });
+          if (roomPassWrap) {
+            roomPassWrap.classList.toggle('hidden', modeVal !== 'online');
+          }
+          if (modeVal !== 'online' && roomPassInput) {
+            roomPassInput.value = '';
+            updatePasswordStatusUI();
+          }
+        }
+
+        if (roomPassInput) {
+          roomPassInput.addEventListener('input', function () {
+            updatePasswordStatusUI();
+          });
+        }
+
+        if (toggleRoomPassBtn && roomPassInput) {
+          toggleRoomPassBtn.addEventListener('click', function () {
+            const isHidden = roomPassInput.type === 'password';
+            roomPassInput.type = isHidden ? 'text' : 'password';
+            this.textContent = isHidden ? '🙈' : '👁️';
+            Snd.play('click');
+          });
+        }
+
+        const roomCodeInput = el('room-code');
+        if (roomCodeInput) {
+          roomCodeInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handleJoin();
+            }
+          });
+        }
+
+        // Password Modal Listeners
+        const passModalForm = el('password-modal-form');
+        if (passModalForm) {
+          passModalForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (!pendingJoinRoomId) return;
+            const passInput = el('join-room-password');
+            const errEl = el('password-modal-error');
+            const pwd = passInput ? passInput.value.trim() : '';
+            if (!pwd) {
+              if (errEl) {
+                errEl.textContent = 'נא להזין את סיסמת החדר.';
+                errEl.classList.remove('hidden');
+              }
+              Snd.play('error');
+              return;
+            }
+            if (errEl) errEl.classList.add('hidden');
+            Snd.play('click');
+            connectSocket();
+            socket.emit('join-room', {
+              name,
+              roomId: pendingJoinRoomId,
+              password: pwd
+            });
+          });
+        }
+
+        const joinRoomPassInput = el('join-room-password');
+        if (joinRoomPassInput) {
+          joinRoomPassInput.addEventListener('input', function () {
+            const errEl = el('password-modal-error');
+            if (errEl) errEl.classList.add('hidden');
+          });
+        }
+
+        const closePassModalBtn = el('close-password-modal-btn');
+        if (closePassModalBtn) {
+          closePassModalBtn.addEventListener('click', function () {
+            hidePasswordModal();
+            Snd.play('click');
+          });
+        }
+
+        const cancelPassBtn = el('cancel-password-btn');
+        if (cancelPassBtn) {
+          cancelPassBtn.addEventListener('click', function () {
+            hidePasswordModal();
+            Snd.play('click');
+          });
+        }
+
+        const passModal = el('password-modal');
+        if (passModal) {
+          passModal.addEventListener('click', function (e) {
+            if (e.target === this) {
+              hidePasswordModal();
+              Snd.play('click');
+            }
+          });
+        }
+
+        el('game-mode').addEventListener('change', syncModeUI);
+        syncModeUI();
 
         el('close-tutorial-btn').addEventListener('click', function () {
           el('tutorial-guide').classList.add('hidden');

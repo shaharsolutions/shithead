@@ -1377,9 +1377,10 @@
           `;
         }).join(' ');
 
+        const lockIcon = room.hasPassword ? ` <span class="text-amber-400 text-xs" title="מוגן בסיסמה">🔒</span>` : '';
         return `
           <tr class="hover:bg-slate-950/20 transition duration-150">
-            <td class="py-3.5 pr-2 font-bold font-outfit text-white text-sm">${room.id}</td>
+            <td class="py-3.5 pr-2 font-bold font-outfit text-white text-sm">${room.id}${lockIcon}</td>
             <td class="py-3.5">${modeBadge}</td>
             <td class="py-3.5">${phaseBadge}</td>
             <td class="py-3.5 text-center font-outfit font-bold">${room.playerCount} / ${room.maxPlayers}</td>
