@@ -9,6 +9,7 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#020617">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="שיטהד אונליין">
@@ -1805,6 +1806,8 @@
         }
       };
 
+      const renderBoard = () => { if (typeof render === 'function') render(); };
+
       // ═══════════════════════════════════════════
       //  VOIP / WEBRTC VOICE CHAT ENGINE
       // ═══════════════════════════════════════════
@@ -1854,7 +1857,7 @@
             toast('התחברת לצ\'אט הקולי! 🎙️', 'info');
             Snd.play('click');
             this.updateUI();
-            if (G) renderBoard();
+            if (G) render();
           } catch (err) {
             console.error('Microphone access error:', err);
             if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
@@ -1889,7 +1892,7 @@
                   this.isSpeaking = false;
                   if (socket) socket.emit('voice-speaking', { isSpeaking: false });
                   this.updateUI();
-                  if (G) renderBoard();
+                  if (G) render();
                 }
                 return;
               }
@@ -1908,7 +1911,7 @@
                   this.isSpeaking = true;
                   if (socket) socket.emit('voice-speaking', { isSpeaking: true });
                   this.updateUI();
-                  if (G) renderBoard();
+                  if (G) render();
                 }
               } else {
                 silenceCount++;
@@ -1916,7 +1919,7 @@
                   this.isSpeaking = false;
                   if (socket) socket.emit('voice-speaking', { isSpeaking: false });
                   this.updateUI();
-                  if (G) renderBoard();
+                  if (G) render();
                 }
               }
             }, 100);
@@ -1939,7 +1942,7 @@
           toast(this.isMuted ? 'מיקרופון הושתק 🔇' : 'מיקרופון פעיל 🎤', 'info');
           Snd.play('click');
           this.updateUI();
-          if (G) renderBoard();
+          if (G) render();
         },
 
         createPeer(peerId, isInitiator) {
@@ -2078,7 +2081,7 @@
             this.createPeer(u.id, true);
           });
           this.updateUI();
-          if (G) renderBoard();
+          if (G) render();
         },
 
         handleUserJoined(user) {
@@ -2091,7 +2094,7 @@
           });
           toast(`${user.name} הצטרף/ה לצ'אט הקולי 🎙️`, 'info');
           this.updateUI();
-          if (G) renderBoard();
+          if (G) render();
         },
 
         handleUserLeft(userId) {
@@ -2102,7 +2105,7 @@
           this.cleanupPeer(userId);
           this.voiceUsers.delete(userId);
           this.updateUI();
-          if (G) renderBoard();
+          if (G) render();
         },
 
         handleUserMuted(userId, isMuted) {
@@ -2111,7 +2114,7 @@
             user.isMuted = !!isMuted;
             if (isMuted) user.isSpeaking = false;
             this.updateUI();
-            if (G) renderBoard();
+            if (G) render();
           }
         },
 
@@ -2120,7 +2123,7 @@
           if (user) {
             user.isSpeaking = !!isSpeaking;
             this.updateUI();
-            if (G) renderBoard();
+            if (G) render();
           }
         },
 
@@ -2185,7 +2188,7 @@
           }
 
           this.updateUI();
-          if (G) renderBoard();
+          if (G) render();
         },
 
         updateUI() {
