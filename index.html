@@ -1169,8 +1169,15 @@
             </div>
 
             <div class="relative flex items-center w-full sm:w-72">
-              <input type="text" id="player-name" placeholder="הכנס שם שחקן..." maxlength="12" class="lobby-field w-full pl-11 pr-4 py-2.5 rounded-xl text-white font-bold text-sm placeholder-slate-500 focus:outline-none transition duration-200">
-              <button id="random-name-btn" type="button" class="absolute left-1.5 w-7 h-7 rounded-lg bg-slate-800/90 border border-white/10 text-slate-300 hover:text-white flex items-center justify-center hover:scale-105 active:scale-[0.96] transition-transform text-xs cursor-pointer" title="כינוי אקראי">🎲</button>
+              <input type="text" id="player-name" placeholder="הכנס שם שחקן..." maxlength="12" class="lobby-field w-full pl-[4.5rem] pr-4 py-2.5 rounded-xl text-white font-bold text-sm placeholder-slate-500 focus:outline-none transition duration-200">
+              <div class="absolute left-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                <button id="clear-player-name-btn" type="button" style="display: none;" class="w-6 h-6 rounded-full bg-slate-800/80 hover:bg-slate-700 border border-white/10 text-slate-400 hover:text-rose-400 items-center justify-center transition-all text-xs font-bold cursor-pointer active:scale-90" title="נקה שם">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+                <button id="random-name-btn" type="button" class="w-7 h-7 rounded-lg bg-slate-800/90 border border-white/10 text-slate-300 hover:text-white flex items-center justify-center hover:scale-105 active:scale-[0.96] transition-transform text-xs cursor-pointer" title="כינוי אקראי">🎲</button>
+              </div>
             </div>
           </div>
 
@@ -3658,6 +3665,34 @@
         });
 
         // Lobby view listeners
+        const playerNameInput = el('player-name');
+        const clearPlayerNameBtn = el('clear-player-name-btn');
+
+        function updatePlayerNameClearBtn() {
+          if (!playerNameInput || !clearPlayerNameBtn) return;
+          const hasText = Boolean(playerNameInput.value && playerNameInput.value.length > 0);
+          clearPlayerNameBtn.style.display = hasText ? 'inline-flex' : 'none';
+        }
+
+        if (playerNameInput) {
+          playerNameInput.addEventListener('input', function () {
+            updatePlayerNameClearBtn();
+            localStorage.setItem('shithead_player_name', this.value.trim());
+          });
+        }
+
+        if (clearPlayerNameBtn) {
+          clearPlayerNameBtn.addEventListener('click', function () {
+            if (playerNameInput) {
+              playerNameInput.value = '';
+              playerNameInput.focus();
+            }
+            localStorage.removeItem('shithead_player_name');
+            updatePlayerNameClearBtn();
+            Snd.play('click');
+          });
+        }
+
         el('random-name-btn').addEventListener('click', function () {
           const nicknames = [
             'כריש קלפים', 'אלוף השיטהד', 'קוסם הערימה', 'ג\'וקר טקטי', 'נסיך הקופה', 
@@ -3670,6 +3705,7 @@
           const randomName = nicknames[randomIdx];
           el('player-name').value = randomName;
           localStorage.setItem('shithead_player_name', randomName);
+          updatePlayerNameClearBtn();
           Snd.play('click');
         });
 
@@ -3677,6 +3713,7 @@
         if (savedName) {
           el('player-name').value = savedName;
         }
+        updatePlayerNameClearBtn();
 
         el('create-btn').addEventListener('click', handleCreate);
         el('join-btn').addEventListener('click', handleJoin);
