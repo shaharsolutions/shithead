@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shithead-cache-v6';
+const CACHE_NAME = 'shithead-cache-v7';
 const URLS_TO_CACHE = [
   '/',
   '/index.html',
@@ -12,8 +12,16 @@ const URLS_TO_CACHE = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(URLS_TO_CACHE).catch(() => {});
+    caches.open(CACHE_NAME).then(async (cache) => {
+      await Promise.all(
+        URLS_TO_CACHE.map((url) => {
+          return fetch(new Request(url, { cache: 'reload' }))
+            .then((res) => {
+              if (res.ok) return cache.put(url, res);
+            })
+            .catch(() => {});
+        })
+      );
     })
   );
   self.skipWaiting();
