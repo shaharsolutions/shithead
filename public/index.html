@@ -135,11 +135,6 @@
       max-width: 100%;
     }
 
-    .lobby-panel {
-      justify-self: center;
-      width: min(420px, calc(100vw - 64px)) !important;
-    }
-
     .lobby-shell {
       direction: ltr;
     }
@@ -151,6 +146,31 @@
     .lobby-panel,
     .lobby-panel * {
       min-width: 0;
+    }
+
+    .lobby-name-bar {
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.75), rgba(2, 6, 23, 0.65));
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    #open-rooms-list {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(99, 102, 241, 0.4) transparent;
+    }
+
+    #open-rooms-list::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    #open-rooms-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    #open-rooms-list::-webkit-scrollbar-thumb {
+      background: rgba(99, 102, 241, 0.4);
+      border-radius: 9999px;
     }
 
     @media (max-width: 900px) {
@@ -177,26 +197,25 @@
       }
 
       .lobby-panel {
-        width: min(100%, calc(100vw - 64px)) !important;
-        padding: 14px !important;
-        gap: 12px !important;
+        padding: 16px !important;
         border-radius: 22px !important;
       }
 
-      .lobby-panel h2 {
-        font-size: 22px;
-        line-height: 1.15;
+      .lobby-panel h2,
+      .lobby-panel h3 {
+        font-size: 18px;
+        line-height: 1.2;
       }
 
       .lobby-panel label {
-        font-size: 10px;
+        font-size: 11px;
       }
 
       .lobby-field,
       #create-btn,
       #join-btn,
       #room-code {
-        border-radius: 15px !important;
+        border-radius: 14px !important;
       }
 
       #player-name,
@@ -213,13 +232,8 @@
         padding-bottom: 11px !important;
       }
 
-      #open-rooms-section {
-        gap: 8px !important;
-        padding-top: 10px !important;
-      }
-
       #open-rooms-list {
-        max-height: 52px !important;
+        max-height: 240px !important;
       }
     }
 
@@ -1131,135 +1145,182 @@
       <div class="lobby-shell w-full max-w-6xl border border-white/10 overflow-hidden relative transition-all duration-300">
         
         <!-- Rules Button -->
-        <button id="rules-btn" class="absolute top-4 right-4 w-9 h-9 rounded-xl bg-slate-950/70 border border-white/10 text-slate-300 flex items-center justify-center hover:bg-slate-800 hover:text-white transition duration-200 z-30 shadow-lg" title="חוקי המשחק">
+        <button id="rules-btn" class="absolute top-4 left-4 w-9 h-9 rounded-xl bg-slate-950/70 border border-white/10 text-slate-300 flex items-center justify-center hover:bg-slate-800 hover:text-white transition duration-200 z-30 shadow-lg cursor-pointer" title="חוקי המשחק">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </button>
 
-        <div class="relative z-20 grid lg:grid-cols-[minmax(0,1fr)_420px] gap-5 lg:gap-10 items-start lg:items-end min-h-[inherit] p-4 sm:p-7 lg:p-10 pt-12 sm:pt-16">
-          <section class="order-2 lg:order-1 text-right w-full min-w-0 max-w-2xl flex flex-col justify-end gap-4 sm:gap-5 min-h-0 lg:min-h-0">
-            <div class="inline-flex items-center gap-2 self-end rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-[10px] sm:text-[11px] font-bold text-cyan-200 max-w-full">
-              <span class="w-1.5 h-1.5 rounded-full bg-cyan-300"></span>
-              <span class="truncate">אונליין עם חברים או מול המחשב</span>
-            </div>
-            <div>
-              <h2 class="text-3xl sm:text-5xl lg:text-6xl font-black text-white leading-tight tracking-tight drop-shadow-2xl">שיטהד אונליין</h2>
-              <p class="text-sm sm:text-base text-slate-200 mt-3 max-w-xl leading-relaxed">פתח שולחן, שלח קוד לחברים, או התחמם במשחק מהיר מול המחשב. הכל נמצא כאן בלי מסכים מיותרים.</p>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 w-full max-w-2xl">
-              <div class="rounded-2xl bg-slate-950/55 border border-white/10 p-3">
-                <div class="text-lg mb-1">⚔️</div>
-                <p class="text-xs font-bold text-white">קרבות בזמן אמת</p>
-                <p class="text-[11px] text-slate-400 mt-1">חדרים פרטיים או פתוחים</p>
+        <div class="relative z-20 flex flex-col gap-4 sm:gap-5 min-h-[inherit] p-3.5 sm:p-6 lg:p-8 pt-10 sm:pt-12" dir="rtl">
+          
+          <!-- Lobby Top Bar: Player Profile Bar -->
+          <div class="lobby-name-bar p-3.5 sm:p-4 rounded-2xl bg-slate-950/65 border border-white/10 backdrop-blur-md flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-lg">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-indigo-500/20 border border-cyan-400/30 flex items-center justify-center text-xl select-none shrink-0 shadow-inner">
+                👤
               </div>
-              <div class="rounded-2xl bg-slate-950/55 border border-white/10 p-3">
-                <div class="text-lg mb-1">💻</div>
-                <p class="text-xs font-bold text-white">אימון מול מחשב</p>
-                <p class="text-[11px] text-slate-400 mt-1">כניסה מהירה למשחק</p>
-              </div>
-              <div class="rounded-2xl bg-slate-950/55 border border-white/10 p-3">
-                <div class="text-lg mb-1">✨</div>
-                <p class="text-xs font-bold text-white">קלפי כוח</p>
-                <p class="text-[11px] text-slate-400 mt-1">2, 3, 7, 8 ו-10</p>
-              </div>
-            </div>
-          </section>
-
-          <section class="order-1 lg:order-2 lobby-panel rounded-3xl p-4 sm:p-6 flex flex-col gap-5 relative z-20 text-right w-full min-w-0">
-            <div>
-              <h2 class="text-2xl font-black text-white tracking-tight">כניסה למשחק</h2>
-              <p class="text-xs text-slate-400 mt-1">בחר שם, מצב משחק ומספר שחקנים</p>
-            </div>
-
-            <!-- Name Input -->
-            <div class="flex flex-col gap-2 relative z-10">
-              <label for="player-name" class="text-xs font-semibold text-slate-300 uppercase tracking-wider">השם שלך</label>
-              <div class="relative flex items-center">
-                <input type="text" id="player-name" placeholder="הכנס שם שחקן..." maxlength="12" class="lobby-field w-full pl-11 pr-4 py-3 rounded-2xl text-white placeholder-slate-500 focus:outline-none transition duration-200">
-                <button id="random-name-btn" class="absolute left-2 w-8 h-8 rounded-xl bg-slate-900/90 border border-white/10 text-slate-300 hover:text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-200 z-20" title="כינוי אקראי">🎲</button>
+              <div class="text-right">
+                <div class="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                  <span>השם שלך למשחק</span>
+                  <span class="text-[10px] text-cyan-300 font-semibold bg-cyan-950/70 px-2 py-0.5 rounded-full border border-cyan-500/25">נשמר אוטומטית</span>
+                </div>
+                <p class="text-[11px] text-slate-400">הכינוי שיופיע לכל השחקנים בשולחן ובהצטרפות לחדרים</p>
               </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <!-- Game Mode Selector -->
-              <div class="flex flex-col gap-2 relative z-10">
-                <label for="game-mode" class="text-xs font-semibold text-slate-300 uppercase tracking-wider">מצב משחק</label>
-                <div class="relative">
-                  <select id="game-mode" class="lobby-field w-full px-4 py-3 rounded-2xl text-white focus:outline-none transition duration-200 appearance-none cursor-pointer">
-                    <option value="computer">💻 נגד המחשב</option>
-                    <option value="online">👥 חדר עם חברים</option>
-                    <option value="tutorial">🎓 משחק הדרכה (Tutorial)</option>
-                  </select>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
-                  </svg>
+            <div class="relative flex items-center w-full sm:w-72">
+              <input type="text" id="player-name" placeholder="הכנס שם שחקן..." maxlength="12" class="lobby-field w-full pl-11 pr-4 py-2.5 rounded-xl text-white font-bold text-sm placeholder-slate-500 focus:outline-none transition duration-200">
+              <button id="random-name-btn" type="button" class="absolute left-1.5 w-7 h-7 rounded-lg bg-slate-800/90 border border-white/10 text-slate-300 hover:text-white flex items-center justify-center hover:scale-105 active:scale-[0.96] transition-transform text-xs cursor-pointer" title="כינוי אקראי">🎲</button>
+            </div>
+          </div>
+
+          <!-- Mobile Segmented Tabs Switcher (Visible on < md) -->
+          <div class="flex md:hidden items-center bg-slate-950/80 p-1 rounded-2xl border border-white/10 w-full shadow-inner">
+            <button id="tab-open-rooms" type="button" class="flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500/25 to-teal-500/25 text-emerald-300 border border-emerald-500/40 shadow-sm cursor-pointer active:scale-[0.98]">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>חדרים פתוחים</span>
+              <span id="tab-rooms-count" class="px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-500/30 font-bold tabular-nums">0</span>
+            </button>
+            <button id="tab-create-room" type="button" class="flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 text-slate-400 hover:text-white border border-transparent cursor-pointer active:scale-[0.98]">
+              <span>⚔️</span>
+              <span>פתיחת שולחן</span>
+            </button>
+          </div>
+
+          <!-- Main 2-Column Grid (Open Rooms on Right, Create on Left in RTL) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 lg:gap-6 items-stretch w-full">
+            
+            <!-- PANEL 1: OPEN ROOMS TO JOIN (First Glance!) -->
+            <section id="panel-open-rooms" class="lobby-panel rounded-3xl p-4 sm:p-6 flex flex-col justify-between gap-4 relative z-20 text-right w-full min-w-0">
+              <div class="flex flex-col gap-3">
+                <div class="flex items-center justify-between gap-2 pb-3 border-b border-white/10">
+                  <div class="flex items-center gap-2.5">
+                    <span class="relative flex h-3 w-3">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                    </span>
+                    <h3 class="text-base sm:text-lg font-black text-white tracking-tight">חדרים פתוחים להצטרפות</h3>
+                    <span id="open-rooms-badge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 tabular-nums">0 חדרים</span>
+                  </div>
+                  <span class="text-[11px] text-slate-400 flex items-center gap-1 font-medium">
+                    <span>שידור חי</span>
+                    <span class="text-emerald-400">⚡</span>
+                  </span>
+                </div>
+
+                <p class="text-xs text-slate-300 leading-relaxed">שולחנות שממתינים לשחקנים כעת. לחץ על 'הצטרף' כדי להיכנס מיד למשחק:</p>
+
+                <!-- Dynamic Open Rooms List -->
+                <div id="open-rooms-list" class="flex flex-col gap-2.5 max-h-[300px] min-h-[140px] overflow-y-auto pr-1 text-xs" dir="rtl">
+                  <!-- Populated dynamically via renderOpenRooms -->
                 </div>
               </div>
 
-              <!-- Player Count Selector -->
-              <div class="flex flex-col gap-2 relative z-10">
-                <label for="player-count" class="text-xs font-semibold text-slate-300 uppercase tracking-wider">מספר שחקנים</label>
-                <div class="relative">
-                  <select id="player-count" class="lobby-field w-full px-4 py-3 rounded-2xl text-white focus:outline-none transition duration-200 appearance-none cursor-pointer">
-                    <option value="2">2 שחקנים</option>
-                    <option value="3">3 שחקנים</option>
-                    <option value="4">4 שחקנים</option>
-                  </select>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
-                  </svg>
+              <!-- Direct Code Join (At the bottom of Open Rooms panel) -->
+              <div class="pt-3 border-t border-white/10 flex flex-col gap-2 mt-auto">
+                <div class="flex items-center justify-between">
+                  <label for="room-code" class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>🔑 יש לך קוד חדר פרטי?</span>
+                  </label>
+                  <span class="text-[10px] text-slate-400">4 אותיות באנגלית</span>
+                </div>
+                <div class="grid grid-cols-[100px_minmax(0,1fr)] gap-2">
+                  <input type="text" id="room-code" placeholder="ABCD" maxlength="4" class="lobby-field w-full text-center uppercase font-black text-sm rounded-2xl text-white placeholder-slate-500 focus:outline-none py-2.5 tracking-wider">
+                  <button id="join-btn" type="button" class="py-2.5 rounded-2xl font-bold text-xs sm:text-sm bg-white/10 hover:bg-white/15 text-white border border-white/10 shadow-md transition duration-200 hover:scale-[1.01] active:scale-[0.96] flex items-center justify-center gap-2 cursor-pointer">
+                    <span>הצטרף לשולחן</span>
+                    <span>👥</span>
+                  </button>
                 </div>
               </div>
-            </div>
+            </section>
 
-            <!-- Optional Room Password (only for online friends mode) -->
-            <div id="room-password-wrap" class="hidden flex flex-col gap-2 relative z-10">
-              <div class="flex items-center justify-between">
-                <label for="room-password" class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <span>🔒 סיסמה לחדר</span>
-                  <span class="text-[10px] font-medium text-slate-400 normal-case">(לא חובה)</span>
-                </label>
-                <span id="room-password-status" class="text-[10px] font-semibold text-slate-400">פתוח לכולם 🌐</span>
-              </div>
-              <div class="relative flex items-center">
-                <input type="password" id="room-password" placeholder="השאר ריק לחדר פתוח ללא סיסמה..." maxlength="20" autocomplete="off" class="lobby-field w-full pl-11 pr-4 py-2.5 rounded-2xl text-sm text-white placeholder-slate-500 focus:outline-none transition duration-200">
-                <button type="button" id="toggle-room-password-btn" class="absolute left-2 w-8 h-8 rounded-xl bg-slate-900/90 border border-white/10 text-slate-400 hover:text-white flex items-center justify-center active:scale-[0.96] transition-transform duration-200 z-20" title="הצג / הסתר סיסמה">👁️</button>
-              </div>
-            </div>
+            <!-- PANEL 2: CREATE NEW ROOM / PLAY -->
+            <section id="panel-create-room" class="hidden md:flex lobby-panel rounded-3xl p-4 sm:p-6 flex-col justify-between gap-4 relative z-20 text-right w-full min-w-0">
+              <div class="flex flex-col gap-4">
+                <div class="flex items-center justify-between gap-2 pb-3 border-b border-white/10">
+                  <div class="flex items-center gap-2">
+                    <span class="text-lg">⚔️</span>
+                    <h3 class="text-base sm:text-lg font-black text-white tracking-tight">פתיחת שולחן חדש</h3>
+                  </div>
+                  <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">מארח משחק</span>
+                </div>
 
-            <!-- Action Grid -->
-            <div class="grid grid-cols-1 gap-3">
-              <!-- Create Room -->
-              <button id="create-btn" class="w-full py-3.5 rounded-2xl font-black text-sm bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white shadow-lg shadow-cyan-950/30 transition duration-200 hover:scale-[1.01] active:scale-95">התחל משחק 🎮</button>
+                <!-- Mode & Player Count Selectors -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <!-- Game Mode Selector -->
+                  <div class="flex flex-col gap-1.5 relative z-10">
+                    <label for="game-mode" class="text-xs font-semibold text-slate-300 uppercase tracking-wider">מצב משחק</label>
+                    <div class="relative">
+                      <select id="game-mode" class="lobby-field w-full px-3.5 py-2.5 rounded-2xl text-white text-xs sm:text-sm focus:outline-none transition duration-200 appearance-none cursor-pointer">
+                        <option value="online">👥 חדר עם חברים</option>
+                        <option value="computer">💻 נגד המחשב</option>
+                        <option value="tutorial">🎓 משחק הדרכה (Tutorial)</option>
+                      </select>
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
 
-              <!-- Join Room -->
-              <div class="grid grid-cols-1 sm:grid-cols-[96px_minmax(0,1fr)] gap-2 relative z-10">
-                <input type="text" id="room-code" placeholder="קוד חדר" class="lobby-field w-full text-center uppercase font-black text-sm rounded-2xl text-white placeholder-slate-500 focus:outline-none transition duration-200 py-3 sm:py-0">
-                <button id="join-btn" class="py-3.5 rounded-2xl font-bold text-sm bg-white/10 hover:bg-white/15 text-white border border-white/10 shadow-md transition duration-200 hover:scale-[1.01] active:scale-95">הצטרף לחדר 👥</button>
+                  <!-- Player Count Selector -->
+                  <div class="flex flex-col gap-1.5 relative z-10">
+                    <label for="player-count" class="text-xs font-semibold text-slate-300 uppercase tracking-wider">מספר שחקנים</label>
+                    <div class="relative">
+                      <select id="player-count" class="lobby-field w-full px-3.5 py-2.5 rounded-2xl text-white text-xs sm:text-sm focus:outline-none transition duration-200 appearance-none cursor-pointer font-sans tabular-nums">
+                        <option value="2">2 שחקנים</option>
+                        <option value="3">3 שחקנים</option>
+                        <option value="4">4 שחקנים</option>
+                      </select>
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Optional Room Password (only for online friends mode) -->
+                <div id="room-password-wrap" class="flex flex-col gap-1.5 relative z-10">
+                  <div class="flex items-center justify-between">
+                    <label for="room-password" class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <span>🔒 סיסמה לחדר</span>
+                      <span class="text-[10px] font-medium text-slate-400 normal-case">(לא חובה)</span>
+                    </label>
+                    <span id="room-password-status" class="text-[10px] font-semibold text-emerald-400">פתוח לכולם 🌐</span>
+                  </div>
+                  <div class="relative flex items-center">
+                    <input type="password" id="room-password" placeholder="השאר ריק לחדר פתוח ללא סיסמה..." maxlength="20" autocomplete="off" class="lobby-field w-full pl-11 pr-4 py-2.5 rounded-2xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none transition duration-200">
+                    <button type="button" id="toggle-room-password-btn" class="absolute left-2 w-8 h-8 rounded-xl bg-slate-900/90 border border-white/10 text-slate-400 hover:text-white flex items-center justify-center active:scale-[0.96] transition-transform duration-200 z-20 text-xs cursor-pointer" title="הצג / הסתר סיסמה">👁️</button>
+                  </div>
+                </div>
+
+                <!-- Create Room CTA Button -->
+                <button id="create-btn" type="button" class="w-full py-3.5 rounded-2xl font-black text-sm bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white shadow-lg shadow-cyan-950/30 transition duration-200 hover:scale-[1.01] active:scale-[0.96] cursor-pointer">
+                  התחל משחק 🎮
+                </button>
               </div>
-              <p class="text-[11px] text-slate-500 text-center">קוד חדר בן 4 אותיות מאפשר להצטרף ישירות לשולחן של חברים</p>
 
               <!-- Install Game App Button -->
-              <button id="lobby-install-btn" class="w-full py-3.5 rounded-2xl font-bold text-xs sm:text-sm bg-gradient-to-r from-emerald-600/90 via-teal-600/90 to-cyan-600/90 hover:from-emerald-500 hover:via-teal-500 hover:to-cyan-500 text-white border border-emerald-400/30 shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2 transition duration-200 hover:scale-[1.01] active:scale-95 cursor-pointer">
-                <span class="text-base">📲</span>
-                <span id="lobby-install-text">התקן את המשחק במכשיר (App)</span>
-              </button>
-            </div>
-
-            <!-- Open Rooms Section -->
-            <div id="open-rooms-section" class="flex flex-col gap-3 pt-4 border-t border-white/10 relative z-10">
-              <label class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center justify-end gap-1.5">
-                חדרים פתוחים להצטרפות 🌐
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              </label>
-              <div id="open-rooms-list" class="flex flex-col gap-2 max-h-[150px] overflow-y-auto pr-1 text-xs" dir="rtl">
-                <!-- Dynamically populated open rooms -->
+              <div class="pt-3 border-t border-white/10 flex flex-col gap-2 mt-auto">
+                <button id="lobby-install-btn" type="button" class="w-full py-2.5 rounded-2xl font-bold text-xs bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-white/10 transition duration-200 hover:scale-[1.01] active:scale-[0.96] flex items-center justify-center gap-2 cursor-pointer">
+                  <span class="text-sm">📲</span>
+                  <span id="lobby-install-text">התקן את המשחק במכשיר (App)</span>
+                </button>
               </div>
-            </div>
-          </section>
-        </div>
+            </section>
+          </div>
 
+          <!-- Bottom Feature Highlights Strip -->
+          <div class="mt-2 pt-3 border-t border-white/10 hidden sm:flex items-center justify-between text-[11px] text-slate-400 px-1 flex-wrap gap-2">
+            <div class="flex items-center gap-4 flex-wrap">
+              <span class="inline-flex items-center gap-1.5"><span class="text-cyan-400">⚔️</span> <span>קרבות בזמן אמת</span></span>
+              <span class="inline-flex items-center gap-1.5"><span class="text-amber-400">✨</span> <span>קלפי כוח: 2, 3, 7, 8 ו-10</span></span>
+              <span class="inline-flex items-center gap-1.5"><span class="text-indigo-400">🎙️</span> <span>צ'אט קולי מובנה</span></span>
+              <span class="inline-flex items-center gap-1.5"><span class="text-emerald-400">💻</span> <span>אימון מול המחשב</span></span>
+            </div>
+            <div class="text-slate-500 font-mono text-[10px]">שיטהד אונליין</div>
+          </div>
+
+        </div>
       </div>
     </div>
 
@@ -2479,6 +2540,9 @@
         el('tutorial-guide').classList.add('hidden');
         el('tutorial-toggle-btn').classList.add('hidden');
         updateRulesBtnVisibility();
+        if (typeof switchLobbyTab === 'function') {
+          switchLobbyTab('open');
+        }
         if (socket) {
           socket.disconnect();
           socket = null;
@@ -2578,14 +2642,73 @@
       }
       window.handleJoinRoom = handleJoinRoom;
 
+      function switchLobbyTab(tab) {
+        const openPanel = el('panel-open-rooms');
+        const createPanel = el('panel-create-room');
+        const tabOpen = el('tab-open-rooms');
+        const tabCreate = el('tab-create-room');
+        if (!openPanel || !createPanel) return;
+
+        if (tab === 'open') {
+          openPanel.classList.remove('hidden');
+          openPanel.classList.add('flex');
+          createPanel.classList.add('hidden');
+          createPanel.classList.remove('flex');
+          if (tabOpen) {
+            tabOpen.className = 'flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500/25 to-teal-500/25 text-emerald-300 border border-emerald-500/40 shadow-sm cursor-pointer active:scale-[0.98]';
+          }
+          if (tabCreate) {
+            tabCreate.className = 'flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 text-slate-400 hover:text-white border border-transparent cursor-pointer active:scale-[0.98]';
+          }
+        } else {
+          createPanel.classList.remove('hidden');
+          createPanel.classList.add('flex');
+          openPanel.classList.add('hidden');
+          openPanel.classList.remove('flex');
+          if (tabCreate) {
+            tabCreate.className = 'flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500/25 to-indigo-500/25 text-cyan-200 border border-cyan-400/40 shadow-sm cursor-pointer active:scale-[0.98]';
+          }
+          if (tabOpen) {
+            tabOpen.className = 'flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 text-slate-400 hover:text-white border border-transparent cursor-pointer active:scale-[0.98]';
+          }
+        }
+      }
+      window.switchLobbyTab = switchLobbyTab;
+
+      function focusCreateRoom() {
+        switchLobbyTab('create');
+        const btn = el('create-btn');
+        if (btn) {
+          btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          btn.classList.add('ring-2', 'ring-cyan-400');
+          setTimeout(() => btn.classList.remove('ring-2', 'ring-cyan-400'), 1500);
+        }
+      }
+      window.focusCreateRoom = focusCreateRoom;
+
       function renderOpenRooms(openRooms) {
         const container = el('open-rooms-list');
+        const badge = el('open-rooms-badge');
+        const tabBadge = el('tab-rooms-count');
+        const count = Array.isArray(openRooms) ? openRooms.length : 0;
+        const countText = `${count} ${count === 1 ? 'חדר זמין' : 'חדרים'}`;
+
+        if (badge) badge.textContent = countText;
+        if (tabBadge) tabBadge.textContent = count;
+
         if (!container) return;
 
         if (!openRooms || openRooms.length === 0) {
           container.innerHTML = `
-            <div class="text-center py-4 text-slate-500 font-medium italic">
-              אין חדרים פתוחים כרגע. צור חדר והזמן חברים! ✉️
+            <div class="py-6 px-4 rounded-2xl bg-slate-950/40 border border-dashed border-slate-800/80 flex flex-col items-center justify-center text-center gap-2.5 my-auto">
+              <div class="w-11 h-11 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center text-xl select-none">
+                🃏
+              </div>
+              <div class="font-bold text-slate-200 text-xs sm:text-sm">אין כרגע שולחנות פתוחים שממתינים</div>
+              <p class="text-[11px] text-slate-400 max-w-xs leading-relaxed">היה הראשון לפתוח שולחן והזמן חברים להצטרף אליך לקרב!</p>
+              <button type="button" onclick="focusCreateRoom()" class="mt-1 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 hover:from-cyan-500/30 hover:to-indigo-500/30 text-cyan-200 border border-cyan-400/30 active:scale-[0.96] transition-all cursor-pointer">
+                ➕ פתח שולחן חדש עכשיו
+              </button>
             </div>
           `;
           return;
@@ -2595,19 +2718,35 @@
         openRooms.forEach(room => {
           const safeHost = String(room.hostName || 'אנונימי').replace(/'/g, "\\'");
           const lockBadge = room.hasPassword
-            ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-bold" title="חדר מוגן בסיסמה">🔒 סיסמה</span>`
-            : '';
-          const btnLabel = room.hasPassword ? '🔒 הצטרף' : 'הצטרף ⚡';
+            ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/25 text-[10px] font-bold" title="חדר מוגן בסיסמה">🔒 מוגן</span>`
+            : `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 text-[10px] font-bold">🌐 פתוח</span>`;
+          const btnLabel = room.hasPassword ? 'הצטרף 🔒' : 'הצטרף ⚡';
           html += `
-            <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/50 border border-slate-800/80 hover:border-slate-700/50 hover:bg-slate-950/80 transition duration-200">
-              <div class="flex items-center gap-2 flex-wrap">
-                <span class="inline-flex items-center justify-center px-2 min-w-[36px] h-5 rounded-lg bg-indigo-500/10 text-indigo-400 font-bold border border-indigo-500/20 text-[10px] select-all cursor-pointer" title="העתק קוד" onclick="navigator.clipboard.writeText('${room.roomId}').then(() => toast('הקוד הועתק','info'))">${room.roomId}</span>
-                <span class="text-slate-300 font-bold">החדר של ${room.hostName}</span>
-                ${lockBadge}
+            <div class="flex items-center justify-between p-2.5 sm:p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-slate-700/60 hover:bg-slate-950/90 transition-all duration-200 shadow-sm gap-2">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 text-indigo-300 font-bold flex items-center justify-center text-xs shrink-0 select-none shadow-inner">
+                  🎴
+                </div>
+                <div class="flex flex-col min-w-0 text-right">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-white font-bold text-xs sm:text-sm truncate">השולחן של ${room.hostName}</span>
+                    ${lockBadge}
+                  </div>
+                  <div class="flex items-center gap-2 mt-0.5">
+                    <button type="button" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-indigo-500/15 text-cyan-300 font-mono font-bold border border-indigo-500/20 text-[10px] select-all cursor-pointer hover:bg-indigo-500/25 active:scale-95 transition-transform" title="לחץ להעתקת קוד" onclick="navigator.clipboard.writeText('${room.roomId}').then(() => toast('הקוד ${room.roomId} הועתק!','info'))">
+                      <span>${room.roomId}</span>
+                      <span class="text-[9px] opacity-70">📋</span>
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div class="flex items-center gap-3">
-                <span class="text-slate-400 font-medium font-sans tabular-nums">👥 ${room.playerCount}/${room.maxPlayers}</span>
-                <button onclick="handleJoinRoom('${room.roomId}', ${!!room.hasPassword}, '${safeHost}')" class="px-3 py-1 rounded-lg font-bold text-[10px] bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white shadow-md hover:scale-105 active:scale-[0.96] transition-transform duration-200 cursor-pointer">${btnLabel}</button>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="text-slate-300 font-semibold text-xs font-sans tabular-nums px-2 py-1 rounded-lg bg-slate-900/80 border border-white/5">
+                  👥 ${room.playerCount}/${room.maxPlayers}
+                </span>
+                <button type="button" onclick="handleJoinRoom('${room.roomId}', ${!!room.hasPassword}, '${safeHost}')" class="px-3 sm:px-3.5 py-1.5 rounded-xl font-black text-xs bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white shadow-md shadow-emerald-950/40 hover:scale-[1.02] active:scale-[0.96] transition-transform duration-200 cursor-pointer">
+                  ${btnLabel}
+                </button>
               </div>
             </div>
           `;
@@ -3522,6 +3661,21 @@
         el('join-btn').addEventListener('click', handleJoin);
         el('waiting-code-display').addEventListener('click', handleCopyCode);
         el('waiting-back-btn').addEventListener('click', resetToLobby);
+
+        const tabOpenRooms = el('tab-open-rooms');
+        if (tabOpenRooms) {
+          tabOpenRooms.addEventListener('click', function () {
+            switchLobbyTab('open');
+            Snd.play('click');
+          });
+        }
+        const tabCreateRoom = el('tab-create-room');
+        if (tabCreateRoom) {
+          tabCreateRoom.addEventListener('click', function () {
+            switchLobbyTab('create');
+            Snd.play('click');
+          });
+        }
 
         // In-game board click events
         el('human-hand').addEventListener('click', function (e) {
