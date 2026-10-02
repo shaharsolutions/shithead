@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shithead-cache-v11';
+const CACHE_NAME = 'shithead-cache-v12';
 const URLS_TO_CACHE = [
   '/',
   '/index.html',

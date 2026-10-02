@@ -1183,66 +1183,22 @@
 
           <!-- Mobile Segmented Tabs Switcher (Visible on < md) -->
           <div class="flex md:hidden items-center bg-slate-950/80 p-1 rounded-2xl border border-white/10 w-full shadow-inner">
-            <button id="tab-open-rooms" type="button" class="flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500/25 to-teal-500/25 text-emerald-300 border border-emerald-500/40 shadow-sm cursor-pointer active:scale-[0.98]">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>חדרים פתוחים</span>
-              <span id="tab-rooms-count" class="px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-500/30 font-bold tabular-nums">0</span>
-            </button>
-            <button id="tab-create-room" type="button" class="flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 text-slate-400 hover:text-white border border-transparent cursor-pointer active:scale-[0.98]">
+            <button id="tab-create-room" type="button" class="flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500/25 to-indigo-500/25 text-cyan-200 border border-cyan-400/40 shadow-sm cursor-pointer active:scale-[0.98]">
               <span>⚔️</span>
               <span>פתיחת שולחן</span>
             </button>
+            <button id="tab-open-rooms" type="button" class="flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 text-slate-400 hover:text-white border border-transparent cursor-pointer active:scale-[0.98]">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>חדרים פתוחים</span>
+              <span id="tab-rooms-count" class="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300 font-bold tabular-nums">0</span>
+            </button>
           </div>
 
-          <!-- Main 2-Column Grid (Open Rooms on Right, Create on Left in RTL) -->
+          <!-- Main 2-Column Grid (Create on Right, Open Rooms on Left in RTL) -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 lg:gap-6 items-stretch w-full">
             
-            <!-- PANEL 1: OPEN ROOMS TO JOIN (First Glance!) -->
-            <section id="panel-open-rooms" class="lobby-panel rounded-3xl p-4 sm:p-6 flex flex-col justify-between gap-4 relative z-20 text-right w-full min-w-0">
-              <div class="flex flex-col gap-3">
-                <div class="flex items-center justify-between gap-2 pb-3 border-b border-white/10">
-                  <div class="flex items-center gap-2.5">
-                    <span class="relative flex h-3 w-3">
-                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                    </span>
-                    <h3 class="text-base sm:text-lg font-black text-white tracking-tight">חדרים פתוחים להצטרפות</h3>
-                    <span id="open-rooms-badge" class="hidden px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 tabular-nums">0 חדרים</span>
-                  </div>
-                  <span class="text-[11px] text-slate-400 flex items-center gap-1 font-medium shrink-0 whitespace-nowrap">
-                    <span class="whitespace-nowrap">שידור חי</span>
-                    <span class="text-emerald-400">⚡</span>
-                  </span>
-                </div>
-
-                <p class="text-xs text-slate-300 leading-relaxed">שולחנות שממתינים לשחקנים כעת. לחץ על 'הצטרף' כדי להיכנס מיד למשחק:</p>
-
-                <!-- Dynamic Open Rooms List -->
-                <div id="open-rooms-list" class="flex flex-col gap-2.5 max-h-[300px] min-h-[140px] overflow-y-auto pr-1 text-xs" dir="rtl">
-                  <!-- Populated dynamically via renderOpenRooms -->
-                </div>
-              </div>
-
-              <!-- Direct Code Join (At the bottom of Open Rooms panel) -->
-              <div class="pt-3 border-t border-white/10 flex flex-col gap-2 mt-auto">
-                <div class="flex items-center justify-between">
-                  <label for="room-code" class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <span>🔑 יש לך קוד חדר פרטי?</span>
-                  </label>
-                  <span class="text-[10px] text-slate-400">4 אותיות באנגלית</span>
-                </div>
-                <div class="grid grid-cols-[100px_minmax(0,1fr)] gap-2">
-                  <input type="text" id="room-code" placeholder="ABCD" maxlength="4" class="lobby-field w-full text-center uppercase font-black text-sm rounded-2xl text-white placeholder-slate-500 focus:outline-none py-2.5 tracking-wider">
-                  <button id="join-btn" type="button" class="py-2.5 rounded-2xl font-bold text-xs sm:text-sm bg-white/10 hover:bg-white/15 text-white border border-white/10 shadow-md transition duration-200 hover:scale-[1.01] active:scale-[0.96] flex items-center justify-center gap-2 cursor-pointer">
-                    <span>הצטרף לשולחן</span>
-                    <span>👥</span>
-                  </button>
-                </div>
-              </div>
-            </section>
-
-            <!-- PANEL 2: CREATE NEW ROOM / PLAY -->
-            <section id="panel-create-room" class="hidden md:flex lobby-panel rounded-3xl p-4 sm:p-6 flex-col justify-between gap-4 relative z-20 text-right w-full min-w-0">
+            <!-- PANEL 1: CREATE NEW ROOM / PLAY (Default active tab on mobile, Right column on desktop) -->
+            <section id="panel-create-room" class="flex md:flex lobby-panel rounded-3xl p-4 sm:p-6 flex-col justify-between gap-4 relative z-20 text-right w-full min-w-0">
               <div class="flex flex-col gap-4">
                 <div class="flex items-center justify-between gap-2 pb-3 border-b border-white/10">
                   <div class="flex items-center gap-2">
@@ -1312,6 +1268,50 @@
                   <span class="text-sm">📲</span>
                   <span id="lobby-install-text">התקן את המשחק במכשיר (App)</span>
                 </button>
+              </div>
+            </section>
+
+            <!-- PANEL 2: OPEN ROOMS TO JOIN -->
+            <section id="panel-open-rooms" class="hidden md:flex lobby-panel rounded-3xl p-4 sm:p-6 flex-col justify-between gap-4 relative z-20 text-right w-full min-w-0">
+              <div class="flex flex-col gap-3">
+                <div class="flex items-center justify-between gap-2 pb-3 border-b border-white/10">
+                  <div class="flex items-center gap-2.5">
+                    <span class="relative flex h-3 w-3">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                    </span>
+                    <h3 class="text-base sm:text-lg font-black text-white tracking-tight">חדרים פתוחים להצטרפות</h3>
+                    <span id="open-rooms-badge" class="hidden px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 tabular-nums">0 חדרים</span>
+                  </div>
+                  <span class="text-[11px] text-slate-400 flex items-center gap-1 font-medium shrink-0 whitespace-nowrap">
+                    <span class="whitespace-nowrap">שידור חי</span>
+                    <span class="text-emerald-400">⚡</span>
+                  </span>
+                </div>
+
+                <p class="text-xs text-slate-300 leading-relaxed">שולחנות שממתינים לשחקנים כעת. לחץ על 'הצטרף' כדי להיכנס מיד למשחק:</p>
+
+                <!-- Dynamic Open Rooms List -->
+                <div id="open-rooms-list" class="flex flex-col gap-2.5 max-h-[300px] min-h-[140px] overflow-y-auto pr-1 text-xs" dir="rtl">
+                  <!-- Populated dynamically via renderOpenRooms -->
+                </div>
+              </div>
+
+              <!-- Direct Code Join (At the bottom of Open Rooms panel) -->
+              <div class="pt-3 border-t border-white/10 flex flex-col gap-2 mt-auto">
+                <div class="flex items-center justify-between">
+                  <label for="room-code" class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>🔑 יש לך קוד חדר פרטי?</span>
+                  </label>
+                  <span class="text-[10px] text-slate-400">4 אותיות באנגלית</span>
+                </div>
+                <div class="grid grid-cols-[100px_minmax(0,1fr)] gap-2">
+                  <input type="text" id="room-code" placeholder="ABCD" maxlength="4" class="lobby-field w-full text-center uppercase font-black text-sm rounded-2xl text-white placeholder-slate-500 focus:outline-none py-2.5 tracking-wider">
+                  <button id="join-btn" type="button" class="py-2.5 rounded-2xl font-bold text-xs sm:text-sm bg-white/10 hover:bg-white/15 text-white border border-white/10 shadow-md transition duration-200 hover:scale-[1.01] active:scale-[0.96] flex items-center justify-center gap-2 cursor-pointer">
+                    <span>הצטרף לשולחן</span>
+                    <span>👥</span>
+                  </button>
+                </div>
               </div>
             </section>
           </div>
@@ -2548,7 +2548,7 @@
         el('tutorial-toggle-btn').classList.add('hidden');
         updateRulesBtnVisibility();
         if (typeof switchLobbyTab === 'function') {
-          switchLobbyTab('open');
+          switchLobbyTab('create');
         }
         if (socket) {
           socket.disconnect();
