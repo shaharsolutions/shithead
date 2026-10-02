@@ -1200,7 +1200,7 @@
                       <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
                     </span>
                     <h3 class="text-base sm:text-lg font-black text-white tracking-tight">חדרים פתוחים להצטרפות</h3>
-                    <span id="open-rooms-badge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 tabular-nums">0 חדרים</span>
+                    <span id="open-rooms-badge" class="hidden px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 tabular-nums">0 חדרים</span>
                   </div>
                   <span class="text-[11px] text-slate-400 flex items-center gap-1 font-medium">
                     <span>שידור חי</span>
@@ -2686,6 +2686,26 @@
       }
       window.focusCreateRoom = focusCreateRoom;
 
+      function updateOpenRoomsBadgeVisibility() {
+        const badge = el('open-rooms-badge');
+        const tabBadge = el('tab-rooms-count');
+        if (!badge) return;
+        if (!tabBadge) {
+          badge.classList.remove('hidden');
+          return;
+        }
+        const badgeMatch = (badge.textContent || '').match(/\d+/);
+        const tabMatch = (tabBadge.textContent || '').match(/\d+/);
+        const badgeNum = badgeMatch ? parseInt(badgeMatch[0], 10) : null;
+        const tabNum = tabMatch ? parseInt(tabMatch[0], 10) : null;
+
+        if (badgeNum !== null && tabNum !== null && badgeNum === tabNum) {
+          badge.classList.add('hidden');
+        } else {
+          badge.classList.remove('hidden');
+        }
+      }
+
       function renderOpenRooms(openRooms) {
         const container = el('open-rooms-list');
         const badge = el('open-rooms-badge');
@@ -2695,6 +2715,7 @@
 
         if (badge) badge.textContent = countText;
         if (tabBadge) tabBadge.textContent = count;
+        updateOpenRoomsBadgeVisibility();
 
         if (!container) return;
 
@@ -4131,6 +4152,7 @@
       Snd.muted = localStorage.getItem('shithead_sound_muted') === '1';
       updateMuteUI();
       updateInstallUI();
+      updateOpenRoomsBadgeVisibility();
 
       // Connect socket on load to receive open rooms list
       connectSocket();
